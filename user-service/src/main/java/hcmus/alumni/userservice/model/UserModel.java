@@ -1,5 +1,6 @@
 package hcmus.alumni.userservice.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -9,12 +10,17 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import hcmus.alumni.userservice.utils.Privacy;
+import hcmus.alumni.userservice.common.Privacy;
 
 @Entity
-@Table(name = "user")
-public class UserModel {
-    @Id
+@Table(name = "[user]")
+public class UserModel implements Serializable {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	@Id
     @Column(name = "id", nullable = false)
     private String id;
 
@@ -24,63 +30,64 @@ public class UserModel {
     @Column(name = "pass", nullable = false)
     private String pass;
 
-    @Column(name = "roleId", nullable = false)
+    @Column(name = "role_id", nullable = false)
     private String roleId;
 
-    @Column(name = "fullName")
+    @Column(name = "full_name")
     private String fullName;
 
     @Column(name = "phone")
     private String phone;
 
-    @Column(name = "sexId", nullable = false)
+    @Column(name = "sex_id", nullable = false)
     private String sexId;
 
     @Column(name = "dob")
     private Date dob;
-
-    @Column(name = "aboutMe", columnDefinition = "TEXT")
+    
+    @Column(name = "about_me", columnDefinition = "TEXT")
     private String aboutMe;
 
-    @Column(name = "avatarUrl")
+    @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Column(name = "coverUrl")
+    @Column(name = "cover_url")
     private String coverUrl;
 
-    @Column(name = "statusId", nullable = false)
+    @Column(name = "status_id", nullable = false)
     private String statusId;
 
-    @Column(name = "createAt")
+    @Column(name = "create_at")
     private Date createAt;
 
-    @Column(name = "updateAt")
+    @Column(name = "update_at")
     private Date updateAt;
 
-    @Column(name = "lastLogin")
+    @Column(name = "last_login")
     private Date lastLogin;
 
-    @Column(name = "onlineStatus", nullable = false)
+    @Column(name = "online_status", nullable = false)
     private boolean onlineStatus;
 
-    @Column(name = "emailPrivacy", nullable = false)
+    @Column(name = "email_privacy", nullable = false)
     @Enumerated(EnumType.STRING)
     private Privacy emailPrivacy;
 
-    @Column(name = "phonePrivacy", nullable = false)
+    @Column(name = "phone_privacy", nullable = false)
     @Enumerated(EnumType.STRING)
     private Privacy phonePrivacy;
 
-    @Column(name = "sexPrivacy", nullable = false)
+    @Column(name = "sex_privacy", nullable = false)
     @Enumerated(EnumType.STRING)
     private Privacy sexPrivacy;
 
-    @Column(name = "dobPrivacy", nullable = false)
+    @Column(name = "dob_privacy", nullable = false)
     @Enumerated(EnumType.STRING)
     private Privacy dobPrivacy;
 
-    	
+
     // Constructors, getters, and setters
+
 	public String getId() {
 		return id;
 	}
@@ -240,7 +247,5 @@ public class UserModel {
 	public void setDobPrivacy(Privacy dobPrivacy) {
 		this.dobPrivacy = dobPrivacy;
 	}
-    
-    
-}
 
+}

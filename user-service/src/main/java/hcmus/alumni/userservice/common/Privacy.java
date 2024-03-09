@@ -1,4 +1,4 @@
-package hcmus.alumni.userservice.utils;
+package hcmus.alumni.userservice.common;
 
 public enum Privacy {
     PUBLIC,

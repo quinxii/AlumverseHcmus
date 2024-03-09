@@ -5,7 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import hcmus.alumni.userservice.model.UserModel;
 
 public interface UserRepository extends JpaRepository<UserModel, String> {
-    UserModel findByEmailAndPass(String email, String pass);
+
+    UserModel findByEmail(String email);
 }
 
 
