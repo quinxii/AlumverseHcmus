@@ -15,7 +15,7 @@ import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.PasswordUtils;
 
 @RestController
-@RequestMapping("/userservice")
+@RequestMapping("/user")
 public class UserServiceController {
 
     @Autowired
