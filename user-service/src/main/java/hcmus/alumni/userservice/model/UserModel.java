@@ -87,10 +87,63 @@ public class UserModel implements Serializable {
 
 
     // Constructors, getters, and setters
+    public UserModel(String id, String email, String pass, String roleId, String fullName, String phone, String sexId,
+    		Date dob, String aboutMe, String avatarUrl, String coverUrl, String statusId, Date createAt, Date updateAt,
+    		Date lastLogin, boolean onlineStatus, Privacy emailPrivacy, Privacy phonePrivacy, Privacy sexPrivacy,
+    		Privacy dobPrivacy) {
+    	super();
+    	this.id = id;
+    	this.email = email;
+    	this.pass = pass;
+    	this.roleId = roleId;
+    	this.fullName = fullName;
+    	this.phone = phone;
+    	this.sexId = sexId;
+    	this.dob = dob;
+    	this.aboutMe = aboutMe;
+    	this.avatarUrl = avatarUrl;
+    	this.coverUrl = coverUrl;
+    	this.statusId = statusId;
+    	this.createAt = createAt;
+    	this.updateAt = updateAt;
+    	this.lastLogin = lastLogin;
+    	this.onlineStatus = onlineStatus;
+    	this.emailPrivacy = emailPrivacy;
+    	this.phonePrivacy = phonePrivacy;
+    	this.sexPrivacy = sexPrivacy;
+    	this.dobPrivacy = dobPrivacy;
+    }
+    
+    
+	public UserModel() {
+		this.id = "";
+    	this.email = "";
+    	this.pass = "";
+    	this.roleId = "";
+    	this.fullName = "";
+    	this.phone = "";
+    	this.sexId = "";
+    	this.dob = null;
+    	this.aboutMe = "";
+    	this.avatarUrl = "";
+    	this.coverUrl = "";
+    	this.statusId = "";
+    	this.createAt = null;
+    	this.updateAt = null;
+    	this.lastLogin = null;
+    	this.onlineStatus = false;
+    	this.emailPrivacy = null;
+    	this.phonePrivacy = null;
+    	this.sexPrivacy = null;
+    	this.dobPrivacy = null;
+	}
+
+
 
 	public String getId() {
 		return id;
 	}
+
 
 	public void setId(String id) {
 		this.id = id;
