@@ -14,7 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.UserRepository;
+import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
+import hcmus.alumni.userservice.utils.GCPConnectionUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 import hcmus.alumni.userservice.utils.PasswordUtils;
 
@@ -24,8 +26,10 @@ public class UserServiceController {
 
 	@Autowired
 	private UserRepository userRepository;
-    @Autowired
-    private ImageUtils imageUtils;
+	@Autowired
+	private VerifyAlumniRepository verifyAlumniRepository;
+	@Autowired
+	private ImageUtils imageUtils;
 
 	@PostMapping("/login")
 	public UserModel login(@RequestParam String email, @RequestParam String pass) {
@@ -96,19 +100,26 @@ public class UserServiceController {
 	 * // Save the new user return userRepository.save(newUser); }
 	 */
 
-	@PostMapping("alumni-verification")
-	public VerifyAlumniModel createAlumniVerification(@RequestParam("avatar") MultipartFile avatar) {
-		String userID = "60c7f54a-0583-4db1-a087-144e57d27d1e";
-		VerifyAlumniModel res = new VerifyAlumniModel();
-		String uploadDirectory = "images/avatar/";
-		res.setId(uploadDirectory);
+	@PostMapping("/alumni-verification")
+	public VerifyAlumniModel createAlumniVerification(@RequestParam("avatar") MultipartFile avatar,
+			@RequestParam("name") String name, @RequestParam("student_id") String student_id,
+			@RequestParam("beginning_year") int beginning_year,
+			@RequestParam("social_media_link") String social_media_link) {
+		String userID = "8ea1665e-74b4-43ac-a966-bf10e938da44"; // delete after implementing jwt
+		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(userID, student_id, beginning_year, social_media_link);
+
 		try {
-			imageUtils.saveImageToStorage(uploadDirectory, avatar, userID);
+			verifyAlumniRepository.save(verifyAlumni);
+			String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, userID);
+			userRepository.setAvatarUrl(userID, avatarUrl);
+		} catch (IllegalArgumentException e) {
+			// TODO: handle exception
+			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		return res;
+
+		return verifyAlumni;
 	}
 }

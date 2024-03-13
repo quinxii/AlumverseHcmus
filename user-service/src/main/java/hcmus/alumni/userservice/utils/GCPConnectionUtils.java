@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 @Service
@@ -15,18 +16,27 @@ public class GCPConnectionUtils {
 
 	@Value("${gcp.serviceAccountKeyPath}")
 	private String serviceAccountKeyPath;
-
-	@Value("${gcp.bucketName}") // Optional: Specify default bucket name
+	@Value("${gcp.bucketName}")
 	private String bucketName;
+	@Value("${gcp.domainName}")
+	private String domainName;
+	private Storage storage = null;
 
-	@Bean
-	public Storage getStorage() throws IOException {
+
+	public Storage getStorage() throws FileNotFoundException, IOException {
+		if (this.storage != null) {
+			return this.storage;
+		}
 		GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountKeyPath));
-		return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
+		this.storage = StorageOptions.newBuilder().setCredentials(credentials).build().getService();
+		return this.storage;
 	}
-	
-	@Bean
+
 	public String getBucketName() {
-		return bucketName;
+		return this.bucketName;
+	}
+
+	public String getDomainName() {
+		return domainName;
 	}
 }

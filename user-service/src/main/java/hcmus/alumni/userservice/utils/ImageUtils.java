@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,8 +18,9 @@ import com.google.cloud.storage.StorageException;
 @Service
 public class ImageUtils {
 	@Autowired
-	private Storage storage;
-
+	private GCPConnectionUtils gcp;
+	private final String avatarPath = "images/users/avatar/";
+	
 	// Save image in a local directory
 	public String saveImageToStorage(String uploadDirectory, MultipartFile imageFile, String imageName)
 			throws IOException {
@@ -28,41 +30,22 @@ public class ImageUtils {
 		// Convert MultipartFile to byte array
 		byte[] imageBytes = imageFile.getBytes();
 
-		BlobInfo blobInfo = BlobInfo.newBuilder("hcmus-alumverse", newFilename)
+		BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
 				.setContentType(imageFile.getContentType())
 				.build();
 
 		// Upload the image from the local file path
 		try {
-			storage.create(blobInfo, imageBytes);
+			gcp.getStorage().create(blobInfo, imageBytes);
 		} catch (StorageException e) {
 			System.err.println("Error uploading image: " + e.getMessage());
 		}
 
-		return newFilename;
+		String imageUrl = gcp.getDomainName() + gcp.getBucketName() + "/" + newFilename;
+		return imageUrl;
 	}
 
-	// To view an image
-	public byte[] getImage(String imageDirectory, String imageName) throws IOException {
-		Path imagePath = Path.of(imageDirectory, imageName);
-
-		if (Files.exists(imagePath)) {
-			byte[] imageBytes = Files.readAllBytes(imagePath);
-			return imageBytes;
-		} else {
-			return null; // Handle missing images
-		}
-	}
-
-	// Delete an image
-	public String deleteImage(String imageDirectory, String imageName) throws IOException {
-		Path imagePath = Path.of(imageDirectory, imageName);
-
-		if (Files.exists(imagePath)) {
-			Files.delete(imagePath);
-			return "Success";
-		} else {
-			return "Failed"; // Handle missing images
-		}
+	public String getAvatarPath() {
+		return avatarPath;
 	}
 }
