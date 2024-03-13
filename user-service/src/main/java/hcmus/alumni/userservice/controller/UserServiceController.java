@@ -2,9 +2,15 @@ package hcmus.alumni.userservice.controller;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -99,6 +105,19 @@ public class UserServiceController {
 	 * 
 	 * // Save the new user return userRepository.save(newUser); }
 	 */
+	
+	@GetMapping("/alumni-verification")
+	public List<VerifyAlumniModel> getAllAlumniVerification() {
+	    return verifyAlumniRepository.findAllByIsDeleteEquals(false);
+	}
+	
+	@GetMapping("/alumni-verification/userid")
+	public ResponseEntity<VerifyAlumniModel> getAlumniVerificationByUserId(@RequestParam String user_id) {
+	    Optional<VerifyAlumniModel> alumniVerification = verifyAlumniRepository.findByUserIdAndIsDeleteEquals(user_id, false);
+	    
+	    return alumniVerification.map(response -> ResponseEntity.ok().body(response))
+	            .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
 
 	@PostMapping("/alumni-verification")
 	public VerifyAlumniModel createAlumniVerification(@RequestParam("avatar") MultipartFile avatar,
