@@ -25,7 +25,7 @@ public class ImageUtils {
 	// Save image in a local directory
 	public String saveImageToStorage(String uploadDirectory, MultipartFile imageFile, String imageName)
 			throws IOException {
-		if (imageFile.isEmpty()) {
+		if (imageFile == null) {
 			String imageUrl = gcp.getDomainName() + gcp.getBucketName() + "/" + uploadDirectory + noneAvatar;
 			return imageUrl;
 		}
