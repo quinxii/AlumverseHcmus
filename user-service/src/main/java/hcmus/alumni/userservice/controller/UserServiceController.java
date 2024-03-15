@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +24,7 @@ import hcmus.alumni.userservice.utils.ImageUtils;
 import hcmus.alumni.userservice.utils.PasswordUtils;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000") // Allow requests from Web
 @RequestMapping("/user")
 public class UserServiceController {
 
@@ -101,15 +105,20 @@ public class UserServiceController {
 	 */
 
 	@PostMapping("/alumni-verification")
-	public VerifyAlumniModel createAlumniVerification(@RequestParam("avatar") MultipartFile avatar,
-			@RequestParam("name") String name, @RequestParam("student_id") String student_id,
-			@RequestParam("beginning_year") int beginning_year,
-			@RequestParam("social_media_link") String social_media_link) {
+	public ResponseEntity<String> createAlumniVerification(
+			@RequestParam(value = "avatar", required = false) MultipartFile avatar,
+			@RequestParam("full_name") String full_name,
+			@RequestParam(value = "student_id", required = false) String student_id,
+			@RequestParam(value = "beginning_year", required = false) Integer beginning_year,
+			@RequestParam(value = "social_media_link", required = false) String social_media_link) {
 		String userID = "8ea1665e-74b4-43ac-a966-bf10e938da44"; // delete after implementing jwt
 		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(userID, student_id, beginning_year, social_media_link);
 
 		try {
-			verifyAlumniRepository.save(verifyAlumni);
+			userRepository.setFullName(userID, full_name);
+			if (student_id != null || beginning_year != null || social_media_link != null) {
+				verifyAlumniRepository.save(verifyAlumni);
+			}
 			String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, userID);
 			userRepository.setAvatarUrl(userID, avatarUrl);
 		} catch (IllegalArgumentException e) {
@@ -120,6 +129,6 @@ public class UserServiceController {
 			e.printStackTrace();
 		}
 
-		return verifyAlumni;
+		return ResponseEntity.status(HttpStatus.CREATED).body("Post alumni verification successfully");
 	}
 }
