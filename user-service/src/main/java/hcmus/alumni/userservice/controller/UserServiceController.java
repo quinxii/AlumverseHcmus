@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -170,5 +171,49 @@ public class UserServiceController {
 		}
 
 		return ResponseEntity.status(HttpStatus.CREATED).body("Post alumni verification successfully");
+	}
+	
+	@PutMapping("/alumni-verification/{user_id}")
+	public ResponseEntity<String> updateAlumniVerification(
+	        @PathVariable String user_id,
+	        @RequestBody Map<String, Object> requestBody) {
+
+		Optional<VerifyAlumniModel> optionalAlumni = verifyAlumniRepository.findByUserIdAndIsDeleteEquals(user_id, false);
+
+	    if (optionalAlumni.isEmpty()) {
+	        return ResponseEntity.notFound().build();
+	    }
+
+	    VerifyAlumniModel alumni = optionalAlumni.get();
+
+	    try {
+	        if (requestBody.containsKey("full_name")) {
+	            String full_name = (String) requestBody.get("full_name");
+	            userRepository.setFullName(user_id, full_name);
+	        }
+	        if (requestBody.containsKey("student_id")) {
+	            String student_id = (String) requestBody.get("student_id");
+	            alumni.setStudentId(student_id);
+	        }
+	        if (requestBody.containsKey("beginning_year")) {
+	            Integer beginning_year = (Integer) requestBody.get("beginning_year");
+	            alumni.setBeginningYear(beginning_year);
+	        }
+	        if (requestBody.containsKey("social_media_link")) {
+	            String social_media_link = (String) requestBody.get("social_media_link");
+	            alumni.setSocialMediaLink(social_media_link);
+	        }
+	        if (requestBody.containsKey("avatar")) {
+	            MultipartFile avatar = (MultipartFile) requestBody.get("avatar");
+	            String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, user_id);
+	            userRepository.setAvatarUrl(user_id, avatarUrl);
+	        }
+
+	        verifyAlumniRepository.save(alumni);
+	        return ResponseEntity.ok("Alumni verification updated successfully");
+	    } catch (IllegalArgumentException | IOException e) {
+	        e.printStackTrace(); // Log the exception
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update alumni verification");
+	    }
 	}
 }
