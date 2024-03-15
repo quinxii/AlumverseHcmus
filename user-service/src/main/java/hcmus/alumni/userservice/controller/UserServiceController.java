@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -113,8 +114,8 @@ public class UserServiceController {
 	    return verifyAlumniRepository.findAllByIsDeleteEquals(false);
 	}
 	
-	@GetMapping("/alumni-verification/userid")
-	public ResponseEntity<VerifyAlumniModel> getAlumniVerificationByUserId(@RequestParam String user_id) {
+	@GetMapping("/alumni-verification/{user_id}")
+	public ResponseEntity<VerifyAlumniModel> getAlumniVerificationByUserId(@PathVariable String user_id) {
 	    Optional<VerifyAlumniModel> alumniVerification = verifyAlumniRepository.findByUserIdAndIsDeleteEquals(user_id, false);
 	    
 	    return alumniVerification.map(response -> ResponseEntity.ok().body(response))
