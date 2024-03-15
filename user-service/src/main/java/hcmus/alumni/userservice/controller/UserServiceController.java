@@ -2,7 +2,9 @@ package hcmus.alumni.userservice.controller;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,11 +117,31 @@ public class UserServiceController {
 	}
 	
 	@GetMapping("/alumni-verification/{user_id}")
-	public ResponseEntity<VerifyAlumniModel> getAlumniVerificationByUserId(@PathVariable String user_id) {
-	    Optional<VerifyAlumniModel> alumniVerification = verifyAlumniRepository.findByUserIdAndIsDeleteEquals(user_id, false);
+	public ResponseEntity<Map<String, Object>> getAlumniVerificationByUserId(@PathVariable String user_id) {
+		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository.findByUserIdAndIsDeleteEquals(user_id, false);
+
+		if (alumniVerificationOptional.isEmpty()) {
+			Map<String, Object> errorResponse = new HashMap<>();
+	        errorResponse.put("error", "No alumni verification with that userid");
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+		}
 	    
-	    return alumniVerification.map(response -> ResponseEntity.ok().body(response))
-	            .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+		VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("id", alumniVerification.getId());
+		response.put("userId", alumniVerification.getUserId());
+		response.put("studentId", alumniVerification.getStudentId());
+		response.put("beginningYear", alumniVerification.getBeginningYear());
+		response.put("socialMediaLink", alumniVerification.getSocialMediaLink());
+		response.put("comment", alumniVerification.getComment());
+		response.put("status", alumniVerification.getStatus());
+		response.put("createdAt", alumniVerification.getCreatedAt());
+		response.put("isDelete", alumniVerification.getIsDelete());
+		response.put("fullName", userRepository.findFullNameByUserId(user_id));
+		response.put("avatarUrl", userRepository.findAvatarUrlByUserId(user_id));
+        
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/alumni-verification")

@@ -24,6 +24,12 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
     @Modifying
     @Query("UPDATE UserModel u SET u.fullName = :fullName WHERE u.id = :userId")
     int setFullName(@Param("userId") String userId, @Param("fullName") String fullName);
+    
+    @Query("SELECT u.fullName FROM UserModel u WHERE u.id = :userId")
+    String findFullNameByUserId(@Param("userId") String userId);
+
+    @Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
+    String findAvatarUrlByUserId(@Param("userId") String userId);
 }
 
 
