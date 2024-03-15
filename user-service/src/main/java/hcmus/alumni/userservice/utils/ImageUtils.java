@@ -20,10 +20,16 @@ public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
 	private final String avatarPath = "images/users/avatar/";
+	private final String noneAvatar = "none.png";
 	
 	// Save image in a local directory
 	public String saveImageToStorage(String uploadDirectory, MultipartFile imageFile, String imageName)
 			throws IOException {
+		if (imageFile == null) {
+			String imageUrl = gcp.getDomainName() + gcp.getBucketName() + "/" + uploadDirectory + noneAvatar;
+			return imageUrl;
+		}
+		
 		String extension = StringUtils.getFilenameExtension(imageFile.getOriginalFilename());
 		String newFilename = uploadDirectory + imageName + "." + extension;
 		

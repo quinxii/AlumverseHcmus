@@ -34,7 +34,7 @@ public class VerifyAlumniModel implements Serializable {
 	private String studentId;
 
 	@Column(name = "beginning_year")
-	private int beginningYear;
+	private Integer beginningYear;
 	
 	@Column(name = "social_media_link", length = 100)
 	private String socialMediaLink;
@@ -53,7 +53,7 @@ public class VerifyAlumniModel implements Serializable {
 	@Column(name = "is_delete")
 	private Boolean isDelete;
 	
-	public VerifyAlumniModel(String user_id, String studentId, int beginningYear, String socialMediaLink) {
+	public VerifyAlumniModel(String user_id, String studentId, Integer beginningYear, String socialMediaLink) {
 		super();
 		this.id = UUID.randomUUID().toString();
 		this.userId = user_id;
@@ -67,10 +67,10 @@ public class VerifyAlumniModel implements Serializable {
 	public VerifyAlumniModel() {
 		super();
 		this.id = UUID.randomUUID().toString();
-		this.userId = "";
-		this.studentId = "";
-		this.beginningYear = 0;
-		this.socialMediaLink = "";
+		this.userId = null;
+		this.studentId = null;
+		this.beginningYear = null;
+		this.socialMediaLink = null;
 		this.status = Status.PENDING;
 		this.isDelete = false;
 	}
@@ -100,11 +100,10 @@ public class VerifyAlumniModel implements Serializable {
 		return beginningYear;
 	}
 
-	public void setBeginningYear(int beginningYear) {
+	public void setBeginningYear(Integer beginningYear) {
 		this.beginningYear = beginningYear;
 	}
 	
-
 	public String getSocialMediaLink() {
 		return socialMediaLink;
 	}
