@@ -116,7 +116,9 @@ public class UserServiceController {
 
 		try {
 			userRepository.setFullName(userID, full_name);
-			verifyAlumniRepository.save(verifyAlumni);
+			if (student_id != null || beginning_year != null || social_media_link != null) {
+				verifyAlumniRepository.save(verifyAlumni);
+			}
 			String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, userID);
 			userRepository.setAvatarUrl(userID, avatarUrl);
 		} catch (IllegalArgumentException e) {
@@ -126,7 +128,7 @@ public class UserServiceController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		return ResponseEntity.status(HttpStatus.CREATED).body("Post alumni verification successfully");
 	}
 }
