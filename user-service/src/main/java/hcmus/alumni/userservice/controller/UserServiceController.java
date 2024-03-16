@@ -150,7 +150,7 @@ public class UserServiceController {
 			@RequestParam(value = "avatar", required = false) MultipartFile avatar,
 			@RequestParam("full_name") String full_name,
 			@RequestParam(value = "student_id", required = false) String student_id,
-			@RequestParam(value = "beginning_year", required = false) Integer beginning_year,
+			@RequestParam(value = "beginning_year", required = false, defaultValue = "0") Integer beginning_year,
 			@RequestParam(value = "social_media_link", required = false) String social_media_link) {
 		String userID = "8ea1665e-74b4-43ac-a966-bf10e938da44"; // delete after implementing jwt
 		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(userID, student_id, beginning_year, social_media_link);
