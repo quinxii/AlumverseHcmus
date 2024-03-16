@@ -1,6 +1,7 @@
 package hcmus.alumni.userservice.controller;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,6 @@ import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
-import hcmus.alumni.userservice.utils.GCPConnectionUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 import hcmus.alumni.userservice.utils.PasswordUtils;
 
@@ -114,17 +114,28 @@ public class UserServiceController {
 		String userID = "8ea1665e-74b4-43ac-a966-bf10e938da44"; // delete after implementing jwt
 		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(userID, student_id, beginning_year, social_media_link);
 
+
 		try {
 			userRepository.setFullName(userID, full_name);
 			if (student_id != null || beginning_year != null || social_media_link != null) {
 				verifyAlumniRepository.save(verifyAlumni);
 			}
-			String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, userID);
+			
+			// Delete old avatar if users update theirs
+//			String oldAvatarUrl = userRepository.getAvatarUrl(userID);
+//			imageUtils.deleteImageFromStorageByUrl(oldAvatarUrl);
+			
+			// Save avatar
+			String imageName = ImageUtils.hashImageName(userID);
+			String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, imageName);
 			userRepository.setAvatarUrl(userID, avatarUrl);
 		} catch (IllegalArgumentException e) {
 			// TODO: handle exception
 			e.printStackTrace();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
