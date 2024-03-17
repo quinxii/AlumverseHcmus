@@ -14,6 +14,9 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
     
     @Query("SELECT u FROM UserModel u WHERE u.id = :userId")
     UserModel findUserById(@Param("userId") String userId);
+    
+    @Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
+    String getAvatarUrl(@Param("userId") String userId);
 
     @Transactional
     @Modifying
