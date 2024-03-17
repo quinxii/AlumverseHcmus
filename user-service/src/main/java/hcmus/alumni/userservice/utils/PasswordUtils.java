@@ -5,10 +5,27 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class PasswordUtils {
-	public static String hashPassword(String password) {
+	private static volatile PasswordUtils instance  = null;
+	
+	private PasswordUtils() {
+        super();
+    }
+	
+	public static PasswordUtils getInstance() {
+        if (instance == null) {
+            synchronized (PasswordUtils.class) {
+                if (instance == null) {
+                    instance = new PasswordUtils();
+                }
+            }
+        }
+        return instance;
+    }
+	
+	public String hashPassword(String pass) {
 		try {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			byte[] hashBytes = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+			byte[] hashBytes = digest.digest(pass.getBytes(StandardCharsets.UTF_8));
 
 			StringBuilder sb = new StringBuilder();
 			for (byte hashByte : hashBytes) {
@@ -19,4 +36,5 @@ public class PasswordUtils {
 			return null;
 		}
 	}
+	
 }
