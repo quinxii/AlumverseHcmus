@@ -11,6 +11,7 @@ import hcmus.alumni.userservice.model.UserModel;
 public interface UserRepository extends JpaRepository<UserModel, String> {
 
     UserModel findByEmailAndPass(String email, String pass);
+    UserModel findByEmail(String email);
     
     @Query("SELECT u FROM UserModel u WHERE u.id = :userId")
     UserModel findUserById(@Param("userId") String userId);
