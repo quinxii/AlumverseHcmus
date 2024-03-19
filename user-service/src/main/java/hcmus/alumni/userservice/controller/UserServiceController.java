@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -181,16 +182,16 @@ public class UserServiceController {
 
 	@PostMapping("/alumni-verification")
 	public ResponseEntity<String> createAlumniVerification(
+			@RequestHeader("userId") String userId,
 			@RequestParam(value = "avatar", required = false) MultipartFile avatar,
 			@RequestParam("full_name") String full_name,
 			@RequestParam(value = "student_id", required = false) String student_id,
 			@RequestParam(value = "beginning_year", required = false, defaultValue = "0") Integer beginning_year,
 			@RequestParam(value = "social_media_link", required = false) String social_media_link) {
-		String userID = "8ea1665e-74b4-43ac-a966-bf10e938da44"; // delete after implementing jwt
-		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(userID, student_id, beginning_year, social_media_link);
+		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(userId, student_id, beginning_year, social_media_link);
 
 		try {
-			userRepository.setFullName(userID, full_name);
+			userRepository.setFullName(userId, full_name);
 			if (student_id != null || beginning_year != null || social_media_link != null) {
 				verifyAlumniRepository.save(verifyAlumni);
 			}
@@ -200,9 +201,9 @@ public class UserServiceController {
 			// imageUtils.deleteImageFromStorageByUrl(oldAvatarUrl);
 
 			// Save avatar
-			String imageName = ImageUtils.hashImageName(userID);
+			String imageName = avatar == null ? null : ImageUtils.hashImageName(userId);
 			String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, imageName);
-			userRepository.setAvatarUrl(userID, avatarUrl);
+			userRepository.setAvatarUrl(userId, avatarUrl);
 		} catch (IllegalArgumentException e) {
 			// TODO: handle exception
 			e.printStackTrace();

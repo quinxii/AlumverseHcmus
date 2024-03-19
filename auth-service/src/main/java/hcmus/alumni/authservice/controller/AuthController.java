@@ -45,9 +45,7 @@ public class AuthController {
 
 	@PostMapping("/login")
 	public ResponseEntity<String> login(@RequestParam String email, @RequestParam String pass) {
-		System.out.println("1");
         Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, pass));
-		System.out.println("2");
         if (authenticate.isAuthenticated()) {
         	userRepository.setLastLogin(email, new Date());
         	CustomUserDetails cud = (CustomUserDetails) authenticate.getPrincipal();
