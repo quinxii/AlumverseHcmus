@@ -10,7 +10,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,7 +21,6 @@ import hcmus.alumni.authservice.repository.EmailActivationCodeRepository;
 import hcmus.alumni.authservice.repository.UserRepository;
 import hcmus.alumni.authservice.utils.EmailSenderUtils;
 import hcmus.alumni.authservice.utils.JwtUtils;
-import hcmus.alumni.authservice.utils.PasswordUtils;
 import hcmus.alumni.authservice.utils.UserUtils;
 
 @RestController
