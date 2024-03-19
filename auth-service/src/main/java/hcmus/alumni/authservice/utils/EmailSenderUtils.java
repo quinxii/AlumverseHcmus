@@ -1,9 +1,8 @@
-package hcmus.alumni.userservice.utils;
+package hcmus.alumni.authservice.utils;
 import java.io.IOException;
 import java.util.HashMap;
 
-import hcmus.alumni.userservice.common.UserUtils;
-import hcmus.alumni.userservice.repository.EmailActivationCodeRepository;
+import hcmus.alumni.authservice.repository.EmailActivationCodeRepository;
 import models.SendEnhancedRequestBody;
 import models.SendEnhancedResponseBody;
 import models.SendRequestMessage;
@@ -13,7 +12,7 @@ import services.SendService;
 public class EmailSenderUtils {
 	
 	private UserUtils userUtils = UserUtils.getInstance();
-	private AuthorizationCodeGeneratorUtils authorizationCodeGeneratorUtils = AuthorizationCodeGeneratorUtils.getInstance();
+	private EmailActivationCodeGeneratorUtils authorizationCodeGeneratorUtils = EmailActivationCodeGeneratorUtils.getInstance();
 	private static volatile EmailSenderUtils instance  = null;
 	
 	private EmailSenderUtils() {

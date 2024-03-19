@@ -7,11 +7,19 @@ spring:
   cloud:
     gateway:
       routes:
+        ## auth service
+        - id: auth
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**
+
         ## user service
         - id: user
-          uri: http://localhost:9001
+          uri: lb://user-service
           predicates:
             - Path=/user/**
+          filters:
+            - name: Authentication
 #
 #        ## Service2
 #        - id: service2

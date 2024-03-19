@@ -1,13 +1,13 @@
-package hcmus.alumni.userservice.common;
+package hcmus.alumni.authservice.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import hcmus.alumni.userservice.model.EmailActivationCodeModel;
-import hcmus.alumni.userservice.repository.EmailActivationCodeRepository;
-import hcmus.alumni.userservice.repository.UserRepository;
+import hcmus.alumni.authservice.model.EmailActivationCodeModel;
+import hcmus.alumni.authservice.repository.EmailActivationCodeRepository;
+import hcmus.alumni.authservice.repository.UserRepository;
 
 public class UserUtils {
 	private static volatile UserUtils instance  = null;

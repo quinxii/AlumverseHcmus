@@ -1,23 +1,23 @@
-package hcmus.alumni.userservice.utils;
+package hcmus.alumni.authservice.utils;
 
 import java.security.SecureRandom;
 
-public class AuthorizationCodeGeneratorUtils {
+public class EmailActivationCodeGeneratorUtils {
 	
 	private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final int CODE_LENGTH = 8; 
 
-    private static volatile AuthorizationCodeGeneratorUtils instance  = null;
+    private static volatile EmailActivationCodeGeneratorUtils instance  = null;
     
-    private AuthorizationCodeGeneratorUtils() {
+    private EmailActivationCodeGeneratorUtils() {
         super();
     }
 	
-	public static AuthorizationCodeGeneratorUtils getInstance() {
+	public static EmailActivationCodeGeneratorUtils getInstance() {
         if (instance == null) {
-            synchronized (AuthorizationCodeGeneratorUtils.class) {
+            synchronized (EmailActivationCodeGeneratorUtils.class) {
                 if (instance == null) {
-                    instance = new AuthorizationCodeGeneratorUtils();
+                    instance = new EmailActivationCodeGeneratorUtils();
                 }
             }
         }
