@@ -22,7 +22,7 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtils {
 	public static final String SECRET = "givepraiseforhehasnoequalworshiphimagodhasbeenbornuntotheworldcowerinfearhewillnotforgiveanyvicedevoteyourselfyourfateisoverwritten";
-	private final long expirationTime = 1000L * 60L * 60L * 24L * 3L; // 3 days
+	private final long expirationTime = 259200000L; // 3 days
 	
 	public boolean validateToken(final String token) {
 		Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token);

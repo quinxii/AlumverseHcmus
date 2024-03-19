@@ -56,12 +56,6 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	public ResponseEntity<String> signup(@RequestParam String email, @RequestParam String pass) {
-
-		UserModel existingUser = userRepository.findByEmail(email);
-		if (existingUser != null) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
-		}
-
 		UserModel newUser = new UserModel();
 
 		// Generate UUID
@@ -88,6 +82,11 @@ public class AuthController {
 
 	@PostMapping("/send-authorize-code")
 	public ResponseEntity<String> sendAuthorizeCode(@RequestParam String email) {
+		UserModel existingUser = userRepository.findByEmail(email);
+		if (existingUser != null) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+		}
+		
 		if (email == null || email.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email is required");
 		}
