@@ -7,13 +7,19 @@ spring:
   cloud:
     gateway:
       routes:
+        ## auth service
+        - id: auth
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**
+
         ## user service
         - id: user
-          uri: lb://user
+          uri: lb://user-service
           predicates:
             - Path=/user/**
           filters:
-            - StripPrefix=1
+            - name: Authentication
 #
 #        ## Service2
 #        - id: service2
@@ -22,6 +28,15 @@ spring:
 #            - Path=/service2/**
 #          filters:
 #            - StripPrefix=1
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+              allowedOrigins: "*"
+              allowedMethods: "*"
+              allowedHeaders: "*"
 server:
   port: 8080
 
