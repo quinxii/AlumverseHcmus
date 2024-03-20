@@ -9,13 +9,22 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 @Entity
 @Table(name = "[verify_alumni]")
-public class VerifyAlumniModel implements Serializable {
+@Getter
+@Setter
+@AllArgsConstructor
+public class VerifyAlumniModel implements Serializable {	
     public enum Status {
         PENDING,
         APPROVED,
@@ -27,8 +36,12 @@ public class VerifyAlumniModel implements Serializable {
 	@Column(name = "id", nullable = false)
 	private String id;
 	
-	@Column(name = "user_id", nullable = false)
-	private String userId;
+//	@Column(name = "user_id", nullable = false)
+//	private String userId;
+	
+    @ManyToOne // This establishes the ManyToOne relationship
+    @JoinColumn(name = "user_id", nullable = false) // Foreign key constraint
+    private UserModel user; // User object representing the related user
 
 	@Column(name = "student_id", length = 8)
 	private String studentId;
@@ -53,10 +66,10 @@ public class VerifyAlumniModel implements Serializable {
 	@Column(name = "is_delete")
 	private Boolean isDelete;
 	
-	public VerifyAlumniModel(String user_id, String studentId, Integer beginningYear, String socialMediaLink) {
+	public VerifyAlumniModel(UserModel user, String studentId, Integer beginningYear, String socialMediaLink) {
 		super();
 		this.id = UUID.randomUUID().toString();
-		this.userId = user_id;
+		this.user = user;
 		this.studentId = studentId;
 		this.beginningYear = beginningYear;
 		this.socialMediaLink = socialMediaLink;
@@ -67,87 +80,11 @@ public class VerifyAlumniModel implements Serializable {
 	public VerifyAlumniModel() {
 		super();
 		this.id = UUID.randomUUID().toString();
-		this.userId = null;
+		this.user = null;
 		this.studentId = null;
 		this.beginningYear = null;
 		this.socialMediaLink = null;
 		this.status = Status.PENDING;
 		this.isDelete = false;
-	}
-	
-
-	public String getId() {
-		return id;
-	}
-
-	public String getUserId() {
-		return userId;
-	}
-
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
-
-	public String getStudentId() {
-		return studentId;
-	}
-
-	public void setStudentId(String studentId) {
-		this.studentId = studentId;
-	}
-
-	public int getBeginningYear() {
-		return beginningYear;
-	}
-
-	public void setBeginningYear(Integer beginningYear) {
-		this.beginningYear = beginningYear;
-	}
-	
-	public String getSocialMediaLink() {
-		return socialMediaLink;
-	}
-
-	public void setSocialMediaLink(String socialMediaLink) {
-		this.socialMediaLink = socialMediaLink;
-	}
-
-	public String getComment() {
-		return comment;
-	}
-
-	public void setComment(String comment) {
-		this.comment = comment;
-	}
-
-	public Status getStatus() {
-		return status;
-	}
-
-	public void setStatus(Status status) {
-		this.status = status;
-	}
-
-	public Date getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public Boolean getIsDelete() {
-		return isDelete;
-	}
-
-	public void setIsDelete(Boolean isDelete) {
-		this.isDelete = isDelete;
-	}
-
-	@Override
-	public String toString() {
-		return "VerifyAlumniModel [id=" + id + ", userId=" + userId + ", studentId=" + studentId + ", beginningYear="
-				+ beginningYear + ", socialMediaLink=" + socialMediaLink + ", comment=" + comment + ", status=" + status
-				+ ", createdAt=" + createdAt + ", isDelete=" + isDelete + "]";
 	}
 }
