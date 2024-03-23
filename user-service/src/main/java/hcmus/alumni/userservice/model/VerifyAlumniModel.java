@@ -36,9 +36,6 @@ public class VerifyAlumniModel implements Serializable {
 	@Column(name = "id", nullable = false)
 	private String id;
 	
-//	@Column(name = "user_id", nullable = false)
-//	private String userId;
-	
     @ManyToOne // This establishes the ManyToOne relationship
     @JoinColumn(name = "user_id", nullable = false) // Foreign key constraint
     private UserModel user; // User object representing the related user
@@ -61,7 +58,7 @@ public class VerifyAlumniModel implements Serializable {
 
 	@CreationTimestamp
 	@Column(name = "create_at", updatable = false)
-	private Date createdAt;
+	private Date createAt;
 
 	@Column(name = "is_delete")
 	private Boolean isDelete;

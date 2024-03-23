@@ -75,7 +75,13 @@ public class AuthController {
 		newUser.setSexPrivacy(UserModel.Privacy.PUBLIC);
 		newUser.setDobPrivacy(UserModel.Privacy.PUBLIC);
 
-		userRepository.save(newUser);
+		try {
+			userRepository.save(newUser);
+		} catch (Exception e) {
+			// TODO: handle exception
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email already exists");
+		}
+
 
 		return ResponseEntity.status(HttpStatus.CREATED).body("Signup successfully");
 	}
