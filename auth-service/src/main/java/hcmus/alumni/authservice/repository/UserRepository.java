@@ -21,7 +21,7 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
     
     @Transactional
     @Modifying
-    @Query("UPDATE UserModel u SET u.lastLogin = :lastLogin, onlineStatus = true WHERE u.email = :email")
+    @Query("UPDATE UserModel u SET u.lastLogin = :lastLogin WHERE u.email = :email")
     int setLastLogin(@Param("email") String email, @Param("lastLogin") Date lastLogin);
 }
 

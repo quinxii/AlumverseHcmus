@@ -223,6 +223,10 @@ public class UserServiceController {
 			@RequestParam(value = "beginningYear", required = false, defaultValue = "0") Integer beginningYear,
 			@RequestParam(value = "socialMediaLink", required = false) String socialMediaLink,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId) {
+		if (avatar != null && avatar.getSize() > 5 * 1024 * 1024) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+		}
+		
 		UserModel user = new UserModel();
 		user.setId(userId);
 		FacultyModel faculty = new FacultyModel();

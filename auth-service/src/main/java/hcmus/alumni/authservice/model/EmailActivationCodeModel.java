@@ -22,8 +22,8 @@ public class EmailActivationCodeModel implements Serializable {
     @Column(name = "activation_code", nullable = false, length = 8)
     private String activationCode;
 
-    @Column(name = "create_at", nullable = false)
-    private String createAt;
+    @Column(name = "created_at", nullable = false)
+    private String createdAt;
 
     // Constructors, getters, and setters
     // Constructor
@@ -47,11 +47,11 @@ public class EmailActivationCodeModel implements Serializable {
     }
 
     public String getCreateAt() {
-        return createAt;
+        return createdAt;
     }
 
     public void setCreateAt(String currentTime) {
-        this.createAt = currentTime;
+        this.createdAt = currentTime;
     }
 }
 
