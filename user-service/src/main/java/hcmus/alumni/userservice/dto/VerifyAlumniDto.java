@@ -18,4 +18,5 @@ public class VerifyAlumniDto {
 	private String email;
 	private String fullName;
 	private String avatarUrl;
+	private String facultyName;
 }

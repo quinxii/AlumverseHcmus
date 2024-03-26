@@ -3,7 +3,6 @@ package hcmus.alumni.authservice.controller;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -72,24 +71,7 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	public ResponseEntity<String> signup(@RequestParam String email, @RequestParam String pass) {
-		UserModel newUser = new UserModel();
-
-		// Generate UUID
-		UUID uuid = UUID.randomUUID();
-		String uuidString = uuid.toString();
-
-		newUser.setId(uuidString);
-		newUser.setEmail(email);
-
-		newUser.setPass(passwordEncoder.encode(pass));
-
-		newUser.setRoleId("8ea1665e-74b4-43ac-a966-bf10e938da42");
-		newUser.setSexId("8ea1665e-74b4-43ac-a966-bf10e938da43");
-		newUser.setStatusId("8ea1665e-74b4-43ac-a966-bf10e938da45");
-		newUser.setEmailPrivacy(UserModel.Privacy.PUBLIC);
-		newUser.setPhonePrivacy(UserModel.Privacy.PUBLIC);
-		newUser.setSexPrivacy(UserModel.Privacy.PUBLIC);
-		newUser.setDobPrivacy(UserModel.Privacy.PUBLIC);
+		UserModel newUser = new UserModel(email, passwordEncoder.encode(pass));
 
 		try {
 			userRepository.save(newUser);

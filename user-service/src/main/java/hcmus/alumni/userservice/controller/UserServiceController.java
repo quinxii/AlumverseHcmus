@@ -44,6 +44,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.userservice.dto.IVerifyAlumniDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
+import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.UserRepository;
@@ -105,6 +106,7 @@ public class UserServiceController {
 
 		// Join
 		Join<VerifyAlumniModel, UserModel> userJoin = root.join("user", JoinType.INNER);
+		Join<VerifyAlumniModel, FacultyModel>facultyJoin = root.join("faculty", JoinType.LEFT);
 
 		// Select
 		Selection<String> idSelection = root.get("id");
@@ -116,8 +118,10 @@ public class UserServiceController {
 		Selection<String> emailSelection = userJoin.get("email");
 		Selection<String> fullNameSelection = userJoin.get("fullName");
 		Selection<String> avatarUrlSelection = userJoin.get("avatarUrl");
+		Selection<String> facultyNameSelection = facultyJoin.get("name");
+		
 		cq.multiselect(idSelection, studentIdSelection, beginningYearSelection, socialMediaLinkSelection,
-				commentSelection, statusSelection, emailSelection, fullNameSelection, avatarUrlSelection);
+				commentSelection, statusSelection, emailSelection, fullNameSelection, avatarUrlSelection, facultyNameSelection);
 
 		// Where
 		Predicate statusPredication = null;
@@ -217,10 +221,20 @@ public class UserServiceController {
 			@RequestParam("fullName") String fullName,
 			@RequestParam(value = "studentId", required = false) String studentId,
 			@RequestParam(value = "beginningYear", required = false, defaultValue = "0") Integer beginningYear,
-			@RequestParam(value = "socialMediaLink", required = false) String socialMediaLink) {
+			@RequestParam(value = "socialMediaLink", required = false) String socialMediaLink,
+			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId) {
 		UserModel user = new UserModel();
 		user.setId(userId);
-		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(user, studentId, beginningYear, socialMediaLink);
+		FacultyModel faculty = new FacultyModel();
+		if (beginningYear.equals(0)) {
+			beginningYear = null;
+		}
+		if (facultyId.equals(0)) {
+			faculty = null;
+		} else {
+			faculty.setId(facultyId);
+		}
+		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(user, studentId, beginningYear, socialMediaLink, faculty);
 
 		try {
 			userRepository.setFullName(userId, fullName);

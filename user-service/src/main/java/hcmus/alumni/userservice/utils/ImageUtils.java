@@ -97,7 +97,7 @@ public class ImageUtils {
 		}
 
 		// Prepend the encoded salt to the hashed name for storage
-		return Base64.getUrlEncoder().encodeToString(salt) + ":" + hashedName.toString();
+		return hashedName.toString();
 	}
 
 	public String getAvatarPath() {

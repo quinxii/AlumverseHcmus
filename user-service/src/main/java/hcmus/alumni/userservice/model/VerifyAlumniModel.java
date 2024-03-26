@@ -11,19 +11,21 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "[verify_alumni]")
-@Getter
-@Setter
 @AllArgsConstructor
+@Data
 public class VerifyAlumniModel implements Serializable {	
     public enum Status {
         PENDING,
@@ -48,11 +50,15 @@ public class VerifyAlumniModel implements Serializable {
 	
 	@Column(name = "social_media_link", length = 100)
 	private String socialMediaLink;
+	
+	@OneToOne
+    @JoinColumn(name = "faculty_id") // Foreign key constraint
+	private FacultyModel faculty;
 
 	@Column(name = "comment", columnDefinition = "TEXT")
 	private String comment;
 
-	@Column(name = "status")
+	@Column(name = "status", columnDefinition = "ENUM('PENDING', 'APPROVED', 'DENIED') DEFAULT('PENDING')")
 	@Enumerated(EnumType.STRING)
 	private Status status;
 
@@ -60,16 +66,17 @@ public class VerifyAlumniModel implements Serializable {
 	@Column(name = "create_at", updatable = false)
 	private Date createAt;
 
-	@Column(name = "is_delete")
+	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete;
 	
-	public VerifyAlumniModel(UserModel user, String studentId, Integer beginningYear, String socialMediaLink) {
+	public VerifyAlumniModel(UserModel user, String studentId, Integer beginningYear, String socialMediaLink, FacultyModel faculty) {
 		super();
 		this.id = UUID.randomUUID().toString();
 		this.user = user;
 		this.studentId = studentId;
 		this.beginningYear = beginningYear;
 		this.socialMediaLink = socialMediaLink;
+		this.faculty = faculty;
 		this.status = Status.PENDING;
 		this.isDelete = false;
 	}
@@ -81,6 +88,7 @@ public class VerifyAlumniModel implements Serializable {
 		this.studentId = null;
 		this.beginningYear = null;
 		this.socialMediaLink = null;
+		this.faculty = null;
 		this.status = Status.PENDING;
 		this.isDelete = false;
 	}
