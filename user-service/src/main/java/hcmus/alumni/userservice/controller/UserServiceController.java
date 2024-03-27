@@ -96,7 +96,8 @@ public class UserServiceController {
 			@RequestParam(value = "createAtOrder", required = false, defaultValue = "desc") String createAtOrder,
 			@RequestParam(value = "studentIdOrder", required = false, defaultValue = "") String studentIdOrder,
 			@RequestParam(value = "fullNameOrder", required = false, defaultValue = "") String fullNameOrder,
-			@RequestParam(value = "beginningYearOrder", required = false, defaultValue = "") String beginningYearOrder) {
+			@RequestParam(value = "beginningYearOrder", required = false, defaultValue = "") String beginningYearOrder,
+			@RequestParam(value = "facultyId", required = false, defaultValue = "0") String facultyId) {
 
 		// Initiate
 		CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -150,8 +151,13 @@ public class UserServiceController {
 		} else {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
-
-		cq.where(statusPredication, criteriaPredicate, isDeletePredicate);
+		Predicate facultyIdPredicate = null;
+		if (!facultyId.equals("0")) {
+			facultyIdPredicate = cb.equal(facultyJoin.get("id"), facultyId);
+			cq.where(statusPredication, criteriaPredicate, isDeletePredicate, facultyIdPredicate);
+		} else {
+			cq.where(statusPredication, criteriaPredicate, isDeletePredicate);
+		}
 
 		List<Order> orderList = new ArrayList<Order>();
 		if (studentIdOrder.equals("asc")) {
