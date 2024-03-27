@@ -1,6 +1,6 @@
 package hcmus.alumni.userservice.model;
 
-import java.io.Serializable;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -17,13 +17,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "[role]")
-@Data
+@Table(name = "[faculty]")
 @AllArgsConstructor
 @NoArgsConstructor
-public class RoleModel implements Serializable {
-	private static final long serialVersionUID = 1L;
-
+@Data
+public class FacultyModel {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id", nullable = false, columnDefinition = "TINYINT")
@@ -32,20 +30,16 @@ public class RoleModel implements Serializable {
 	@Column(name = "name", length = 100, nullable = false, unique = true)
 	private String name;
 	
-	@Column(name = "description", columnDefinition = "TINYTEXT")
-	private String description;
-	
+    @Column(name = "description", columnDefinition = "TINYTEXT")
+    private String description;
+    
 	@CreationTimestamp
-	@Column(name = "create_at")
-	private Date createAt;
+    @Column(name = "create_at")
+    private Date createAt;
 	
-	@Column(name = "update_at")
-	private Date updateAt;
-	
+    @Column(name = "update_at")
+    private Date updateAt;
+    
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete;
-	
-	public RoleModel(Integer id) {
-		this.id = id;
-	}
 }

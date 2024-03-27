@@ -1,12 +1,14 @@
 package hcmus.alumni.authservice.controller;
 
+import java.util.Collections;
 import java.util.Date;
-import java.util.UUID;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,49 +35,50 @@ public class AuthController {
 	private UserRepository userRepository;
 	@Autowired
 	private EmailActivationCodeRepository emailActivationCodeRepository;
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+	@Autowired
+	private AuthenticationManager authenticationManager;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	private UserUtils userUtils = UserUtils.getInstance();
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
 	@PostMapping("/login")
-	public ResponseEntity<String> login(@RequestParam String email, @RequestParam String pass) {
-        Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, pass));
-        if (authenticate.isAuthenticated()) {
-        	userRepository.setLastLogin(email, new Date());
-        	CustomUserDetails cud = (CustomUserDetails) authenticate.getPrincipal();
-        	return ResponseEntity.status(HttpStatus.OK).body(jwtUtils.generateToken(cud.getUser()));
-        } else {
-        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email hoặc mật khẩu không đúng");
-        }
-		
+	public ResponseEntity<Map<String, String>> login(@RequestParam String email, @RequestParam String pass) {
+		try {
+			Authentication authenticate = authenticationManager
+					.authenticate(new UsernamePasswordAuthenticationToken(email, pass));
+			if (authenticate.isAuthenticated()) {
+				userRepository.setLastLogin(email, new Date());
+				CustomUserDetails cud = (CustomUserDetails) authenticate.getPrincipal();
+				return ResponseEntity.status(HttpStatus.OK)
+						.body(Collections.singletonMap("jwt", jwtUtils.generateToken(cud.getUser())));
+			} else {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+						.body(Collections.singletonMap("msg", "Invalid email or password"));
+			}
+		} catch (BadCredentialsException e) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Collections.singletonMap("msg", "Invalid email or password"));
+			// TODO: handle exception
+		} catch (Exception e) {
+			// Catch any unexpected exceptions to prevent server errors
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Collections.singletonMap("msg", "Internal server error"));
+		}
+
 	}
 
 	@PostMapping("/signup")
 	public ResponseEntity<String> signup(@RequestParam String email, @RequestParam String pass) {
-		UserModel newUser = new UserModel();
+		UserModel newUser = new UserModel(email, passwordEncoder.encode(pass));
 
-		// Generate UUID
-		UUID uuid = UUID.randomUUID();
-		String uuidString = uuid.toString();
-
-		newUser.setId(uuidString);
-		newUser.setEmail(email);
-
-		newUser.setPass(passwordEncoder.encode(pass));
-
-		newUser.setRoleId("8ea1665e-74b4-43ac-a966-bf10e938da42");
-		newUser.setSexId("8ea1665e-74b4-43ac-a966-bf10e938da43");
-		newUser.setStatusId("8ea1665e-74b4-43ac-a966-bf10e938da45");
-		newUser.setEmailPrivacy(UserModel.Privacy.PUBLIC);
-		newUser.setPhonePrivacy(UserModel.Privacy.PUBLIC);
-		newUser.setSexPrivacy(UserModel.Privacy.PUBLIC);
-		newUser.setDobPrivacy(UserModel.Privacy.PUBLIC);
-
-		userRepository.save(newUser);
+		try {
+			userRepository.save(newUser);
+		} catch (Exception e) {
+			// TODO: handle exception
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email already exists");
+		}
 
 		return ResponseEntity.status(HttpStatus.CREATED).body("Signup successfully");
 	}
@@ -86,7 +89,7 @@ public class AuthController {
 		if (existingUser != null) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
 		}
-		
+
 		if (email == null || email.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email is required");
 		}
@@ -96,7 +99,8 @@ public class AuthController {
 			return ResponseEntity.status(HttpStatus.CREATED).body("Send activatino code successfully");
 		} catch (Exception e) {
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Send Authorize code failed: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Send Authorize code failed: " + e.getMessage());
 		}
 	}
 
@@ -115,7 +119,8 @@ public class AuthController {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Send Authorize code failed: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Send Authorize code failed: " + e.getMessage());
 		}
 	}
 }

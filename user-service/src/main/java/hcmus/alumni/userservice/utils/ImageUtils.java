@@ -19,7 +19,7 @@ public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
 	private final String avatarPath = "images/users/avatar/";
-	private final String noneAvatar = "none.png";
+	private final String noneAvatar = "none";
 	public static int saltLength = 16;
 
 	// Save image in a local directory
@@ -97,7 +97,7 @@ public class ImageUtils {
 		}
 
 		// Prepend the encoded salt to the hashed name for storage
-		return Base64.getUrlEncoder().encodeToString(salt) + ":" + hashedName.toString();
+		return hashedName.toString();
 	}
 
 	public String getAvatarPath() {
