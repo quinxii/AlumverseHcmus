@@ -9,6 +9,8 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -34,8 +36,9 @@ public class UserModel implements Serializable {
     @Column(name = "pass", length = 60, nullable = false)
     private String pass;
 
-    @Column(name = "role_id", nullable = false)
-    private Integer roleId;
+	@OneToOne
+    @JoinColumn(name = "role_id", nullable = false) // Foreign key constraint
+	private RoleModel role;
 
     @Column(name = "full_name", length = 100)
     private String fullName;
@@ -43,8 +46,9 @@ public class UserModel implements Serializable {
     @Column(name = "phone", length = 15)
     private String phone;
 
-    @Column(name = "sex_id")
-    private Integer sexId;
+	@OneToOne
+    @JoinColumn(name = "sex_id") // Foreign key constraint
+	private SexModel sex;
 
     @Column(name = "dob")
     private Date dob;
@@ -52,8 +56,9 @@ public class UserModel implements Serializable {
     @Column(name = "social_media_link", columnDefinition = "TINYTEXT")
     private String socialMediaLink;
     
-    @Column(name = "faculty_id")
-    private Integer facultyId;
+	@OneToOne
+    @JoinColumn(name = "faculty_id") // Foreign key constraint
+	private FacultyModel faculty;
     
     @Column(name = "degree", length = 50)
     private String degree;
@@ -105,7 +110,7 @@ public class UserModel implements Serializable {
     
     public UserModel() {
     	id = UUID.randomUUID().toString();
-    	roleId = 1;
+    	role = new RoleModel(1);
     	emailPrivacy = Privacy.PUBLIC;
     	phonePrivacy = Privacy.PUBLIC;
     	sexPrivacy = Privacy.PUBLIC;
@@ -117,7 +122,7 @@ public class UserModel implements Serializable {
     	id = UUID.randomUUID().toString();
     	this.email = email;
     	this.pass = pass;
-    	roleId = 1;
+    	role = new RoleModel(1);
     	emailPrivacy = Privacy.PUBLIC;
     	phonePrivacy = Privacy.PUBLIC;
     	sexPrivacy = Privacy.PUBLIC;

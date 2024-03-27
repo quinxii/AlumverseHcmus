@@ -27,7 +27,7 @@ public class RoleModel implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id", nullable = false, columnDefinition = "TINYINT")
-	private String id;
+	private Integer id;
 	
 	@Column(name = "name", length = 100, nullable = false, unique = true)
 	private String name;
@@ -44,4 +44,8 @@ public class RoleModel implements Serializable {
 	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete;
+	
+	public RoleModel(Integer id) {
+		this.id = id;
+	}
 }

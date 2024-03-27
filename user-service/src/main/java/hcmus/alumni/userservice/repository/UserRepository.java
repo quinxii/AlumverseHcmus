@@ -6,34 +6,35 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 
 public interface UserRepository extends JpaRepository<UserModel, String> {
 
-    UserModel findByEmailAndPass(String email, String pass);
-    UserModel findByEmail(String email);
-    
-    @Query("SELECT u FROM UserModel u WHERE u.id = :userId")
-    UserModel findUserById(@Param("userId") String userId);
-    
-    @Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
-    String getAvatarUrl(@Param("userId") String userId);
+	UserModel findByEmailAndPass(String email, String pass);
 
-    @Transactional
-    @Modifying
-    @Query("UPDATE UserModel u SET u.avatarUrl = :avatarUrl WHERE u.id = :userId")
-    int setAvatarUrl(@Param("userId") String userId, @Param("avatarUrl") String avatarUrl);
-    
-    @Transactional
-    @Modifying
-    @Query("UPDATE UserModel u SET u.fullName = :fullName WHERE u.id = :userId")
-    int setFullName(@Param("userId") String userId, @Param("fullName") String fullName);
-    
-    @Query("SELECT u.fullName FROM UserModel u WHERE u.id = :userId")
-    String findFullNameByUserId(@Param("userId") String userId);
+	UserModel findByEmail(String email);
 
-    @Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
-    String findAvatarUrlByUserId(@Param("userId") String userId);
+	@Query("SELECT u FROM UserModel u WHERE u.id = :userId")
+	UserModel findUserById(@Param("userId") String userId);
+
+	@Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
+	String getAvatarUrl(@Param("userId") String userId);
+
+	@Transactional
+	@Modifying
+	@Query("UPDATE UserModel u SET u.avatarUrl = :avatarUrl WHERE u.id = :userId")
+	int setAvatarUrl(@Param("userId") String userId, @Param("avatarUrl") String avatarUrl);
+
+	@Transactional
+	@Modifying
+	@Query("UPDATE UserModel u SET u.fullName = :fullName, u.socialMediaLink = :socialMediaLink, u.faculty = :faculty WHERE u.id = :userId")
+	int setDataFirstVerifyAlumni(@Param("userId") String userId, @Param("fullName") String fullName,
+			@Param("socialMediaLink") String socialMediaLink, @Param("faculty") FacultyModel faculty);
+
+	@Query("SELECT u.fullName FROM UserModel u WHERE u.id = :userId")
+	String findFullNameByUserId(@Param("userId") String userId);
+
+	@Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
+	String findAvatarUrlByUserId(@Param("userId") String userId);
 }
-
-

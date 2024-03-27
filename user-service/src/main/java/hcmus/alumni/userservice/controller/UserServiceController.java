@@ -247,8 +247,8 @@ public class UserServiceController {
 		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(user, studentId, beginningYear, socialMediaLink, faculty);
 
 		try {
-			userRepository.setFullName(userId, fullName);
-			if (studentId != null || beginningYear != 0 || socialMediaLink != null) {
+			userRepository.setDataFirstVerifyAlumni(userId, fullName, socialMediaLink, faculty);
+			if (studentId != null || beginningYear != 0 || socialMediaLink != null || facultyId != 0) {
 				verifyAlumniRepository.save(verifyAlumni);
 			}
 
@@ -263,6 +263,7 @@ public class UserServiceController {
 		} catch (IllegalArgumentException e) {
 			// TODO: handle exception
 			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -274,49 +275,49 @@ public class UserServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body("Post alumni verification successfully");
 	}
 
-	@PutMapping("/alumni-verification/{user_id}")
-	public ResponseEntity<String> updateAlumniVerification(@PathVariable String user_id,
-			@RequestBody Map<String, Object> requestBody) {
-
-		Optional<VerifyAlumniModel> optionalAlumni = verifyAlumniRepository.findByUserIdAndIsDeleteEquals(user_id,
-				false);
-
-		if (optionalAlumni.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		VerifyAlumniModel alumni = optionalAlumni.get();
-
-		try {
-			if (requestBody.containsKey("fullName")) {
-				String fullName = (String) requestBody.get("fullName");
-				userRepository.setFullName(user_id, fullName);
-			}
-			if (requestBody.containsKey("studentId")) {
-				String studentId = (String) requestBody.get("studentId");
-				alumni.setStudentId(studentId);
-			}
-			if (requestBody.containsKey("beginningYear")) {
-				Integer beginningYear = (Integer) requestBody.get("beginningYear");
-				alumni.setBeginningYear(beginningYear);
-			}
-			if (requestBody.containsKey("socialMediaLink")) {
-				String socialMediaLink = (String) requestBody.get("socialMediaLink");
-				alumni.setSocialMediaLink(socialMediaLink);
-			}
-			if (requestBody.containsKey("avatar")) {
-				MultipartFile avatar = (MultipartFile) requestBody.get("avatar");
-				String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, user_id);
-				userRepository.setAvatarUrl(user_id, avatarUrl);
-			}
-
-			verifyAlumniRepository.save(alumni);
-			return ResponseEntity.ok("Alumni verification updated successfully");
-		} catch (IllegalArgumentException | IOException e) {
-			e.printStackTrace(); // Log the exception
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update alumni verification");
-		}
-	}
+//	@PutMapping("/alumni-verification/{user_id}")
+//	public ResponseEntity<String> updateAlumniVerification(@PathVariable String user_id,
+//			@RequestBody Map<String, Object> requestBody) {
+//
+//		Optional<VerifyAlumniModel> optionalAlumni = verifyAlumniRepository.findByUserIdAndIsDeleteEquals(user_id,
+//				false);
+//
+//		if (optionalAlumni.isEmpty()) {
+//			return ResponseEntity.notFound().build();
+//		}
+//
+//		VerifyAlumniModel alumni = optionalAlumni.get();
+//
+//		try {
+//			if (requestBody.containsKey("fullName")) {
+//				String fullName = (String) requestBody.get("fullName");
+//				userRepository.setDataFirstVerifyAlumni(user_id, fullName, null);
+//			}
+//			if (requestBody.containsKey("studentId")) {
+//				String studentId = (String) requestBody.get("studentId");
+//				alumni.setStudentId(studentId);
+//			}
+//			if (requestBody.containsKey("beginningYear")) {
+//				Integer beginningYear = (Integer) requestBody.get("beginningYear");
+//				alumni.setBeginningYear(beginningYear);
+//			}
+//			if (requestBody.containsKey("socialMediaLink")) {
+//				String socialMediaLink = (String) requestBody.get("socialMediaLink");
+//				alumni.setSocialMediaLink(socialMediaLink);
+//			}
+//			if (requestBody.containsKey("avatar")) {
+//				MultipartFile avatar = (MultipartFile) requestBody.get("avatar");
+//				String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, user_id);
+//				userRepository.setAvatarUrl(user_id, avatarUrl);
+//			}
+//
+//			verifyAlumniRepository.save(alumni);
+//			return ResponseEntity.ok("Alumni verification updated successfully");
+//		} catch (IllegalArgumentException | IOException e) {
+//			e.printStackTrace(); // Log the exception
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update alumni verification");
+//		}
+//	}
 
 	@PutMapping("/alumni-verification/{id}/verify")
 	public ResponseEntity<String> updateAlumniVerificationStatus(@PathVariable String id,
