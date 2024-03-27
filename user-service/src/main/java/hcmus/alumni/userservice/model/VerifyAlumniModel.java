@@ -35,7 +35,7 @@ public class VerifyAlumniModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	@Id
-	@Column(name = "id", nullable = false)
+	@Column(name = "id", length = 36, nullable = false)
 	private String id;
 	
     @ManyToOne // This establishes the ManyToOne relationship

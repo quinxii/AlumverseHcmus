@@ -15,7 +15,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "[user]")
@@ -31,19 +30,19 @@ public class UserModel implements Serializable {
 	}
 
 	@Id
-    @Column(name = "id", nullable = false)
+    @Column(name = "id", length = 36, nullable = false)
     private String id;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
 
-    @Column(name = "pass", nullable = false)
+    @Column(name = "pass", length = 60, nullable = false)
     private String pass;
 
     @Column(name = "role_id", nullable = false)
     private Integer roleId;
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", length = 100)
     private String fullName;
 
     @Column(name = "phone", length = 15)
