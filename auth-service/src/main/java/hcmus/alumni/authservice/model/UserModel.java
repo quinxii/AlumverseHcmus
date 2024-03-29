@@ -1,14 +1,21 @@
 package hcmus.alumni.authservice.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -39,8 +46,13 @@ public class UserModel implements Serializable {
     @Column(name = "pass", length = 60, nullable = false)
     private String pass;
 
-    @Column(name = "role_id", nullable = false)
-    private Integer roleId;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+            )
+    private Set<RoleModel> roles = new HashSet<>();
 
     @Column(name = "full_name", length = 100)
     private String fullName;
@@ -90,43 +102,41 @@ public class UserModel implements Serializable {
 
     @Column(name = "email_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy emailPrivacy;
+    private Privacy emailPrivacy = Privacy.PUBLIC;
 
     @Column(name = "phone_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy phonePrivacy;
+    private Privacy phonePrivacy = Privacy.PUBLIC;
 
     @Column(name = "sex_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy sexPrivacy;
+    private Privacy sexPrivacy = Privacy.PUBLIC;
 
     @Column(name = "dob_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy dobPrivacy;
+    private Privacy dobPrivacy = Privacy.PUBLIC;
     
     @Column(name = "faculty_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy facultyPrivacy;
+    private Privacy facultyPrivacy = Privacy.PUBLIC;
     
     public UserModel() {
     	id = UUID.randomUUID().toString();
-    	roleId = 1;
-    	emailPrivacy = Privacy.PUBLIC;
-    	phonePrivacy = Privacy.PUBLIC;
-    	sexPrivacy = Privacy.PUBLIC;
-    	dobPrivacy = Privacy.PUBLIC;
-    	facultyPrivacy = Privacy.PUBLIC;
+    	roles.add(new RoleModel(1));
 	}
     
     public UserModel(String email, String pass) {
     	id = UUID.randomUUID().toString();
     	this.email = email;
     	this.pass = pass;
-    	roleId = 1;
-    	emailPrivacy = Privacy.PUBLIC;
-    	phonePrivacy = Privacy.PUBLIC;
-    	sexPrivacy = Privacy.PUBLIC;
-    	dobPrivacy = Privacy.PUBLIC;
-    	facultyPrivacy = Privacy.PUBLIC;
+    	roles.add(new RoleModel(1));
 	}
+    
+    public ArrayList<String> getRolesName() {
+    	ArrayList<String> rolesName = new ArrayList<String>();
+    	for (RoleModel role : roles) {
+    		rolesName.add(role.getName());
+    	}
+    	return rolesName;
+    }
 }

@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.userservice.dto.IVerifyAlumniDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.model.FacultyModel;
+import hcmus.alumni.userservice.model.RoleModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.UserRepository;
@@ -341,6 +343,14 @@ public class UserServiceController {
 		va.setStatus(VerifyAlumniModel.Status.valueOf(status));
 		va.setComment(comment);
 		verifyAlumniRepository.save(va);
+		
+		// Change role
+		UserModel user = va.getUser();
+		HashSet<RoleModel> newRole = new HashSet<RoleModel>();
+		newRole.add(new RoleModel(3)); // Cựu sinh viên
+		user.setRoles(newRole);
+		userRepository.save(user);
+		
 		return ResponseEntity.ok("Alumni verification approved successfully");
 	}
 }
