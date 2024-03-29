@@ -1,12 +1,16 @@
 package hcmus.alumni.authservice.config;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import hcmus.alumni.authservice.model.RoleModel;
 import hcmus.alumni.authservice.model.UserModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,9 +23,15 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Mặc định mình sẽ để tất cả là ROLE_USER. Để demo cho đơn giản.
-//        return Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
-    	return null;
+        List<String> roles = user.getRolesName();
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+         
+        for (String role : roles) {
+            authorities.add(new SimpleGrantedAuthority(role));
+        }
+        System.out.println(authorities.toString());
+         
+        return authorities;
     }
 
     @Override
