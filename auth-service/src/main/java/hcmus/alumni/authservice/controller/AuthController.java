@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -75,9 +76,11 @@ public class AuthController {
 
 		try {
 			userRepository.save(newUser);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("");
 		} catch (Exception e) {
-			// TODO: handle exception
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email already exists");
+			System.err.println(e);
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
 		}
 
 		return ResponseEntity.status(HttpStatus.CREATED).body("Signup successfully");
