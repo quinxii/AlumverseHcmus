@@ -1,4 +1,4 @@
-package hcmus.alumni.events.model;
+package hcmus.alumni.event.model;
 
 import java.io.Serializable;
 import java.util.Date;

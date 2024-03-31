@@ -20,6 +20,12 @@ spring:
             - Path=/user/**
           filters:
             - name: Authentication
+            
+        ## event service
+        - id: event
+          uri: lb://event-service
+          predicates:
+            - Path=/event/**
 #
 #        ## Service2
 #        - id: service2

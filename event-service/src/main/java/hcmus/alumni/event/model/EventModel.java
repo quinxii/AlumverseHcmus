@@ -1,4 +1,4 @@
-package hcmus.alumni.events.model;
+package hcmus.alumni.event.model;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -19,26 +19,35 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "[news]")
+@Table(name = "[event]")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class NewsModel implements Serializable {
-	private static final long serialVersionUID = 1L;
+public class EventModel implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @Column(name = "id", length = 36, nullable = false)
-    private String id; 
-    
+    private String id;
+
     @ManyToOne
     @JoinColumn(name = "creator", nullable = false)
     private UserModel creator;
 
-    @Column(name = "title", columnDefinition = "TINITEXT")
+    @Column(name = "title", columnDefinition = "TINYTEXT")
     private String title;
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "thumbnail", columnDefinition = "TINYTEXT")
+    private String thumbnail;
+
+    @Column(name = "organization_location", columnDefinition = "TINYTEXT")
+    private String organizationLocation;
+
+    @Column(name = "organization_time")
+    private Date organizationTime;
 
     @CreationTimestamp
     @Column(name = "create_at")
@@ -47,11 +56,11 @@ public class NewsModel implements Serializable {
     @UpdateTimestamp
     @Column(name = "update_at")
     private Date updateAt;
-    
+
     @Column(name = "published_at")
     private Date publishedAt;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "status_id")
     private StatusPost status;
 

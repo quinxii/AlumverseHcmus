@@ -1,13 +1,13 @@
-package hcmus.alumni.events;
+package hcmus.alumni.event;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class EventsServiceApplication {
+public class EventServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(EventsServiceApplication.class, args);
+		SpringApplication.run(EventServiceApplication.class, args);
 	}
 
 }
