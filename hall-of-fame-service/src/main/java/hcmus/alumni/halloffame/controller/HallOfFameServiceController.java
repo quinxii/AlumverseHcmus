@@ -15,7 +15,7 @@ import jakarta.persistence.PersistenceContext;
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/news")
-public class NewsServiceController {
+public class HallOfFameServiceController {
 	@PersistenceContext
 	private EntityManager em;
 
