@@ -9,52 +9,53 @@ import org.hibernate.annotations.UpdateTimestamp;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "[news]")
+@Table(name = "hall_of_fame")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class HallOfFameModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-    @Id
+	@Id
     @Column(name = "id", length = 36, nullable = false)
-    private String id; 
+    private String id;
     
-    @ManyToOne
-    @JoinColumn(name = "creator", nullable = false)
+    @Column(name = "creator", length = 36, nullable = false)
     private UserModel creator;
 
-    @Column(name = "title", columnDefinition = "TINITEXT")
+    @Column(name = "title", columnDefinition = "TINYTEXT")
     private String title;
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "thumbnail", columnDefinition = "TINYTEXT")
+    private String thumbnail;
+
+    @Column(name = "user_id", length = 36)
+    private UserModel userId;
+
     @CreationTimestamp
     @Column(name = "create_at")
-    private Date createAt;
+    private Date createdAt;
 
     @UpdateTimestamp
     @Column(name = "update_at")
-    private Date updateAt;
+    private Date updatedAt;
     
     @Column(name = "published_at")
     private Date publishedAt;
 
-    @OneToOne
-    @JoinColumn(name = "status_id")
-    private StatusPost status;
+    @Column(name = "status_id")
+    private StatusPost statusId;
 
     @Column(name = "views", nullable = false)
-    private Integer views = 0;
+    private int views = 0;
+
 }
