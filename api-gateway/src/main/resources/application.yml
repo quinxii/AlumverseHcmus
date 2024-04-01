@@ -22,12 +22,12 @@ spring:
             - name: Authentication
 
         ## hall of fame service
-        - id: halloffame
+        - id: hall-of-fame
           uri: lb://hall-of-fame-service
           predicates:
             - Path=/hall-of-fame/**
           filters:
-            - name: HallOfFame
+            - name: Authentication
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
