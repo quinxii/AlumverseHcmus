@@ -62,7 +62,7 @@ public class EventModel implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "status_id")
-    private StatusPost status;
+    private StatusPost statusId;
 
     @Column(name = "views", nullable = false)
     private Integer views = 0;

@@ -1,5 +1,7 @@
 package hcmus.alumni.event.controller;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,12 +15,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import hcmus.alumni.event.model.EventModel;
+import hcmus.alumni.event.model.StatusPost;
+import hcmus.alumni.event.model.UserModel;
 import hcmus.alumni.event.repository.EventRepository;
+import hcmus.alumni.event.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -38,12 +46,8 @@ public class EventServiceController {
 
 	@Autowired
 	private EventRepository eventRepository;
-
-//	@GetMapping("/news/count")
-//	public ResponseEntity<Long> getPendingAlumniVerificationCount(
-//			@RequestParam(value = "creator", required = false) String creator) {
-//
-//	}
+	@Autowired
+	private UserRepository userRepository;
 	
 	@GetMapping("/")
 	public ResponseEntity<HashMap<String, Object>> searchEvent(
@@ -76,7 +80,7 @@ public class EventServiceController {
 	    Selection<Date> createAtSelection = root.get("createAt");
 	    Selection<Date> updateAtSelection = root.get("updateAt");
 	    Selection<Date> publishedAtSelection = root.get("publishedAt");
-	    Selection<Integer> statusIdSelection = root.get("statusId");
+	    Selection<StatusPost> statusIdSelection = root.get("statusId");
 	    Selection<Integer> viewsSelection = root.get("views");
 	    cq.multiselect(idSelection, creatorSelection, titleSelection, contentSelection, thumbnailSelection,
 	            organizationLocationSelection, organizationTimeSelection, createAtSelection, updateAtSelection,
@@ -86,19 +90,21 @@ public class EventServiceController {
 	    Predicate statusPredicate;
 	    switch (status) {
 	        case "pending":
-	            statusPredicate = cb.equal(root.get("statusId"), 1); // Assuming 1 represents pending status
+	            statusPredicate = cb.equal(root.get("statusId").get("id"), 1); // Assuming 1 represents pending status
 	            break;
-	        case "approved":
-	            statusPredicate = cb.equal(root.get("statusId"), 2); // Assuming 2 represents approved status
+	        case "normal":
+	            statusPredicate = cb.equal(root.get("statusId").get("id"), 2); 
 	            break;
-	        case "rejected":
-	            statusPredicate = cb.equal(root.get("statusId"), 3); // Assuming 3 represents rejected status
+	        case "hide":
+	            statusPredicate = cb.equal(root.get("statusId").get("id"), 3); 
+	            break;
+	        case "deleted":
+	            statusPredicate = cb.equal(root.get("statusId").get("id"), 4); 
 	            break;
 	        default:
 	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 
-	    Predicate isDeletePredicate = cb.equal(root.get("isDelete"), false);
 	    Predicate criteriaPredicate;
 	    if (criteria.equals("title") || criteria.equals("content") || criteria.equals("organizationLocation")) {
 	        criteriaPredicate = cb.like(root.get(criteria), "%" + keyword + "%");
@@ -106,7 +112,7 @@ public class EventServiceController {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 
-	    cq.where(statusPredicate, isDeletePredicate, criteriaPredicate);
+	    cq.where(statusPredicate, criteriaPredicate);
 
 	    // Order by
 	    List<Order> orderList = new ArrayList<>();
@@ -146,5 +152,90 @@ public class EventServiceController {
         
         return eventOptional.map(ResponseEntity::ok)
                             .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @PostMapping("/")
+    public ResponseEntity<EventModel> addEvent(@RequestBody Map<String, Object> eventModel) {
+        try {
+            // Extract data from the map
+        	String creatorId = (String) eventModel.get("creator");
+            UserModel creator = userRepository.findById(creatorId).orElse(null);
+            if (creator == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+            String title = (String) eventModel.get("title");
+            String content = (String) eventModel.get("content");
+            String thumbnail = (String) eventModel.get("thumbnail");
+            String organizationLocation = (String) eventModel.get("organizationLocation");
+            Date organizationTime = parseDateString((String) eventModel.get("organizationTime"));
+            Date createAt = parseDateString((String) eventModel.get("createAt"));
+            Date updateAt = parseDateString((String) eventModel.get("updateAt"));
+            Date publishedAt = parseDateString((String) eventModel.get("publishedAt"));
+            StatusPost statusId = (StatusPost) eventModel.get("statusId");
+            Integer views = (Integer) eventModel.get("views");
+
+            // Create the EventModel object
+            EventModel newEvent = new EventModel();
+            newEvent.setCreator(creator);
+            newEvent.setTitle(title);
+            newEvent.setContent(content);
+            newEvent.setThumbnail(thumbnail);
+            newEvent.setOrganizationLocation(organizationLocation);
+            newEvent.setOrganizationTime(organizationTime);
+            newEvent.setCreateAt(createAt);
+            newEvent.setUpdateAt(updateAt);
+            newEvent.setPublishedAt(publishedAt);
+            newEvent.setStatusId(statusId);
+            newEvent.setViews(views);
+
+            // Save the new event
+            EventModel savedEvent = eventRepository.save(newEvent);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedEvent);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @PutMapping("/{eventId}")
+    public ResponseEntity<EventModel> updateEvent(@PathVariable String eventId, 
+            @RequestBody EventModel updatedEvent) {
+        Optional<EventModel> eventOptional = eventRepository.findById(eventId);
+        
+        if (eventOptional.isPresent()) {
+            EventModel existingEvent = eventOptional.get();
+            
+            // Update fields of existingEvent with non-null values from updatedEvent
+            if (updatedEvent.getTitle() != null)
+                existingEvent.setTitle(updatedEvent.getTitle());
+            if (updatedEvent.getContent() != null)
+                existingEvent.setContent(updatedEvent.getContent());
+            if (updatedEvent.getThumbnail() != null)
+                existingEvent.setThumbnail(updatedEvent.getThumbnail());
+            if (updatedEvent.getOrganizationLocation() != null)
+                existingEvent.setOrganizationLocation(updatedEvent.getOrganizationLocation());
+            if (updatedEvent.getOrganizationTime() != null)
+                existingEvent.setOrganizationTime(updatedEvent.getOrganizationTime());
+            if (updatedEvent.getPublishedAt() != null)
+                existingEvent.setPublishedAt(updatedEvent.getPublishedAt());
+            if (updatedEvent.getStatusId() != null)
+                existingEvent.setStatusId(updatedEvent.getStatusId());
+            if (updatedEvent.getViews() != null)
+                existingEvent.setViews(updatedEvent.getViews());
+
+            try {
+                EventModel savedEvent = eventRepository.save(existingEvent);
+                return ResponseEntity.ok(savedEvent);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    private Date parseDateString(String dateString) throws ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        return dateFormat.parse(dateString);
     }
 }
