@@ -43,19 +43,6 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Selection;
 
-//@RestController
-//@RequestMapping("/hall-of-fame")
-//public class HallOfFameServiceController {
-//
-//    @Autowired
-//    private HallOfFameRepository hallOfFameRepository;
-//
-//    @GetMapping("/all")
-//    public ResponseEntity<List<HallOfFameModel>> getAllHallOfFame() {
-//        List<HallOfFameModel> hallOfFameList = hallOfFameRepository.findAll();
-//        return ResponseEntity.ok(hallOfFameList);
-//    }
-//}
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
