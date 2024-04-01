@@ -2,6 +2,7 @@ package hcmus.alumni.halloffame.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -9,20 +10,20 @@ import org.hibernate.annotations.UpdateTimestamp;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "hall_of_fame")
 @AllArgsConstructor
-@NoArgsConstructor
 @Data
 public class HallOfFameModel implements Serializable {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Id
+    @Id
     @Column(name = "id", length = 36, nullable = false)
     private String id;
     
@@ -41,21 +42,43 @@ public class HallOfFameModel implements Serializable {
     @Column(name = "user_id", length = 36)
     private UserModel userId;
 
-    @CreationTimestamp
     @Column(name = "create_at")
+    @CreationTimestamp
     private Date createdAt;
 
-    @UpdateTimestamp
     @Column(name = "update_at")
+    @UpdateTimestamp
     private Date updatedAt;
     
     @Column(name = "published_at")
     private Date publishedAt;
 
-    @Column(name = "status_id")
-    private StatusPost statusId;
+    @ManyToOne
+    @JoinColumn(name = "status_id")
+    private StatusPostModel status;
 
     @Column(name = "views", nullable = false)
-    private int views = 0;
+    private Integer views = 0;
 
+    @Column(name = "faculty", columnDefinition = "TINYTEXT")
+    private String faculty;
+
+    @Column(name = "beginning_year")
+    private Integer beginningYear;
+    
+    public HallOfFameModel() {
+		id = UUID.randomUUID().toString();
+		status = new StatusPostModel(2);
+	}
+
+	public HallOfFameModel(String id, UserModel creator, String title, String content, String thumbnail, String faculty, int beginningYear) {
+		this.id = id;
+		this.creator = creator;
+		this.title = title;
+		this.content = content;
+		this.thumbnail = thumbnail;
+		this.faculty = faculty;
+		this.beginningYear = beginningYear;
+		this.status = new StatusPostModel(3);
+	}
 }
