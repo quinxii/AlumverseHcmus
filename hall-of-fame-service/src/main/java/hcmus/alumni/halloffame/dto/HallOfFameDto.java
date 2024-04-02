@@ -13,4 +13,6 @@ public class HallOfFameDto {
 	private String content;
 	private String thumbnail;
 	private Integer views;
+	private String faculty;
+	private Integer beginningYear;
 }
