@@ -151,9 +151,9 @@ public class HallOfFameServiceController {
 
 		try {
 			// Save thumbnail image
-			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
+			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHallOfFamePath(id), thumbnail, "thumbnail");
 			// Save news to database
-			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, processedContent, thumbnailUrl, faculty, beginningYear);
+			HallOfFameModel halloffame = new HallOfFameModel(id, creator, title, processedContent, thumbnailUrl, faculty, beginningYear);
 			halloffameRepository.save(halloffame);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -188,7 +188,7 @@ public class HallOfFameServiceController {
 			}
 			if (thumbnail != null) {
 				// Overwrite old thumbnail
-				imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
+				imageUtils.saveImageToStorage(imageUtils.getHallOfFamePath(id), thumbnail, "thumbnail");
 			}
 			if (faculty != null) {
 				halloffame.setFaculty(faculty);
@@ -204,4 +204,5 @@ public class HallOfFameServiceController {
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
+	
 }
