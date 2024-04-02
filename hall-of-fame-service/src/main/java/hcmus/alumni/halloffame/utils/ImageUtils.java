@@ -23,7 +23,7 @@ public class ImageUtils {
 	private GCPConnectionUtils gcp;
 	private final String avatarPath = "images/users/avatar/";
 	private final String noneAvatar = "none";
-	private final String newsPath = "images/news/";
+	private final String halloffamePath = "images/hall-of-fame/";
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
@@ -54,29 +54,32 @@ public class ImageUtils {
 	
 	// Save Base 64 image
 	public String saveBase64ImageToStorage(String uploadDirectory, String base64Image, String imageName)
-			throws IOException {
-		if (base64Image == null || base64Image.equals("")) {
-			return null;
-		}
+	        throws IOException {
+	    if (base64Image == null || base64Image.isEmpty()) {
+	        return null;
+	    }
 
-		String newFilename = uploadDirectory + imageName;
+	    String newFilename = uploadDirectory + imageName;
 
 	    // Decode Base64 string to byte array
-		String[] extracted = extractContentTypeAndDataFromImageBase64(base64Image);
+	    String[] extracted = extractContentTypeAndDataFromImageBase64(base64Image);
+	    if (extracted[1] == null || extracted[1].isEmpty()) {
+	        return null;
+	    }
 	    byte[] decodedBytes = Base64.getDecoder().decode(extracted[1]);
 
-		BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
-				.setContentType(extracted[0]).build();
+	    BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
+	            .setContentType(extracted[0]).build();
 
-		// Upload the image from the local file path
-		try {
-			gcp.getStorage().create(blobInfo, decodedBytes);
-		} catch (StorageException e) {
-			System.err.println("Error uploading image: " + e.getMessage());
-		}
+	    // Upload the image from the local file path
+	    try {
+	        gcp.getStorage().create(blobInfo, decodedBytes);
+	    } catch (StorageException e) {
+	        System.err.println("Error uploading image: " + e.getMessage());
+	    }
 
-		String imageUrl = gcp.getDomainName() + gcp.getBucketName() + "/" + newFilename;
-		return imageUrl;
+	    String imageUrl = gcp.getDomainName() + gcp.getBucketName() + "/" + newFilename;
+	    return imageUrl;
 	}
 
 	public void deleteImageFromStorageByUrl(String oldImageUrl) {
@@ -131,22 +134,28 @@ public class ImageUtils {
 	}
 	
 	public String[] extractContentTypeAndDataFromImageBase64(String base64) {
-		String[] strings = base64.split(",");
-		switch (strings[0]) {//check image's extension
-		    case "data:image/jpeg;base64":
-		    	strings[0] = "image/jpeg";
-		        break;
-		    case "data:image/png;base64":
-		    	strings[0] = "image/png";
-		        break;
-		    default:
-		    	strings[0] = null;
-		        break;
-		}
-		return strings;
+	    String[] strings = base64.split(",");
+	    if (strings.length >= 2) {
+	        switch (strings[0]) {//check image's extension
+	            case "data:image/jpeg;base64":
+	                strings[0] = "image/jpeg";
+	                break;
+	            case "data:image/png;base64":
+	                strings[0] = "image/png";
+	                break;
+	            default:
+	                strings[0] = null;
+	                break;
+	        }
+	    } else {
+	        strings = new String[2]; // Initialize the array to prevent IndexOutOfBoundsException
+	        strings[0] = null;
+	        strings[1] = null;
+	    }
+	    return strings;
 	}
-
-	public String getNewsPath(String id) {
-		return this.newsPath + id + "/";
+	
+	public String getHallOfFamePath(String id) {
+		return this.halloffamePath + id + "/";
 	}
 }
