@@ -12,6 +12,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,7 +29,7 @@ public class HallOfFameModel implements Serializable {
     private String id;
     
     @Column(name = "creator", length = 36, nullable = false)
-    private UserModel creator;
+    private String creator;
 
     @Column(name = "title", columnDefinition = "TINYTEXT")
     private String title;
@@ -42,18 +43,18 @@ public class HallOfFameModel implements Serializable {
     @Column(name = "user_id", length = 36)
     private UserModel userId;
 
-    @Column(name = "create_at")
     @CreationTimestamp
-    private Date createdAt;
+    @Column(name = "create_at")
+    private Date createAt;
 
-    @Column(name = "update_at")
     @UpdateTimestamp
-    private Date updatedAt;
+    @Column(name = "update_at")
+    private Date updateAt;
     
     @Column(name = "published_at")
     private Date publishedAt;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "status_id")
     private StatusPostModel status;
 
@@ -70,8 +71,8 @@ public class HallOfFameModel implements Serializable {
 		id = UUID.randomUUID().toString();
 		status = new StatusPostModel(2);
 	}
-
-	public HallOfFameModel(String id, UserModel creator, String title, String content, String thumbnail, String faculty, int beginningYear) {
+    
+	public HallOfFameModel(String id, String creator, String title, String content, String thumbnail, String faculty, int beginningYear) {
 		this.id = id;
 		this.creator = creator;
 		this.title = title;
