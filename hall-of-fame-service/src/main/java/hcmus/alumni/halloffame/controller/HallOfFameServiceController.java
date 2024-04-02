@@ -164,45 +164,51 @@ public class HallOfFameServiceController {
 
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateHallOfFame(@PathVariable String id,
-			@RequestParam(value = "title", required = false) String title,
-			@RequestParam(value = "content", required = false) String content,
-			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
-			@RequestParam(value = "faculty") String faculty,
-		    @RequestParam(value = "beginningYear") Integer beginningYear) {
-		if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
-		}
+	        @RequestParam(value = "title", required = false) String title,
+	        @RequestParam(value = "content", required = false) String content,
+	        @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+	        @RequestParam(value = "faculty", required = false) String faculty,
+	        @RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
 
-		try {
-			// Find news
-			Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
-			if (optionalHallOfFame.empty() != null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-			}
-			HallOfFameModel halloffame = optionalHallOfFame.get();
-			if (title != null) {
-				halloffame.setTitle(title);
-			}
-			if (content != null) {
-				halloffame.setContent(content);
-			}
-			if (thumbnail != null) {
-				// Overwrite old thumbnail
-				imageUtils.saveImageToStorage(imageUtils.getHallOfFamePath(id), thumbnail, "thumbnail");
-			}
-			if (faculty != null) {
-				halloffame.setFaculty(faculty);
-			}
-			if (beginningYear != null) {
-				halloffame.setBeginningYear(beginningYear);
-			}
-			if (title != null | content != null | faculty != null | beginningYear != null)
-				halloffameRepository.save(halloffame);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.err.println(e);
-		}
-		return ResponseEntity.status(HttpStatus.OK).body("");
+	    try {
+	        // Find hall of fame
+	        Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
+	        if (optionalHallOfFame.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+	        }
+	        HallOfFameModel halloffame = optionalHallOfFame.get();
+
+	        // Update fields if provided
+	        if (title != null) {
+	            halloffame.setTitle(title);
+	        }
+	        if (content != null) {
+	            halloffame.setContent(content);
+	        }
+	        if (thumbnail != null) {
+	            // Check if thumbnail size exceeds the limit
+	            if (thumbnail.getSize() > 5 * 1024 * 1024) {
+	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+	            }
+	            // Overwrite old thumbnail
+	            imageUtils.saveImageToStorage(imageUtils.getHallOfFamePath(id), thumbnail, "thumbnail");
+	        }
+	        if (faculty != null) {
+	            halloffame.setFaculty(faculty);
+	        }
+	        if (beginningYear != null) {
+	            halloffame.setBeginningYear(beginningYear);
+	        }
+
+	        // Save updated hall of fame
+	        halloffameRepository.save(halloffame);
+	    } catch (IOException e) {
+	        // Handle IO exception
+	        System.err.println(e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update hall of fame");
+	    }
+
+	    return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
 	}
 	
 }
