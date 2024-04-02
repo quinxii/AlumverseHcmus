@@ -26,6 +26,7 @@ import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPost;
 import hcmus.alumni.event.model.UserModel;
 import hcmus.alumni.event.repository.EventRepository;
+import hcmus.alumni.event.repository.StatusPostRepository;
 import hcmus.alumni.event.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -48,6 +49,8 @@ public class EventServiceController {
 	private EventRepository eventRepository;
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private StatusPostRepository statusPostRepository;
 	
 	@GetMapping("/")
 	public ResponseEntity<HashMap<String, Object>> searchEvent(
@@ -156,72 +159,93 @@ public class EventServiceController {
     
     @PostMapping("/")
     public ResponseEntity<EventModel> addEvent(@RequestBody Map<String, Object> eventModel) {
+    	System.out.println(1111);
         try {
             // Extract data from the map
-        	String creatorId = (String) eventModel.get("creator");
+            String creatorId = (String) eventModel.get("creator");
             UserModel creator = userRepository.findById(creatorId).orElse(null);
             if (creator == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
+          
             String title = (String) eventModel.get("title");
             String content = (String) eventModel.get("content");
             String thumbnail = (String) eventModel.get("thumbnail");
             String organizationLocation = (String) eventModel.get("organizationLocation");
             Date organizationTime = parseDateString((String) eventModel.get("organizationTime"));
-            Date createAt = parseDateString((String) eventModel.get("createAt"));
-            Date updateAt = parseDateString((String) eventModel.get("updateAt"));
             Date publishedAt = parseDateString((String) eventModel.get("publishedAt"));
-            StatusPost statusId = (StatusPost) eventModel.get("statusId");
-            Integer views = (Integer) eventModel.get("views");
+            Integer statusId = (Integer) eventModel.get("statusId");
+            Optional<StatusPost> statusPostOptional = statusPostRepository.findById(statusId);
 
-            // Create the EventModel object
-            EventModel newEvent = new EventModel();
-            newEvent.setCreator(creator);
-            newEvent.setTitle(title);
-            newEvent.setContent(content);
-            newEvent.setThumbnail(thumbnail);
-            newEvent.setOrganizationLocation(organizationLocation);
-            newEvent.setOrganizationTime(organizationTime);
-            newEvent.setCreateAt(createAt);
-            newEvent.setUpdateAt(updateAt);
-            newEvent.setPublishedAt(publishedAt);
-            newEvent.setStatusId(statusId);
-            newEvent.setViews(views);
+            // Check if StatusPost with the given ID exists
+            if (statusPostOptional.isPresent()) {
+                StatusPost statusPost = statusPostOptional.get();
+                // Create the EventModel object
+                EventModel newEvent = new EventModel();
+                newEvent.setCreator(creator);
+                newEvent.setTitle(title);
+                newEvent.setContent(content);
+                newEvent.setThumbnail(thumbnail);
+                newEvent.setOrganizationLocation(organizationLocation);
+                newEvent.setOrganizationTime(organizationTime);
+                newEvent.setPublishedAt(publishedAt);
+                newEvent.setStatusId(statusPost);
+                newEvent.setViews(0);
 
-            // Save the new event
-            EventModel savedEvent = eventRepository.save(newEvent);
+                // Save the new event
+                EventModel savedEvent = eventRepository.save(newEvent);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedEvent);
+                return ResponseEntity.status(HttpStatus.CREATED).body(savedEvent);
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
         } catch (Exception e) {
+        	e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
     
     @PutMapping("/{eventId}")
     public ResponseEntity<EventModel> updateEvent(@PathVariable String eventId, 
-            @RequestBody EventModel updatedEvent) {
+            @RequestBody Map<String, Object> updatedEvent) {
         Optional<EventModel> eventOptional = eventRepository.findById(eventId);
         
         if (eventOptional.isPresent()) {
             EventModel existingEvent = eventOptional.get();
             
             // Update fields of existingEvent with non-null values from updatedEvent
-            if (updatedEvent.getTitle() != null)
-                existingEvent.setTitle(updatedEvent.getTitle());
-            if (updatedEvent.getContent() != null)
-                existingEvent.setContent(updatedEvent.getContent());
-            if (updatedEvent.getThumbnail() != null)
-                existingEvent.setThumbnail(updatedEvent.getThumbnail());
-            if (updatedEvent.getOrganizationLocation() != null)
-                existingEvent.setOrganizationLocation(updatedEvent.getOrganizationLocation());
-            if (updatedEvent.getOrganizationTime() != null)
-                existingEvent.setOrganizationTime(updatedEvent.getOrganizationTime());
-            if (updatedEvent.getPublishedAt() != null)
-                existingEvent.setPublishedAt(updatedEvent.getPublishedAt());
-            if (updatedEvent.getStatusId() != null)
-                existingEvent.setStatusId(updatedEvent.getStatusId());
-            if (updatedEvent.getViews() != null)
-                existingEvent.setViews(updatedEvent.getViews());
+            if (updatedEvent.containsKey("title"))
+                existingEvent.setTitle((String) updatedEvent.get("title"));
+            if (updatedEvent.containsKey("content"))
+                existingEvent.setContent((String) updatedEvent.get("content"));
+            if (updatedEvent.containsKey("thumbnail"))
+                existingEvent.setThumbnail((String) updatedEvent.get("thumbnail"));
+            if (updatedEvent.containsKey("organizationLocation"))
+                existingEvent.setOrganizationLocation((String) updatedEvent.get("organizationLocation"));
+            if (updatedEvent.containsKey("organizationTime"))
+				try {
+					existingEvent.setOrganizationTime(parseDateString((String) updatedEvent.get("organizationTime")));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+            if (updatedEvent.containsKey("publishedAt"))
+				try {
+					existingEvent.setPublishedAt(parseDateString((String) updatedEvent.get("publishedAt")));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+            if (updatedEvent.containsKey("statusId")) {
+                Integer statusId = (Integer) updatedEvent.get("statusId");
+                Optional<StatusPost> statusPostOptional = statusPostRepository.findById(statusId);
+                if (statusPostOptional.isPresent()) {
+                    existingEvent.setStatusId(statusPostOptional.get());
+                } else {
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+            if (updatedEvent.containsKey("views"))
+                existingEvent.setViews((Integer) updatedEvent.get("views"));
 
             try {
                 EventModel savedEvent = eventRepository.save(existingEvent);
@@ -233,6 +257,7 @@ public class EventServiceController {
             return ResponseEntity.notFound().build();
         }
     }
+
     
     private Date parseDateString(String dateString) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
