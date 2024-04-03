@@ -138,7 +138,7 @@ public class HallOfFameServiceController {
 		    for (Element img : imgTags) {
 			      String src = img.attr("src");
 			      System.out.println(src);
-			      String newSrc = imageUtils.saveBase64ImageToStorage(imageUtils.getNewsPath(id), src, contentImgIdx.toString());
+			      String newSrc = imageUtils.saveBase64ImageToStorage(imageUtils.getHallOfFamePath(id), src, contentImgIdx.toString());
 			      img.attr("src", newSrc);
 			      contentImgIdx++;
 			    }
@@ -173,7 +173,7 @@ public class HallOfFameServiceController {
 	    try {
 	        // Find hall of fame
 	        Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
-	        if (optionalHallOfFame.isEmpty()) {
+	        if (optionalHallOfFame == null) {
 	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
 	        }
 	        HallOfFameModel halloffame = optionalHallOfFame.get();
