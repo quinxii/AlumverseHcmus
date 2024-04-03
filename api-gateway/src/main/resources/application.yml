@@ -26,6 +26,8 @@ spring:
           uri: lb://event-service
           predicates:
             - Path=/event/**
+          filters:
+            - name: Authentication
 #
 #        ## Service2
 #        - id: service2

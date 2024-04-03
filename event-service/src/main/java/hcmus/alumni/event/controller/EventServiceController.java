@@ -92,16 +92,16 @@ public class EventServiceController {
 	    // Where
 	    Predicate statusPredicate;
 	    switch (status) {
-	        case "pending":
+	        case "Chờ":
 	            statusPredicate = cb.equal(root.get("statusId").get("id"), 1); // Assuming 1 represents pending status
 	            break;
-	        case "normal":
+	        case "Bình thường":
 	            statusPredicate = cb.equal(root.get("statusId").get("id"), 2); 
 	            break;
-	        case "hide":
+	        case "Ẩn":
 	            statusPredicate = cb.equal(root.get("statusId").get("id"), 3); 
 	            break;
-	        case "deleted":
+	        case "Xoá":
 	            statusPredicate = cb.equal(root.get("statusId").get("id"), 4); 
 	            break;
 	        default:
@@ -139,9 +139,9 @@ public class EventServiceController {
 	    // Create HashMap for result
 	    HashMap<String, Object> result = new HashMap<>();
 	    TypedQuery<EventModel> typedQuery = em.createQuery(cq);
-	    result.put("itemNumber", typedQuery.getResultList().size());
 	    typedQuery.setFirstResult(offset);
 	    typedQuery.setMaxResults(limit);
+	    result.put("itemNumber", typedQuery.getResultList().size());
 	    result.put("items", typedQuery.getResultList());
 
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -159,7 +159,6 @@ public class EventServiceController {
     
     @PostMapping("/")
     public ResponseEntity<EventModel> addEvent(@RequestBody Map<String, Object> eventModel) {
-    	System.out.println(1111);
         try {
             // Extract data from the map
             String creatorId = (String) eventModel.get("creator");
@@ -174,7 +173,27 @@ public class EventServiceController {
             String organizationLocation = (String) eventModel.get("organizationLocation");
             Date organizationTime = parseDateString((String) eventModel.get("organizationTime"));
             Date publishedAt = parseDateString((String) eventModel.get("publishedAt"));
-            Integer statusId = (Integer) eventModel.get("statusId");
+            String status = (String) eventModel.get("status"); // New field for status
+            Integer statusId;
+            
+            // Compare status string to retrieve the corresponding StatusPost entity ID
+            switch (status) {
+                case "Chờ":
+                    statusId = 1;
+                    break;
+                case "Bình thường":
+                    statusId = 2;
+                    break;
+                case "Ẩn":
+                    statusId = 3;
+                    break;
+                case "Xoá":
+                    statusId = 4;
+                    break;
+                default:
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+
             Optional<StatusPost> statusPostOptional = statusPostRepository.findById(statusId);
 
             // Check if StatusPost with the given ID exists
@@ -200,12 +219,11 @@ public class EventServiceController {
                 return ResponseEntity.badRequest().build();
             }
         } catch (Exception e) {
-        	e.printStackTrace();
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    
     @PutMapping("/{eventId}")
     public ResponseEntity<EventModel> updateEvent(@PathVariable String eventId, 
             @RequestBody Map<String, Object> updatedEvent) {
@@ -224,19 +242,39 @@ public class EventServiceController {
             if (updatedEvent.containsKey("organizationLocation"))
                 existingEvent.setOrganizationLocation((String) updatedEvent.get("organizationLocation"));
             if (updatedEvent.containsKey("organizationTime"))
-				try {
-					existingEvent.setOrganizationTime(parseDateString((String) updatedEvent.get("organizationTime")));
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
+                try {
+                    existingEvent.setOrganizationTime(parseDateString((String) updatedEvent.get("organizationTime")));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
             if (updatedEvent.containsKey("publishedAt"))
-				try {
-					existingEvent.setPublishedAt(parseDateString((String) updatedEvent.get("publishedAt")));
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
-            if (updatedEvent.containsKey("statusId")) {
-                Integer statusId = (Integer) updatedEvent.get("statusId");
+                try {
+                    existingEvent.setPublishedAt(parseDateString((String) updatedEvent.get("publishedAt")));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            if (updatedEvent.containsKey("status")) {
+                String status = (String) updatedEvent.get("status");
+                Integer statusId;
+
+                // Compare status string to retrieve the corresponding StatusPost entity ID
+                switch (status) {
+                    case "Chờ":
+                        statusId = 1;
+                        break;
+                    case "Bình thường":
+                        statusId = 2;
+                        break;
+                    case "Ẩn":
+                        statusId = 3;
+                        break;
+                    case "Xoá":
+                        statusId = 4;
+                        break;
+                    default:
+                        return ResponseEntity.badRequest().build();
+                }
+
                 Optional<StatusPost> statusPostOptional = statusPostRepository.findById(statusId);
                 if (statusPostOptional.isPresent()) {
                     existingEvent.setStatusId(statusPostOptional.get());
@@ -257,6 +295,7 @@ public class EventServiceController {
             return ResponseEntity.notFound().build();
         }
     }
+
 
     
     private Date parseDateString(String dateString) throws ParseException {
