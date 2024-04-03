@@ -149,7 +149,7 @@ public class UserServiceController {
 		if (criteria.equals("email") || criteria.equals("fullName")) {
 			criteriaPredicate = cb.like(userJoin.get(criteria), "%" + keyword + "%");
 		} else if (criteria.equals("studentId") || criteria.equals("beginningYear")) {
-			criteriaPredicate = cb.like(root.get(criteria), "%" + keyword + "%");
+			criteriaPredicate = cb.like(root.get(criteria).as(String.class), "%" + keyword + "%");
 		} else {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
@@ -235,8 +235,9 @@ public class UserServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 		}
 		
-		UserModel user = new UserModel();
-		user.setId(userId);
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		UserModel user = optionalUser.get();
+		user.setSocialMediaLink(socialMediaLink);
 		FacultyModel faculty = new FacultyModel();
 		if (beginningYear.equals(0)) {
 			beginningYear = null;
@@ -245,6 +246,7 @@ public class UserServiceController {
 			faculty = null;
 		} else {
 			faculty.setId(facultyId);
+			user.setFaculty(new FacultyModel(facultyId));
 		}
 		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(user, studentId, beginningYear, socialMediaLink, faculty);
 

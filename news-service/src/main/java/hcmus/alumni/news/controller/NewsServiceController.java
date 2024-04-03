@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.dto.NewsDto;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
@@ -78,7 +79,7 @@ public class NewsServiceController {
 		// Join
 //		Join<NewsModel, UserModel> userJoin = root.join("user", JoinType.INNER);
 		Join<NewsModel, StatusPostModel> statusJoin = root.join("status", JoinType.INNER);
-		
+
 		// Select
 		Selection<String> idSelection = root.get("id");
 		Selection<String> titleSelection = root.get("title");
@@ -86,12 +87,12 @@ public class NewsServiceController {
 		Selection<String> thumbnailSelection = root.get("thumbnail");
 		Selection<Integer> viewsSelection = root.get("views");
 		cq.multiselect(idSelection, titleSelection, contentSelection, thumbnailSelection, viewsSelection);
-		
+
 		// Where
 		Predicate titlePredicate = cb.like(root.get("title"), "%" + keyword + "%");
 		Predicate statusPredicate = cb.equal(statusJoin.get("name"), "Bình thường");
 		cq.where(titlePredicate, statusPredicate);
-		
+
 		// Order by
 		List<Order> orderList = new ArrayList<Order>();
 		if (createAtOrder.equals("asc")) {
@@ -100,15 +101,24 @@ public class NewsServiceController {
 			orderList.add(cb.desc(root.get("createAt")));
 		}
 		cq.orderBy(orderList);
-		
+
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		TypedQuery<NewsDto> typedQuery = em.createQuery(cq);
 		result.put("itemNumber", typedQuery.getResultList().size());
 		typedQuery.setFirstResult(offset);
 		typedQuery.setMaxResults(limit);
 		result.put("items", typedQuery.getResultList());
-		
+
 		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<INewsDto> getNewsById(@PathVariable String id) {
+		Optional<INewsDto> optionalNews = newsRepository.findNewsById(id);
+		if (optionalNews.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
 	}
 
 	@PostMapping("")
@@ -122,27 +132,8 @@ public class NewsServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 		}
 		String id = UUID.randomUUID().toString();
-		
-	    // Parse the HTML content
-	    Document doc = Jsoup.parse(content);
-	    // Select all img elements with the src attribute
-	    Elements imgTags = doc.select("img[src]");
-	    // Loop through each img tag and save each to storage
-	    try {
-	    	Integer contentImgIdx = 0;
-		    for (Element img : imgTags) {
-			      String src = img.attr("src");
-			      System.out.println(src);
-			      String newSrc = imageUtils.saveBase64ImageToStorage(imageUtils.getNewsPath(id), src, contentImgIdx.toString());
-			      img.attr("src", newSrc);
-			      contentImgIdx++;
-			    }
-		} catch (IOException e) {
-			// TODO: handle exception
-			System.err.println(e);
-		}
-	    doc.outputSettings().indentAmount(0).prettyPrint(false);
-	    String processedContent = doc.body().html();
+
+		String processedContent = imageUtils.saveImgFromHtmlToStorage(content, id);
 
 		try {
 			// Save thumbnail image
@@ -159,8 +150,8 @@ public class NewsServiceController {
 
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateNews(@PathVariable String id,
-			@RequestParam(value = "title", required = false) String title,
-			@RequestParam(value = "content", required = false) String content,
+			@RequestParam(value = "title", defaultValue = "") String title,
+			@RequestParam(value = "content", defaultValue = "") String content,
 			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail) {
 		if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
@@ -173,13 +164,14 @@ public class NewsServiceController {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
 			}
 			NewsModel news = optionalNews.get();
-			if (title != null) {
+			if (!title.equals("")) {
 				news.setTitle(title);
 			}
-			if (content != null) {
-				news.setContent(content);
+			if (!content.equals("")) {
+				String newContent= imageUtils.updateImgFromHtmlToStorage(news.getContent(), content, id);
+				news.setContent(newContent);
 			}
-			if (thumbnail != null) {
+			if (thumbnail != null && !thumbnail.isEmpty()) {
 				// Overwrite old thumbnail
 				imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
 			}
