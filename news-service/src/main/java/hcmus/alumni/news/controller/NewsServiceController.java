@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -121,6 +122,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
 	}
 
+	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "content") String content,
@@ -148,6 +150,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body("");
 	}
 
+	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateNews(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
