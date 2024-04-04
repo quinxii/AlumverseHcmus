@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.jsoup.Jsoup;
@@ -134,44 +136,46 @@ public class ImageUtils {
 
 	public String updateImgFromHtmlToStorage(String oldHtml, String newHtml, String id) {
 		// Parse the HTML content
-		Document newDoc = Jsoup.parse(newHtml);
 		Document oldDoc = Jsoup.parse(oldHtml);
-		// Select all img elements with the src attribute
-		Elements newImgTags = newDoc.select("img[src]");
-		Elements oldImgTags = oldDoc.select("img[src]");
+		Document newDoc = Jsoup.parse(newHtml);
 
-		// Loop through each img tag and save each to storage
-		try {
-			int newImgTagSize = newImgTags.size();
-			int oldImgTagSize = oldImgTags.size();
-			int minSize = Math.min(newImgTagSize, oldImgTagSize);
-			for (int i = 0; i < minSize; i++) {
-				String newImgSrc = newImgTags.get(i).attr("src");
-				String oldImgSrc = oldImgTags.get(i).attr("src");
-				// Compare
-				if (!newImgSrc.equals(oldImgSrc)) {
-					String newSrc = this.saveBase64ImageToStorage(this.getNewsPath(id), newImgSrc, String.valueOf(i));
-					newImgTags.get(i).attr("src", newSrc);
-				}
-			}
+		List<String> oldImgs = this.getImgSrcList(oldDoc);
+		List<String> newImgs = this.getImgSrcList(newDoc);
 
-			if (newImgTagSize < oldImgTagSize) {
-				// Delete excess images if new size is smaller than old size
-				for (int i = minSize; i < oldImgTagSize; i++) {
-					this.deleteImageFromStorageByUrl(this.getNewsPath(id) + i);
-				}
-			} else if (newImgTagSize > oldImgTagSize) {
-				// Save new images if new size is bigger than old size
-				for (int i = minSize; i < newImgTagSize; i++) {
-					String newImgSrc = newImgTags.get(i).attr("src");
-					String newSrc = this.saveBase64ImageToStorage(this.getNewsPath(id), newImgSrc, String.valueOf(i));
-					newImgTags.get(i).attr("src", newSrc);
-				}
+		List<String> addedImgs = this.findAddedImg(oldImgs, newImgs);
+		List<String> deletedImgs = this.findDeletedImg(oldImgs, newImgs);
+
+		// Delete deleted images
+		if (deletedImgs.size() != 0) {
+			for (String deletedImg : deletedImgs) {
+				this.deleteImageFromStorageByUrl(deletedImg);
+				oldImgs.remove(deletedImg);
 			}
-		} catch (IOException e) {
-			// TODO: handle exception
-			System.err.println(e);
 		}
+
+		// Save added images
+		if (addedImgs.size() != 0) {
+			List<Integer> contentIdxs = new ArrayList<Integer>();
+			for (String img : oldImgs) {
+				Integer idx = Integer.valueOf(img.substring(img.lastIndexOf("/") + 1));
+				contentIdxs.add(idx);
+			}
+
+			try {
+				for (String addedImg : addedImgs) {
+					int smalletMissingIdx = this.findSmallestMissingContentIdx(contentIdxs);
+					String newIdx = String.valueOf(smalletMissingIdx);
+					String newSrc = this.saveBase64ImageToStorage(this.getNewsPath(id), addedImg, newIdx);
+					newDoc.select("img[src=" + addedImg + "]").attr("src", newSrc);
+					contentIdxs.add(smalletMissingIdx);
+				}
+			} catch (IOException e) {
+				// TODO: handle exception
+				System.err.println(e);
+				return null;
+			}
+		}
+
 		newDoc.outputSettings().indentAmount(0).prettyPrint(false);
 		return newDoc.body().html();
 	}
@@ -213,6 +217,52 @@ public class ImageUtils {
 			break;
 		}
 		return strings;
+	}
+
+	private List<String> getImgSrcList(Document doc) {
+		List<String> imgSrcList = new ArrayList<String>();
+		Elements imgTags = doc.select("img");
+
+		for (Element imgTag : imgTags) {
+			String src = imgTag.attr("src");
+			imgSrcList.add(src);
+		}
+		return imgSrcList;
+	}
+
+	private List<String> findDeletedImg(List<String> oldImgs, List<String> newImgs) {
+		List<String> deletedImgs = new ArrayList<String>();
+		for (String oldImg : oldImgs) {
+			if (!newImgs.contains(oldImg)) {
+				deletedImgs.add(oldImg);
+			}
+		}
+		return deletedImgs;
+	}
+
+	private List<String> findAddedImg(List<String> oldImgs, List<String> newImgs) {
+		List<String> addedImgs = new ArrayList<String>();
+		for (String newImg : newImgs) {
+			if (!oldImgs.contains(newImg)) {
+				addedImgs.add(newImg);
+			}
+		}
+		return addedImgs;
+	}
+
+	private int findSmallestMissingContentIdx(List<Integer> contentIdxs) {
+		boolean[] flags = new boolean[contentIdxs.size()];
+		for (Integer idx : contentIdxs) {
+			if (idx < flags.length) {
+				flags[idx] = true;
+			}
+		}
+		for (int i = 0; i < flags.length; i++) {
+			if (!flags[i]) {
+				return i;
+			}
+		}
+		return flags.length;
 	}
 
 	public String getNewsPath(String id) {
