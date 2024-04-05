@@ -14,12 +14,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	PreAuthenticatedUserRoleHeaderFilter authFilter;
 	@Autowired
-	AccessDeniedHandler accessDeniedHandler;
+	CustomAccessDeniedHandler accessDeniedHandler;
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http.antMatcher("/**").csrf().disable().addFilterBefore(authFilter, BasicAuthenticationFilter.class)
-				.authorizeRequests().anyRequest().authenticated().and().exceptionHandling()
-				.accessDeniedHandler(accessDeniedHandler);
+				.authorizeRequests().antMatchers("/error").permitAll().anyRequest().authenticated().and()
+				.exceptionHandling().accessDeniedHandler(accessDeniedHandler);
 	}
 }

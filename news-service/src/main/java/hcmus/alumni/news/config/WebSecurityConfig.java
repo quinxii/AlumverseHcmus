@@ -7,7 +7,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
@@ -17,12 +16,12 @@ public class WebSecurityConfig {
 	@Autowired
 	PreAuthenticatedUserRoleHeaderFilter authFilter;
 	@Autowired
-	AccessDeniedHandler accessDeniedHandler;
+	CustomAccessDeniedHandler accessDeniedHandler;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		return http.csrf(csrf -> csrf.disable()).addFilterBefore(authFilter, BasicAuthenticationFilter.class)
-				.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/error").permitAll().anyRequest().authenticated())
 				.exceptionHandling(((exceptionHandling) -> exceptionHandling.accessDeniedHandler(accessDeniedHandler)))
 				.build();
 	}

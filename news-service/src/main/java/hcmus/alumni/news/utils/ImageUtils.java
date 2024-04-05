@@ -95,8 +95,6 @@ public class ImageUtils {
 		String regex = gcp.getDomainName() + gcp.getBucketName() + "/";
 		String extractedImageName = oldImageUrl.replaceAll(regex, "");
 
-		System.out.println(extractedImageName);
-
 		try {
 			Blob blob = gcp.getStorage().get(gcp.getBucketName(), extractedImageName);
 			if (blob == null) {

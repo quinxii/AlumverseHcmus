@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,6 +58,12 @@ public class NewsServiceController {
 	private NewsRepository newsRepository;
 	@Autowired
 	private ImageUtils imageUtils;
+
+	@PostMapping("/test")
+	public String test(@RequestBody NewsModel test) {
+		System.out.println();
+		return test.toString();
+	}
 
 	@GetMapping("/count")
 	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam(value = "status") String status) {
@@ -125,9 +133,8 @@ public class NewsServiceController {
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
-			@RequestParam(value = "title") String title, @RequestParam(value = "content") String content,
-			@RequestParam(value = "thumbnail") MultipartFile thumbnail) {
-		if (creator.isEmpty() || title.isEmpty() || content.isEmpty() || thumbnail.isEmpty()) {
+			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail) {
+		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
 		}
 		if (thumbnail.getSize() > 5 * 1024 * 1024) {
@@ -135,26 +142,23 @@ public class NewsServiceController {
 		}
 		String id = UUID.randomUUID().toString();
 
-		String processedContent = imageUtils.saveImgFromHtmlToStorage(content, id);
-
 		try {
 			// Save thumbnail image
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
 			// Save news to database
-			NewsModel news = new NewsModel(id, new UserModel(creator), title, processedContent, thumbnailUrl);
+			NewsModel news = new NewsModel(id, new UserModel(creator), title, "", thumbnailUrl);
 			newsRepository.save(news);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.err.println(e);
 		}
-		return ResponseEntity.status(HttpStatus.CREATED).body("");
+		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateNews(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
-			@RequestParam(value = "content", defaultValue = "") String content,
 			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail) {
 		if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
@@ -167,23 +171,39 @@ public class NewsServiceController {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
 			}
 			NewsModel news = optionalNews.get();
-			if (!title.equals("")) {
-				news.setTitle(title);
-			}
-			if (!content.equals("")) {
-				String newContent= imageUtils.updateImgFromHtmlToStorage(news.getContent(), content, id);
-				news.setContent(newContent);
-			}
 			if (thumbnail != null && !thumbnail.isEmpty()) {
 				// Overwrite old thumbnail
 				imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
 			}
-			if (title != null | content != null)
+			if (!title.equals("")) {
+				news.setTitle(title);
 				newsRepository.save(news);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.err.println(e);
 		}
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PutMapping("/{id}/content")
+	public ResponseEntity<String> updateNewsContent(@PathVariable String id,
+			@RequestBody(required = false) NewsModel updatedNews) {
+		// Find news
+		Optional<NewsModel> optionalNews = newsRepository.findById(id);
+		if (optionalNews.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+		}
+		NewsModel news = optionalNews.get();
+		if (!updatedNews.getContent().equals("")) {
+			String newContent = imageUtils.updateImgFromHtmlToStorage(news.getContent(), updatedNews.getContent(), id);
+			if (newContent.equals(news.getContent())) {
+				return ResponseEntity.status(HttpStatus.OK).body("");
+			}
+			news.setContent(newContent);
+		}
+		newsRepository.save(news);
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 }
