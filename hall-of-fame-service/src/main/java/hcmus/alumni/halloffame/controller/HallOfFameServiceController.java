@@ -77,7 +77,6 @@ public class HallOfFameServiceController {
 		Root<HallOfFameModel> root = cq.from(HallOfFameModel.class);
 
 		// Join
-//		Join<NewsModel, UserModel> userJoin = root.join("user", JoinType.INNER);
 		Join<HallOfFameModel, StatusPostModel> statusJoin = root.join("status", JoinType.INNER);
 		
 		// Select
@@ -159,7 +158,7 @@ public class HallOfFameServiceController {
 			// TODO Auto-generated catch block
 			System.err.println(e);
 		}
-		return ResponseEntity.status(HttpStatus.CREATED).body("");
+		return ResponseEntity.status(HttpStatus.CREATED).body("Created successfully!");
 	}
 
 	@PutMapping("/{id}")
