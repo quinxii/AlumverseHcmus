@@ -42,6 +42,14 @@ public class NewsModel implements Serializable {
 
 	@Column(name = "thumbnail", columnDefinition = "TINYTEXT")
 	private String thumbnail;
+	
+	@OneToOne
+	@JoinColumn(name = "faculty_id")
+	private FacultyModel faculty;
+	
+	@OneToOne
+	@JoinColumn(name = "tag_id")
+	private TagModel tag;
 
 	@CreationTimestamp
 	@Column(name = "create_at")
@@ -72,6 +80,6 @@ public class NewsModel implements Serializable {
 		this.title = title;
 		this.content = content;
 		this.thumbnail = thumbnail;
-		this.status = new StatusPostModel(3);
+		this.status = new StatusPostModel(2);
 	}
 }

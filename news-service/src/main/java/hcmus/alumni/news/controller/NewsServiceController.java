@@ -2,9 +2,12 @@ package hcmus.alumni.news.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.jsoup.Jsoup;
@@ -59,10 +62,19 @@ public class NewsServiceController {
 	@Autowired
 	private ImageUtils imageUtils;
 
-	@PostMapping("/test")
-	public String test(@RequestBody NewsModel test) {
-		System.out.println();
-		return test.toString();
+	@GetMapping("/test")
+	public List<NewsModel> test() {
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+		cal.set(2024, 3, 7, 12, 0, 0);
+		Date now = cal.getTime();
+		System.out.println("Calendar: " + now.toString());
+		List<NewsModel> list = newsRepository.getScheduledNews(now);
+		for (NewsModel n : list) {
+			System.out.println("schedule");
+			n.setStatus(new StatusPostModel(2));
+			newsRepository.save(n);
+		}
+		return newsRepository.getScheduledNews(now);
 	}
 
 	@GetMapping("/count")
@@ -133,7 +145,8 @@ public class NewsServiceController {
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
-			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail) {
+			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
+			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
 		}
@@ -147,6 +160,11 @@ public class NewsServiceController {
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
 			// Save news to database
 			NewsModel news = new NewsModel(id, new UserModel(creator), title, "", thumbnailUrl);
+			// Lên lịch
+			if (scheduledTimeMili != null) {
+				news.setPublishedAt(new Date(scheduledTimeMili));
+				news.setStatus(new StatusPostModel(1));
+			}
 			newsRepository.save(news);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -190,6 +208,9 @@ public class NewsServiceController {
 	@PutMapping("/{id}/content")
 	public ResponseEntity<String> updateNewsContent(@PathVariable String id,
 			@RequestBody(required = false) NewsModel updatedNews) {
+		if (updatedNews.getContent() == null) {
+			return ResponseEntity.status(HttpStatus.OK).body("");
+		}
 		// Find news
 		Optional<NewsModel> optionalNews = newsRepository.findById(id);
 		if (optionalNews.isEmpty()) {
