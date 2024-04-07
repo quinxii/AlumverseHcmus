@@ -20,6 +20,7 @@ spring:
             - Path=/user/**
           filters:
             - name: Authentication
+<<<<<<< HEAD
 
         ## hall of fame service
         - id: hall-of-fame
@@ -28,6 +29,23 @@ spring:
             - Path=/hall-of-fame/**
           filters:
             - name: Authentication
+=======
+            
+        ## news service
+        - id: news
+          uri: lb://news-service
+          predicates:
+            - Path=/news/**
+          filters:
+            - name: Authentication
+#
+#        ## Service2
+#        - id: service2
+#          uri: lb://service2
+#          predicates:
+#            - Path=/service2/**
+#          filters:
+#            - StripPrefix=1
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
