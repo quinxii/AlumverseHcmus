@@ -44,7 +44,6 @@ public class UserModel implements Serializable {
 	@Column(name = "phone", length = 15)
 	private String phone;
 
-	@OneToOne
 	@Column(name = "sex_id")
 	private Integer sex;
 
@@ -87,39 +86,32 @@ public class UserModel implements Serializable {
 
 	@Column(name = "email_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
-	private Privacy emailPrivacy;
+	private Privacy emailPrivacy = Privacy.PUBLIC;
 
 	@Column(name = "phone_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
-	private Privacy phonePrivacy;
+	private Privacy phonePrivacy = Privacy.PUBLIC;
 
 	@Column(name = "sex_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
-	private Privacy sexPrivacy;
+	private Privacy sexPrivacy = Privacy.PUBLIC;
 
 	@Column(name = "dob_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
-	private Privacy dobPrivacy;
+	private Privacy dobPrivacy = Privacy.PUBLIC;
 
 	@Column(name = "faculty_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
-	private Privacy facultyPrivacy;
+	private Privacy facultyPrivacy = Privacy.PUBLIC;
 
-	public UserModel() {
-		emailPrivacy = Privacy.PUBLIC;
-		phonePrivacy = Privacy.PUBLIC;
-		sexPrivacy = Privacy.PUBLIC;
-		dobPrivacy = Privacy.PUBLIC;
-		facultyPrivacy = Privacy.PUBLIC;
+	public UserModel() {}
+	
+	public UserModel(String id) {
+		this.id = id;
 	}
 
 	public UserModel(String email, String pass) {
 		this.email = email;
 		this.pass = pass;
-		emailPrivacy = Privacy.PUBLIC;
-		phonePrivacy = Privacy.PUBLIC;
-		sexPrivacy = Privacy.PUBLIC;
-		dobPrivacy = Privacy.PUBLIC;
-		facultyPrivacy = Privacy.PUBLIC;
 	}
 }
