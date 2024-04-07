@@ -90,4 +90,10 @@ public class NewsModel implements Serializable {
 		this.thumbnail = thumbnail;
 		this.status = new StatusPostModel(2);
 	}
+	
+	public void setTags(Integer[] tags) {
+		for(Integer tag : tags) {
+			this.tags.add(new TagModel(tag));
+		}
+	}
 }

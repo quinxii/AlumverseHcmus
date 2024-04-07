@@ -33,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.dto.NewsDto;
+import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
 import hcmus.alumni.news.model.UserModel;
@@ -146,8 +147,8 @@ public class NewsServiceController {
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
-			@RequestParam(value = "tags", required = false) String[] tags,
-			@RequestParam(value = "facultyId", required = false) Integer facultyId,
+			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
@@ -168,6 +169,12 @@ public class NewsServiceController {
 				news.setStatus(new StatusPostModel(1));
 			} else {
 				news.setPublishedAt(new Date());
+			}
+			if (tagsId != null) {
+				news.setTags(tagsId);
+			}
+			if (!facultyId.equals(0)) {
+				news.setFaculty(new FacultyModel(facultyId));
 			}
 			newsRepository.save(news);
 		} catch (IOException e) {

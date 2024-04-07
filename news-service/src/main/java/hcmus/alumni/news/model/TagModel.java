@@ -14,10 +14,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "[tag]")
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class TagModel implements Serializable {
 	private static final long serialVersionUID = 1L;
