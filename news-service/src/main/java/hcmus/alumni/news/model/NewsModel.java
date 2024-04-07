@@ -2,15 +2,19 @@ package hcmus.alumni.news.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -47,9 +51,13 @@ public class NewsModel implements Serializable {
 	@JoinColumn(name = "faculty_id")
 	private FacultyModel faculty;
 	
-	@OneToOne
-	@JoinColumn(name = "tag_id")
-	private TagModel tag;
+	@ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "tag_news",
+            joinColumns = @JoinColumn(name = "news_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+            )
+    private Set<TagModel> tags = new HashSet<>();
 
 	@CreationTimestamp
 	@Column(name = "create_at")

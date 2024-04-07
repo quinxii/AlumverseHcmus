@@ -146,6 +146,8 @@ public class NewsServiceController {
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
+			@RequestParam(value = "tags", required = false) String[] tags,
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
@@ -164,6 +166,8 @@ public class NewsServiceController {
 			if (scheduledTimeMili != null) {
 				news.setPublishedAt(new Date(scheduledTimeMili));
 				news.setStatus(new StatusPostModel(1));
+			} else {
+				news.setPublishedAt(new Date());
 			}
 			newsRepository.save(news);
 		} catch (IOException e) {
