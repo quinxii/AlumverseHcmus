@@ -6,10 +6,11 @@ import java.util.List;
 import java.util.TimeZone;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.google.api.client.util.Value;
+
 
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;

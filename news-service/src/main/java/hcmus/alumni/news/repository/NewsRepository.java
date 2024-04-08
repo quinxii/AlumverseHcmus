@@ -20,7 +20,9 @@ public interface NewsRepository  extends JpaRepository<NewsModel, String> {
 	
 	@Query("SELECT COUNT(n) FROM NewsModel n JOIN n.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
+	@Query("SELECT COUNT(n) FROM NewsModel n JOIN n.status s WHERE s.id != 4")
+	Long getCountByNotDelete();
 	
-	@Query("SELECT n from NewsModel n JOIN n.status s WHERE s.name = \"Chờ\" AND n.publishedAt <= :now")
+	@Query("SELECT n from NewsModel n JOIN n.status s WHERE s.id = 1 AND n.publishedAt <= :now")
 	List<NewsModel> getScheduledNews(Date now);
 }

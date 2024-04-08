@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +32,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.api.client.util.Value;
+
 import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.dto.NewsDto;
 import hcmus.alumni.news.model.FacultyModel;
@@ -38,6 +41,7 @@ import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
 import hcmus.alumni.news.model.UserModel;
 import hcmus.alumni.news.repository.NewsRepository;
+import hcmus.alumni.news.utils.GCPConnectionUtils;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -79,9 +83,9 @@ public class NewsServiceController {
 	}
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam(value = "status") String status) {
+	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam(value = "status", defaultValue = "") String status) {
 		if (status.equals("")) {
-			ResponseEntity.status(HttpStatus.OK).body(0);
+			return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByNotDelete());
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatus(status));
 	}
@@ -91,7 +95,8 @@ public class NewsServiceController {
 			@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
 			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
 			@RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
-			@RequestParam(value = "createAtOrder", required = false, defaultValue = "desc") String createAtOrder) {
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
 		// Initiate
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<NewsDto> cq = cb.createQuery(NewsDto.class);
@@ -105,31 +110,31 @@ public class NewsServiceController {
 		// Select
 		Selection<String> idSelection = root.get("id");
 		Selection<String> titleSelection = root.get("title");
-		Selection<String> contentSelection = root.get("content");
 		Selection<String> thumbnailSelection = root.get("thumbnail");
 		Selection<Integer> viewsSelection = root.get("views");
-		cq.multiselect(idSelection, titleSelection, contentSelection, thumbnailSelection, viewsSelection);
+		Selection<Date> publishedAtSelection = root.get("publishedAt");
+		cq.multiselect(idSelection, titleSelection, thumbnailSelection, viewsSelection, publishedAtSelection);
 
 		// Where
 		Predicate titlePredicate = cb.like(root.get("title"), "%" + keyword + "%");
-		Predicate statusPredicate = cb.equal(statusJoin.get("name"), "Bình thường");
+		Predicate statusPredicate = cb.notEqual(statusJoin.get("name"), "Xoá");
 		cq.where(titlePredicate, statusPredicate);
 
 		// Order by
 		List<Order> orderList = new ArrayList<Order>();
-		if (createAtOrder.equals("asc")) {
-			orderList.add(cb.asc(root.get("createAt")));
-		} else if (createAtOrder.equals("desc")) {
-			orderList.add(cb.desc(root.get("createAt")));
+		if (order.equals("asc")) {
+			orderList.add(cb.asc(root.get(orderBy)));
+		} else if (order.equals("desc")) {
+			orderList.add(cb.desc(root.get(orderBy)));
 		}
 		cq.orderBy(orderList);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		TypedQuery<NewsDto> typedQuery = em.createQuery(cq);
-		result.put("itemNumber", typedQuery.getResultList().size());
+		result.put("newsTotalNumber", typedQuery.getResultList().size());
 		typedQuery.setFirstResult(offset);
 		typedQuery.setMaxResults(limit);
-		result.put("items", typedQuery.getResultList());
+		result.put("news", typedQuery.getResultList());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -188,10 +193,13 @@ public class NewsServiceController {
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateNews(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
-			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail) {
+			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId) {
 		if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 		}
+		boolean isPut = false;
 
 		try {
 			// Find news
@@ -206,12 +214,37 @@ public class NewsServiceController {
 			}
 			if (!title.equals("")) {
 				news.setTitle(title);
+				isPut = true;
+			}
+			if (tagsId != null) {
+				news.setTags(tagsId);
+				isPut = true;
+			}
+			if (!facultyId.equals(0)) {
+				news.setFaculty(new FacultyModel(facultyId));
+				isPut = true;
+			}
+			if (isPut) {
 				newsRepository.save(news);
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.err.println(e);
 		}
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+	
+	@PreAuthorize("hasAnyAuthority('Admin')")
+	@DeleteMapping("/{id}")
+	public ResponseEntity<String> deleteNews(@PathVariable String id) {
+		// Find news
+		Optional<NewsModel> optionalNews = newsRepository.findById(id);
+		if (optionalNews.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+		}
+		NewsModel news = optionalNews.get();
+		news.setStatus(new StatusPostModel(4));
+		newsRepository.save(news);
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
@@ -234,7 +267,21 @@ public class NewsServiceController {
 				return ResponseEntity.status(HttpStatus.OK).body("");
 			}
 			news.setContent(newContent);
+			newsRepository.save(news);
 		}
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+	
+	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PutMapping("/{id}/hide")
+	public ResponseEntity<String> hideNews(@PathVariable String id) {
+		// Find news
+		Optional<NewsModel> optionalNews = newsRepository.findById(id);
+		if (optionalNews.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+		}
+		NewsModel news = optionalNews.get();
+		news.setStatus(new StatusPostModel(3));
 		newsRepository.save(news);
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
