@@ -1,5 +1,7 @@
 package hcmus.alumni.event.controller;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,13 +48,14 @@ import jakarta.persistence.criteria.Selection;
 public class EventServiceController {
 	@PersistenceContext
 	private EntityManager em;
-
 	@Autowired
 	private EventRepository eventRepository;
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
 	private StatusPostRepository statusPostRepository;
+	@Autowired
+    private ImageUtils imageUtils;
 	
 	@GetMapping("/")
 	public ResponseEntity<HashMap<String, Object>> searchEvent(
