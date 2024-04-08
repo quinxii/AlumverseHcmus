@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPost;
@@ -28,6 +29,7 @@ import hcmus.alumni.event.model.UserModel;
 import hcmus.alumni.event.repository.EventRepository;
 import hcmus.alumni.event.repository.StatusPostRepository;
 import hcmus.alumni.event.repository.UserRepository;
+import hcmus.alumni.event.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -58,7 +60,6 @@ public class EventServiceController {
 	        @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
 	        @RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
 	        @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
-	        @RequestParam(value = "criteria", required = false, defaultValue = "title") String criteria,
 	        @RequestParam(value = "createAtOrder", required = false, defaultValue = "desc") String createAtOrder,
 	        @RequestParam(value = "organizationTimeOrder", required = false, defaultValue = "") String organizationTimeOrder,
 	        @RequestParam(value = "viewsOrder", required = false, defaultValue = "") String viewsOrder) {
@@ -109,11 +110,7 @@ public class EventServiceController {
 	    }
 
 	    Predicate criteriaPredicate;
-	    if (criteria.equals("title") || criteria.equals("content") || criteria.equals("organizationLocation")) {
-	        criteriaPredicate = cb.like(root.get(criteria), "%" + keyword + "%");
-	    } else {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	    }
+	    criteriaPredicate = cb.like(root.get("title"), "%" + keyword + "%");
 
 	    cq.where(statusPredicate, criteriaPredicate);
 
@@ -158,24 +155,24 @@ public class EventServiceController {
     }
     
     @PostMapping("/")
-    public ResponseEntity<EventModel> addEvent(@RequestBody Map<String, Object> eventModel) {
+    public ResponseEntity<EventModel> addEvent(@RequestParam String creatorId,
+                                               @RequestParam String title,
+                                               @RequestParam String content,
+                                               @RequestParam MultipartFile thumbnail,
+                                               @RequestParam String organizationLocation,
+                                               @RequestParam String organizationTime,
+                                               @RequestParam String publishedAt,
+                                               @RequestParam String status) {
         try {
-            // Extract data from the map
-            String creatorId = (String) eventModel.get("creator");
             UserModel creator = userRepository.findById(creatorId).orElse(null);
             if (creator == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
-          
-            String title = (String) eventModel.get("title");
-            String content = (String) eventModel.get("content");
-            String thumbnail = (String) eventModel.get("thumbnail");
-            String organizationLocation = (String) eventModel.get("organizationLocation");
-            Date organizationTime = parseDateString((String) eventModel.get("organizationTime"));
-            Date publishedAt = parseDateString((String) eventModel.get("publishedAt"));
-            String status = (String) eventModel.get("status"); // New field for status
+
+            Date orgTime = parseDateString(organizationTime);
+            Date pubAt = parseDateString(publishedAt);
+
             Integer statusId;
-            
             // Compare status string to retrieve the corresponding StatusPost entity ID
             switch (status) {
                 case "Chờ":
@@ -204,10 +201,18 @@ public class EventServiceController {
                 newEvent.setCreator(creator);
                 newEvent.setTitle(title);
                 newEvent.setContent(content);
-                newEvent.setThumbnail(thumbnail);
+                // Save the thumbnail
+                try {
+                    String imageName = ImageUtils.hashImageName(creatorId);
+                    String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), thumbnail, imageName);
+                    newEvent.setThumbnail(thumbnailUrl);
+                } catch (IOException | NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
                 newEvent.setOrganizationLocation(organizationLocation);
-                newEvent.setOrganizationTime(organizationTime);
-                newEvent.setPublishedAt(publishedAt);
+                newEvent.setOrganizationTime(orgTime);
+                newEvent.setPublishedAt(pubAt);
                 newEvent.setStatusId(statusPost);
                 newEvent.setViews(0);
 
@@ -225,36 +230,51 @@ public class EventServiceController {
     }
 
     @PutMapping("/{eventId}")
-    public ResponseEntity<EventModel> updateEvent(@PathVariable String eventId, 
-            @RequestBody Map<String, Object> updatedEvent) {
+    public ResponseEntity<EventModel> updateEvent(@PathVariable String eventId,
+                                                  @RequestParam(required = false) String title,
+                                                  @RequestParam(required = false) String content,
+                                                  @RequestParam(required = false) MultipartFile thumbnail,
+                                                  @RequestParam(required = false) String organizationLocation,
+                                                  @RequestParam(required = false) String organizationTime,
+                                                  @RequestParam(required = false) String publishedAt,
+                                                  @RequestParam(required = false) String status,
+                                                  @RequestParam(required = false) Integer views) {
         Optional<EventModel> eventOptional = eventRepository.findById(eventId);
-        
+
         if (eventOptional.isPresent()) {
             EventModel existingEvent = eventOptional.get();
-            
-            // Update fields of existingEvent with non-null values from updatedEvent
-            if (updatedEvent.containsKey("title"))
-                existingEvent.setTitle((String) updatedEvent.get("title"));
-            if (updatedEvent.containsKey("content"))
-                existingEvent.setContent((String) updatedEvent.get("content"));
-            if (updatedEvent.containsKey("thumbnail"))
-                existingEvent.setThumbnail((String) updatedEvent.get("thumbnail"));
-            if (updatedEvent.containsKey("organizationLocation"))
-                existingEvent.setOrganizationLocation((String) updatedEvent.get("organizationLocation"));
-            if (updatedEvent.containsKey("organizationTime"))
+
+            // Update fields of existingEvent with non-null values from request parameters
+            if (title != null)
+                existingEvent.setTitle(title);
+            if (content != null)
+                existingEvent.setContent(content);
+            // Update thumbnail if provided
+            if (thumbnail != null) {
                 try {
-                    existingEvent.setOrganizationTime(parseDateString((String) updatedEvent.get("organizationTime")));
+                    String imageName = ImageUtils.hashImageName(eventId);
+                    String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), thumbnail, imageName);
+                    existingEvent.setThumbnail(thumbnailUrl);
+                } catch (IOException | NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+            if (organizationLocation != null)
+                existingEvent.setOrganizationLocation(organizationLocation);
+            if (organizationTime != null)
+                try {
+                    existingEvent.setOrganizationTime(parseDateString(organizationTime));
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
-            if (updatedEvent.containsKey("publishedAt"))
+            if (publishedAt != null)
                 try {
-                    existingEvent.setPublishedAt(parseDateString((String) updatedEvent.get("publishedAt")));
+                    existingEvent.setPublishedAt(parseDateString(publishedAt));
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
-            if (updatedEvent.containsKey("status")) {
-                String status = (String) updatedEvent.get("status");
+            if (status != null) {
                 Integer statusId;
 
                 // Compare status string to retrieve the corresponding StatusPost entity ID
@@ -282,8 +302,8 @@ public class EventServiceController {
                     return ResponseEntity.badRequest().build();
                 }
             }
-            if (updatedEvent.containsKey("views"))
-                existingEvent.setViews((Integer) updatedEvent.get("views"));
+            if (views != null)
+                existingEvent.setViews(views);
 
             try {
                 EventModel savedEvent = eventRepository.save(existingEvent);
@@ -295,8 +315,6 @@ public class EventServiceController {
             return ResponseEntity.notFound().build();
         }
     }
-
-
     
     private Date parseDateString(String dateString) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
