@@ -2,19 +2,18 @@ package hcmus.alumni.news.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.TimeZone;
+import java.util.Set;
 import java.util.UUID;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,20 +27,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.google.api.client.util.Value;
 
 import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.dto.NewsDto;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
+import hcmus.alumni.news.model.TagModel;
 import hcmus.alumni.news.model.UserModel;
 import hcmus.alumni.news.repository.NewsRepository;
-import hcmus.alumni.news.utils.GCPConnectionUtils;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -68,22 +65,20 @@ public class NewsServiceController {
 	private ImageUtils imageUtils;
 
 	@GetMapping("/test")
-	public List<NewsModel> test() {
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-		cal.set(2024, 3, 7, 12, 0, 0);
-		Date now = cal.getTime();
-		System.out.println("Calendar: " + now.toString());
-		List<NewsModel> list = newsRepository.getScheduledNews(now);
-		for (NewsModel n : list) {
-			System.out.println("schedule");
-			n.setStatus(new StatusPostModel(2));
-			newsRepository.save(n);
-		}
-		return newsRepository.getScheduledNews(now);
+	public List<INewsDto> test(@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
+			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
+			@RequestParam(value = "title", required = false, defaultValue = "") String title,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
+		Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
+		Page<INewsDto> news = newsRepository.searchNews(title, pageable);
+		System.out.println(news.getTotalPages());
+		return news.getContent();
 	}
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam(value = "status", defaultValue = "") String status) {
+	public ResponseEntity<Long> getPendingAlumniVerificationCount(
+			@RequestParam(value = "status", defaultValue = "") String status) {
 		if (status.equals("")) {
 			return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByNotDelete());
 		}
@@ -94,47 +89,15 @@ public class NewsServiceController {
 	public ResponseEntity<HashMap<String, Object>> getNews(
 			@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
 			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
-			@RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
+			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
-		// Initiate
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<NewsDto> cq = cb.createQuery(NewsDto.class);
-		// From
-		Root<NewsModel> root = cq.from(NewsModel.class);
-
-		// Join
-//		Join<NewsModel, UserModel> userJoin = root.join("user", JoinType.INNER);
-		Join<NewsModel, StatusPostModel> statusJoin = root.join("status", JoinType.INNER);
-
-		// Select
-		Selection<String> idSelection = root.get("id");
-		Selection<String> titleSelection = root.get("title");
-		Selection<String> thumbnailSelection = root.get("thumbnail");
-		Selection<Integer> viewsSelection = root.get("views");
-		Selection<Date> publishedAtSelection = root.get("publishedAt");
-		cq.multiselect(idSelection, titleSelection, thumbnailSelection, viewsSelection, publishedAtSelection);
-
-		// Where
-		Predicate titlePredicate = cb.like(root.get("title"), "%" + keyword + "%");
-		Predicate statusPredicate = cb.notEqual(statusJoin.get("name"), "Xoá");
-		cq.where(titlePredicate, statusPredicate);
-
-		// Order by
-		List<Order> orderList = new ArrayList<Order>();
-		if (order.equals("asc")) {
-			orderList.add(cb.asc(root.get(orderBy)));
-		} else if (order.equals("desc")) {
-			orderList.add(cb.desc(root.get(orderBy)));
-		}
-		cq.orderBy(orderList);
+		Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
+		Page<INewsDto> news = newsRepository.searchNews(title, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
-		TypedQuery<NewsDto> typedQuery = em.createQuery(cq);
-		result.put("newsTotalNumber", typedQuery.getResultList().size());
-		typedQuery.setFirstResult(offset);
-		typedQuery.setMaxResults(limit);
-		result.put("news", typedQuery.getResultList());
+		result.put("totalPages", news.getTotalPages());
+		result.put("news", news.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -233,7 +196,7 @@ public class NewsServiceController {
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteNews(@PathVariable String id) {
@@ -271,7 +234,7 @@ public class NewsServiceController {
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/{id}/hide")
 	public ResponseEntity<String> hideNews(@PathVariable String id) {

@@ -3,9 +3,9 @@ package hcmus.alumni.news.dto;
 import java.util.Set;
 
 public interface INewsDto {
-//	interface User{
-//		
-//	}
+	interface User{
+		String getFullName();
+	}
 	interface StatusPost{
 		String getName();
 	}
@@ -23,6 +23,7 @@ public interface INewsDto {
 	String getContent();
 	String getThumbnail();
 	Integer getViews();
+	User getCreator();
 	Set<Tag> getTags();
 	Faculty getFaculty();
 	StatusPost getStatus();

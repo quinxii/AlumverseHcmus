@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +19,9 @@ public interface NewsRepository  extends JpaRepository<NewsModel, String> {
 	Optional<NewsModel> findById(String id);
 	
 	Optional<INewsDto> findNewsById(String id);
+	
+	@Query("SELECT n FROM NewsModel n WHERE n.title like %:title%")
+	Page<INewsDto> searchNews(String title, Pageable pageable);
 	
 	@Query("SELECT COUNT(n) FROM NewsModel n JOIN n.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
