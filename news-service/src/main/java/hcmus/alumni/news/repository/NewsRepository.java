@@ -20,8 +20,11 @@ public interface NewsRepository  extends JpaRepository<NewsModel, String> {
 	
 	Optional<INewsDto> findNewsById(String id);
 	
-	@Query("SELECT n FROM NewsModel n WHERE n.title like %:title%")
+	@Query("SELECT n FROM NewsModel n JOIN n.status s WHERE s.id != 4 AND n.title like %:title%")
 	Page<INewsDto> searchNews(String title, Pageable pageable);
+	
+	@Query("SELECT n FROM NewsModel n JOIN n.status s WHERE s.id = :statusId AND n.title like %:title%")
+	Page<INewsDto> searchNewsByStatus(String title, Integer statusId, Pageable pageable);
 	
 	@Query("SELECT COUNT(n) FROM NewsModel n JOIN n.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
@@ -30,4 +33,9 @@ public interface NewsRepository  extends JpaRepository<NewsModel, String> {
 	
 	@Query("SELECT n from NewsModel n JOIN n.status s WHERE s.id = 1 AND n.publishedAt <= :now")
 	List<NewsModel> getScheduledNews(Date now);
+	
+	@Transactional
+	@Modifying
+	@Query("UPDATE NewsModel n SET n.views = n.views + 1 WHERE n.id = :id")
+	int viewsIncrement(String id);
 }

@@ -30,7 +30,6 @@ public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
 	private final String avatarPath = "images/users/avatar/";
-	private final String noneAvatar = "none";
 	private final String newsPath = "images/news/";
 	public static int saltLength = 16;
 
@@ -176,29 +175,6 @@ public class ImageUtils {
 
 		newDoc.outputSettings().indentAmount(0).prettyPrint(false);
 		return newDoc.body().html();
-	}
-
-	public static String hashImageName(String imageName) throws NoSuchAlgorithmException {
-		// Generate a random salt using a cryptographically secure random number
-		// generator
-		byte[] salt = new byte[saltLength]; // Adjust salt length as needed (16 bytes is common)
-		new SecureRandom().nextBytes(salt);
-
-		// Combine image name and salt for hashing
-		String dataToHash = imageName + Base64.getUrlEncoder().encodeToString(salt);
-
-		// Hash the combined data using a strong algorithm like SHA-256
-		MessageDigest digest = MessageDigest.getInstance("SHA-256");
-		digest.update(dataToHash.getBytes());
-
-		// Convert digest bytes to a hexadecimal string
-		StringBuilder hashedName = new StringBuilder();
-		for (byte b : digest.digest()) {
-			hashedName.append(String.format("%02x", b));
-		}
-
-		// Prepend the encoded salt to the hashed name for storage
-		return hashedName.toString();
 	}
 
 	public String[] extractContentTypeAndDataFromImageBase64(String base64) {

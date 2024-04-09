@@ -78,7 +78,8 @@ public class NewsServiceController {
 			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 		if (limit == 0 || limit > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
@@ -86,7 +87,12 @@ public class NewsServiceController {
 		
 		try {
 			Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<INewsDto> news = newsRepository.searchNews(title, pageable);
+			Page<INewsDto> news = null;
+			if (statusId.equals(0)) {
+				news = newsRepository.searchNews(title, pageable);
+			} else {
+				news = newsRepository.searchNewsByStatus(title, statusId, pageable);
+			}
 
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
@@ -108,6 +114,7 @@ public class NewsServiceController {
 		if (optionalNews.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
+		newsRepository.viewsIncrement(id);
 		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
 	}
 
@@ -158,7 +165,8 @@ public class NewsServiceController {
 			@RequestParam(value = "title", defaultValue = "") String title,
 			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
 			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
-			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId) {
+			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 		if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 		}
@@ -185,6 +193,10 @@ public class NewsServiceController {
 			}
 			if (!facultyId.equals(0)) {
 				news.setFaculty(new FacultyModel(facultyId));
+				isPut = true;
+			}
+			if (!statusId.equals(0)) {
+				news.setStatus(new StatusPostModel(statusId));
 				isPut = true;
 			}
 			if (isPut) {
@@ -232,20 +244,6 @@ public class NewsServiceController {
 			news.setContent(newContent);
 			newsRepository.save(news);
 		}
-		return ResponseEntity.status(HttpStatus.OK).body("");
-	}
-
-	@PreAuthorize("hasAnyAuthority('Admin')")
-	@PutMapping("/{id}/hide")
-	public ResponseEntity<String> hideNews(@PathVariable String id) {
-		// Find news
-		Optional<NewsModel> optionalNews = newsRepository.findById(id);
-		if (optionalNews.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-		}
-		NewsModel news = optionalNews.get();
-		news.setStatus(new StatusPostModel(3));
-		newsRepository.save(news);
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 }
