@@ -1,5 +1,6 @@
 package hcmus.alumni.news.dto;
 
+import java.util.Date;
 import java.util.Set;
 
 public interface INewsDto {
@@ -23,6 +24,8 @@ public interface INewsDto {
 	String getContent();
 	String getThumbnail();
 	Integer getViews();
+	Date getUpdateAt();
+	Date getPublishedAt();
 	User getCreator();
 	Set<Tag> getTags();
 	Faculty getFaculty();

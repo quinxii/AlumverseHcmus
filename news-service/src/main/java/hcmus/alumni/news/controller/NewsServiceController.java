@@ -1,12 +1,10 @@
 package hcmus.alumni.news.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,25 +30,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import hcmus.alumni.news.dto.INewsDto;
-import hcmus.alumni.news.dto.NewsDto;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
-import hcmus.alumni.news.model.TagModel;
 import hcmus.alumni.news.model.UserModel;
 import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Order;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Selection;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
@@ -92,13 +79,26 @@ public class NewsServiceController {
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
-		Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
-		Page<INewsDto> news = newsRepository.searchNews(title, pageable);
-
+		if (limit == 0 || limit > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
-		result.put("totalPages", news.getTotalPages());
-		result.put("news", news.getContent());
+		
+		try {
+			Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<INewsDto> news = newsRepository.searchNews(title, pageable);
 
+			result.put("totalPages", news.getTotalPages());
+			result.put("news", news.getContent());
+		} catch (IllegalArgumentException e) {
+			// TODO: handle exception
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+		
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
