@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-
 import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
@@ -74,19 +73,19 @@ public class NewsServiceController {
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getNews(
-			@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
-		if (limit == 0 || limit > 50) {
+		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
-		
+
 		try {
-			Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 			Page<INewsDto> news = null;
 			if (statusId.equals(0)) {
 				news = newsRepository.searchNews(title, pageable);
@@ -99,12 +98,11 @@ public class NewsServiceController {
 		} catch (IllegalArgumentException e) {
 			// TODO: handle exception
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			// TODO: handle exception
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
-		
+
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
@@ -122,6 +120,7 @@ public class NewsServiceController {
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
+			@RequestParam(value = "summary", required = false, defaultValue = "") String summary,
 			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
@@ -137,7 +136,7 @@ public class NewsServiceController {
 			// Save thumbnail image
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
 			// Save news to database
-			NewsModel news = new NewsModel(id, new UserModel(creator), title, "", thumbnailUrl);
+			NewsModel news = new NewsModel(id, new UserModel(creator), title, summary, "", thumbnailUrl);
 			// Lên lịch
 			if (scheduledTimeMili != null) {
 				news.setPublishedAt(new Date(scheduledTimeMili));
@@ -164,6 +163,7 @@ public class NewsServiceController {
 	public ResponseEntity<String> updateNews(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
 			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+			@RequestParam(value = "summary", required = false, defaultValue = "") String summary,
 			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
@@ -185,6 +185,10 @@ public class NewsServiceController {
 			}
 			if (!title.equals("")) {
 				news.setTitle(title);
+				isPut = true;
+			}
+			if (!summary.equals("")) {
+				news.setSummary(summary);
 				isPut = true;
 			}
 			if (tagsId != null) {

@@ -39,6 +39,9 @@ public class NewsModel implements Serializable {
 
 	@Column(name = "title", columnDefinition = "TINITEXT")
 	private String title;
+	
+	@Column(name = "summary", columnDefinition = "TEXT")
+	private String summary;
 
 	@Column(name = "content", columnDefinition = "TEXT")
 	private String content;
@@ -77,10 +80,11 @@ public class NewsModel implements Serializable {
 		status = new StatusPostModel(2);
 	}
 
-	public NewsModel(String id, UserModel creator, String title, String content, String thumbnail) {
+	public NewsModel(String id, UserModel creator, String title, String summary, String content, String thumbnail) {
 		this.id = id;
 		this.creator = creator;
 		this.title = title;
+		this.summary = summary;
 		this.content = content;
 		this.thumbnail = thumbnail;
 		this.status = new StatusPostModel(2);

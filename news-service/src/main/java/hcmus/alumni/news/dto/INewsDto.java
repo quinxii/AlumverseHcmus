@@ -21,6 +21,7 @@ public interface INewsDto {
 	
 	String getId();
 	String getTitle();
+	String getSummary();
 	String getContent();
 	String getThumbnail();
 	Integer getViews();
