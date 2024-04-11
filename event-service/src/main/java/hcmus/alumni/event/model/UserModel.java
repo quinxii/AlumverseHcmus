@@ -12,9 +12,6 @@ import jakarta.persistence.ManyToMany;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import hcmus.alumni.event.model.FacultyModel;
-import hcmus.alumni.event.model.RoleModel;
-import hcmus.alumni.event.model.SexModel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -46,14 +43,6 @@ public class UserModel implements Serializable {
 
     @Column(name = "pass", length = 60, nullable = false)
     private String pass;
-    
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-            )
-    private Set<RoleModel> roles = new HashSet<>();
 
     @Column(name = "full_name", length = 100)
     private String fullName;
@@ -61,9 +50,8 @@ public class UserModel implements Serializable {
     @Column(name = "phone", length = 15)
     private String phone;
 
-	@OneToOne
-    @JoinColumn(name = "sex_id") // Foreign key constraint
-	private SexModel sex;
+	@Column(name = "sex_id")
+	private Integer sex;
 
     @Column(name = "dob")
     private Date dob;
@@ -71,9 +59,8 @@ public class UserModel implements Serializable {
     @Column(name = "social_media_link", columnDefinition = "TINYTEXT")
     private String socialMediaLink;
     
-	@OneToOne
-    @JoinColumn(name = "faculty_id") // Foreign key constraint
-	private FacultyModel faculty;
+	@Column(name = "faculty_id")
+	private Integer faculty;
     
     @Column(name = "degree", length = 50)
     private String degree;

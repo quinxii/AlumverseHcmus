@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -147,7 +149,6 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-
     // Endpoint to get a specific event by ID
     @GetMapping("/{eventId}")
     public ResponseEntity<EventModel> getEventById(@PathVariable String eventId) {
@@ -158,22 +159,16 @@ public class EventServiceController {
     }
     
     @PostMapping("/")
-    public ResponseEntity<EventModel> addEvent(@RequestParam String creatorId,
+    public ResponseEntity<EventModel> addEvent(@RequestHeader("userId") String creatorId,
                                                @RequestParam String title,
                                                @RequestParam String content,
                                                @RequestParam MultipartFile thumbnail,
                                                @RequestParam String organizationLocation,
-                                               @RequestParam String organizationTime,
-                                               @RequestParam String publishedAt,
+                                               @RequestParam Date organizationTime,
+                                               @RequestParam Date publishedAt,
                                                @RequestParam String status) {
         try {
             UserModel creator = userRepository.findById(creatorId).orElse(null);
-            if (creator == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-            }
-
-            Date orgTime = parseDateString(organizationTime);
-            Date pubAt = parseDateString(publishedAt);
 
             Integer statusId;
             // Compare status string to retrieve the corresponding StatusPost entity ID
@@ -195,37 +190,40 @@ public class EventServiceController {
             }
 
             Optional<StatusPost> statusPostOptional = statusPostRepository.findById(statusId);
+            StatusPost statusPost = statusPostOptional.get();
+            
+            // Generate a new UUID as the event id
+            String eventId = UUID.randomUUID().toString();
 
-            // Check if StatusPost with the given ID exists
-            if (statusPostOptional.isPresent()) {
-                StatusPost statusPost = statusPostOptional.get();
-                // Create the EventModel object
-                EventModel newEvent = new EventModel();
-                newEvent.setCreator(creator);
-                newEvent.setTitle(title);
-                newEvent.setContent(content);
-                // Save the thumbnail
-                try {
-                    String imageName = ImageUtils.hashImageName(creatorId);
-                    String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), thumbnail, imageName);
-                    newEvent.setThumbnail(thumbnailUrl);
-                } catch (IOException | NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-                }
-                newEvent.setOrganizationLocation(organizationLocation);
-                newEvent.setOrganizationTime(orgTime);
-                newEvent.setPublishedAt(pubAt);
-                newEvent.setStatusId(statusPost);
-                newEvent.setViews(0);
+            // Create the EventModel object
+            EventModel newEvent = new EventModel();
+            newEvent.setId(eventId);
+            newEvent.setCreator(creator);
+            newEvent.setTitle(title);
+            newEvent.setContent(content);
+            
+            // Generate a new UUID as the image name for the thumbnail URL
+            String imageName = UUID.randomUUID().toString();
 
-                // Save the new event
-                EventModel savedEvent = eventRepository.save(newEvent);
-
-                return ResponseEntity.status(HttpStatus.CREATED).body(savedEvent);
-            } else {
-                return ResponseEntity.badRequest().build();
+            // Save the thumbnail
+            try {
+                String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(imageName), thumbnail);
+                newEvent.setThumbnail(thumbnailUrl);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
+            newEvent.setOrganizationLocation(organizationLocation);
+            newEvent.setOrganizationTime(organizationTime);
+            newEvent.setPublishedAt(publishedAt);
+            newEvent.setStatusId(statusPost);
+            newEvent.setViews(0);
+
+            // Save the new event
+            EventModel savedEvent = eventRepository.save(newEvent);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedEvent);
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -238,10 +236,9 @@ public class EventServiceController {
                                                   @RequestParam(required = false) String content,
                                                   @RequestParam(required = false) MultipartFile thumbnail,
                                                   @RequestParam(required = false) String organizationLocation,
-                                                  @RequestParam(required = false) String organizationTime,
-                                                  @RequestParam(required = false) String publishedAt,
-                                                  @RequestParam(required = false) String status,
-                                                  @RequestParam(required = false) Integer views) {
+                                                  @RequestParam(required = false) Date organizationTime,
+                                                  @RequestParam(required = false) Date publishedAt,
+                                                  @RequestParam(required = false) String status) {
         Optional<EventModel> eventOptional = eventRepository.findById(eventId);
 
         if (eventOptional.isPresent()) {
@@ -255,10 +252,9 @@ public class EventServiceController {
             // Update thumbnail if provided
             if (thumbnail != null) {
                 try {
-                    String imageName = ImageUtils.hashImageName(eventId);
-                    String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), thumbnail, imageName);
+                    String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(eventId), thumbnail);
                     existingEvent.setThumbnail(thumbnailUrl);
-                } catch (IOException | NoSuchAlgorithmException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
                 }
@@ -266,17 +262,9 @@ public class EventServiceController {
             if (organizationLocation != null)
                 existingEvent.setOrganizationLocation(organizationLocation);
             if (organizationTime != null)
-                try {
-                    existingEvent.setOrganizationTime(parseDateString(organizationTime));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+            	existingEvent.setOrganizationTime(organizationTime);
             if (publishedAt != null)
-                try {
-                    existingEvent.setPublishedAt(parseDateString(publishedAt));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+            	existingEvent.setPublishedAt(publishedAt);
             if (status != null) {
                 Integer statusId;
 
@@ -299,14 +287,8 @@ public class EventServiceController {
                 }
 
                 Optional<StatusPost> statusPostOptional = statusPostRepository.findById(statusId);
-                if (statusPostOptional.isPresent()) {
-                    existingEvent.setStatusId(statusPostOptional.get());
-                } else {
-                    return ResponseEntity.badRequest().build();
-                }
+                existingEvent.setStatusId(statusPostOptional.get());
             }
-            if (views != null)
-                existingEvent.setViews(views);
 
             try {
                 EventModel savedEvent = eventRepository.save(existingEvent);
@@ -317,10 +299,5 @@ public class EventServiceController {
         } else {
             return ResponseEntity.notFound().build();
         }
-    }
-    
-    private Date parseDateString(String dateString) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        return dateFormat.parse(dateString);
     }
 }
