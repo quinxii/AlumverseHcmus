@@ -13,8 +13,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.event.dto.IEventDto;
 import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPost;
 import hcmus.alumni.event.model.UserModel;
@@ -60,113 +67,60 @@ public class EventServiceController {
     private ImageUtils imageUtils;
 	
 	@GetMapping("/")
-	public ResponseEntity<HashMap<String, Object>> searchEvent(
-	        @RequestParam String status,
-	        @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-	        @RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
-	        @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
-	        @RequestParam(value = "createAtOrder", required = false, defaultValue = "desc") String createAtOrder,
-	        @RequestParam(value = "organizationTimeOrder", required = false, defaultValue = "") String organizationTimeOrder,
-	        @RequestParam(value = "viewsOrder", required = false, defaultValue = "") String viewsOrder) {
-
-	    // Initialize CriteriaBuilder
-	    CriteriaBuilder cb = em.getCriteriaBuilder();
-
-	    // Create CriteriaQuery for the DTO class
-	    CriteriaQuery<EventModel> cq = cb.createQuery(EventModel.class);
-
-	    // Create Root entity
-	    Root<EventModel> root = cq.from(EventModel.class);
-
-	    // Select
-	    Selection<String> idSelection = root.get("id");
-	    Selection<String> creatorSelection = root.get("creator");
-	    Selection<String> titleSelection = root.get("title");
-	    Selection<String> contentSelection = root.get("content");
-	    Selection<String> thumbnailSelection = root.get("thumbnail");
-	    Selection<String> organizationLocationSelection = root.get("organizationLocation");
-	    Selection<Date> organizationTimeSelection = root.get("organizationTime");
-	    Selection<Date> createAtSelection = root.get("createAt");
-	    Selection<Date> updateAtSelection = root.get("updateAt");
-	    Selection<Date> publishedAtSelection = root.get("publishedAt");
-	    Selection<StatusPost> statusIdSelection = root.get("statusId");
-	    Selection<Integer> viewsSelection = root.get("views");
-	    cq.multiselect(idSelection, creatorSelection, titleSelection, contentSelection, thumbnailSelection,
-	            organizationLocationSelection, organizationTimeSelection, createAtSelection, updateAtSelection,
-	            publishedAtSelection, statusIdSelection, viewsSelection);
-
-	    // Where
-	    Predicate statusPredicate;
-	    switch (status) {
-	        case "Chờ":
-	            statusPredicate = cb.equal(root.get("statusId").get("id"), 1); // Assuming 1 represents pending status
-	            break;
-	        case "Bình thường":
-	            statusPredicate = cb.equal(root.get("statusId").get("id"), 2); 
-	            break;
-	        case "Ẩn":
-	            statusPredicate = cb.equal(root.get("statusId").get("id"), 3); 
-	            break;
-	        case "Xoá":
-	            statusPredicate = cb.equal(root.get("statusId").get("id"), 4); 
-	            break;
-	        default:
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	public ResponseEntity<HashMap<String, Object>> getEvents(
+	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+	        @RequestParam(value = "title", required = false, defaultValue = "") String title,
+	        @RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
+	    if (pageSize == 0 || pageSize > 50) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
-
-	    Predicate criteriaPredicate;
-	    criteriaPredicate = cb.like(root.get("title"), "%" + keyword + "%");
-
-	    cq.where(statusPredicate, criteriaPredicate);
-
-	    // Order by
-	    List<Order> orderList = new ArrayList<>();
-	    if (createAtOrder.equals("asc")) {
-	        orderList.add(cb.asc(root.get("createAt")));
-	    } else if (createAtOrder.equals("desc")) {
-	        orderList.add(cb.desc(root.get("createAt")));
-	    }
-	    if (organizationTimeOrder.equals("asc")) {
-	        orderList.add(cb.asc(root.get("organizationTime")));
-	    } else if (organizationTimeOrder.equals("desc")) {
-	        orderList.add(cb.desc(root.get("organizationTime")));
-	    }
-	    if (viewsOrder.equals("asc")) {
-	        orderList.add(cb.asc(root.get("views")));
-	    } else if (viewsOrder.equals("desc")) {
-	        orderList.add(cb.desc(root.get("views")));
-	    }
-	    cq.orderBy(orderList);
-
-	    // Create HashMap for result
 	    HashMap<String, Object> result = new HashMap<>();
-	    TypedQuery<EventModel> typedQuery = em.createQuery(cq);
-	    typedQuery.setFirstResult(offset);
-	    typedQuery.setMaxResults(limit);
-	    result.put("itemNumber", typedQuery.getResultList().size());
-	    result.put("items", typedQuery.getResultList());
+
+	    try {
+	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+	        Page<IEventDto> events = null;
+	        if (statusId.equals(0)) {
+	            events = eventRepository.searchEvents(title, pageable);
+	        } else {
+	            events = eventRepository.searchEventsByStatus(title, statusId, pageable);
+	        }
+
+	        result.put("totalPages", events.getTotalPages());
+	        result.put("events", events.getContent());
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+	    }
 
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-    // Endpoint to get a specific event by ID
-    @GetMapping("/{eventId}")
-    public ResponseEntity<EventModel> getEventById(@PathVariable String eventId) {
-        Optional<EventModel> eventOptional = eventRepository.findById(eventId);
-        
-        return eventOptional.map(ResponseEntity::ok)
-                            .orElse(ResponseEntity.notFound().build());
-    }
+	@GetMapping("/{id}")
+	public ResponseEntity<IEventDto> getEventById(@PathVariable String id) {
+	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
+	    if (optionalEvent.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+	    }
+	    eventRepository.incrementEventViews(id);
+	    return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
+	}
     
+	//@PreAuthorize("hasAnyAuthority('Admin')")
     @PostMapping("/")
     public ResponseEntity<EventModel> addEvent(@RequestHeader("userId") String creatorId,
-                                               @RequestParam String title,
-                                               @RequestParam String content,
-                                               @RequestParam MultipartFile thumbnail,
-                                               @RequestParam String organizationLocation,
-                                               @RequestParam Date organizationTime,
-                                               @RequestParam Date publishedAt,
-                                               @RequestParam String status) {
+                                               @RequestParam(required = false, defaultValue = "") String title,
+                                               @RequestParam(required = false, defaultValue = "") String content,
+                                               @RequestParam(required = false) MultipartFile thumbnail,
+                                               @RequestParam(required = false, defaultValue = "") String organizationLocation,
+                                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
+                                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date publishedAt,
+                                               @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+                                   			   @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+                                               @RequestParam(required = false, defaultValue = "0") String status) {
         try {
             UserModel creator = userRepository.findById(creatorId).orElse(null);
 
@@ -202,12 +156,9 @@ public class EventServiceController {
             newEvent.setTitle(title);
             newEvent.setContent(content);
             
-            // Generate a new UUID as the image name for the thumbnail URL
-            String imageName = UUID.randomUUID().toString();
-
             // Save the thumbnail
             try {
-                String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(imageName), thumbnail);
+                String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(eventId), thumbnail);
                 newEvent.setThumbnail(thumbnailUrl);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -216,7 +167,7 @@ public class EventServiceController {
             newEvent.setOrganizationLocation(organizationLocation);
             newEvent.setOrganizationTime(organizationTime);
             newEvent.setPublishedAt(publishedAt);
-            newEvent.setStatusId(statusPost);
+            newEvent.setStatus(statusPost);
             newEvent.setViews(0);
 
             // Save the new event
@@ -230,14 +181,17 @@ public class EventServiceController {
         }
     }
 
+	//@PreAuthorize("hasAnyAuthority('Admin')")
     @PutMapping("/{eventId}")
     public ResponseEntity<EventModel> updateEvent(@PathVariable String eventId,
                                                   @RequestParam(required = false) String title,
                                                   @RequestParam(required = false) String content,
                                                   @RequestParam(required = false) MultipartFile thumbnail,
                                                   @RequestParam(required = false) String organizationLocation,
-                                                  @RequestParam(required = false) Date organizationTime,
-                                                  @RequestParam(required = false) Date publishedAt,
+                                                  @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
+                                                  @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date publishedAt,
+                                                  @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+                                      			  @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
                                                   @RequestParam(required = false) String status) {
         Optional<EventModel> eventOptional = eventRepository.findById(eventId);
 
@@ -287,7 +241,7 @@ public class EventServiceController {
                 }
 
                 Optional<StatusPost> statusPostOptional = statusPostRepository.findById(statusId);
-                existingEvent.setStatusId(statusPostOptional.get());
+                existingEvent.setStatus(statusPostOptional.get());
             }
 
             try {

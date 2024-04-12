@@ -2,7 +2,9 @@ package hcmus.alumni.event.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
@@ -11,10 +13,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 import hcmus.alumni.event.repository.StatusPostRepository;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -53,6 +57,18 @@ public class EventModel implements Serializable {
 
     @Column(name = "organization_time")
     private Date organizationTime;
+    
+    @OneToOne
+	@JoinColumn(name = "faculty_id")
+	private FacultyModel faculty;
+    
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "tag_event",
+        joinColumns = @JoinColumn(name = "event_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<TagModel> tags = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "create_at")
@@ -67,7 +83,7 @@ public class EventModel implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "status_id")
-    private StatusPost statusId;
+    private StatusPost status;
 
     @Column(name = "views", nullable = false)
     private Integer views = 0;
