@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
@@ -12,11 +13,13 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	PreAuthenticatedUserRoleHeaderFilter authFilter;
+	@Autowired
+	CustomAccessDeniedHandler accessDeniedHandler;
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http.antMatcher("/**").csrf().disable().addFilterBefore(authFilter, BasicAuthenticationFilter.class)
-				.authorizeRequests().anyRequest().authenticated();
+				.authorizeRequests().antMatchers("/error").permitAll().anyRequest().authenticated().and()
+				.exceptionHandling().accessDeniedHandler(accessDeniedHandler);
 	}
-
 }
