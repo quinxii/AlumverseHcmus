@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class StatusPost implements Serializable {
+public class StatusPostModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -32,5 +32,9 @@ public class StatusPost implements Serializable {
 	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
     private Boolean isDelete = false;
+	
+	public StatusPostModel(Integer id) {
+		this.id = id;
+	}
 }
 

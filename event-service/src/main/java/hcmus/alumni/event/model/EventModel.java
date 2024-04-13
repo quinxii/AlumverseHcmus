@@ -10,7 +10,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import hcmus.alumni.event.repository.StatusPostRepository;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -83,8 +82,16 @@ public class EventModel implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "status_id")
-    private StatusPost status;
+    private StatusPostModel status;
 
     @Column(name = "views", nullable = false)
     private Integer views = 0;
+    
+    public void setTags(Integer[] tags) {
+		Set<TagModel> newTags = new HashSet<>();
+		for (Integer tag : tags) {
+			newTags.add(new TagModel(tag));
+		}
+		this.tags = newTags;
+	}
 }
