@@ -29,7 +29,6 @@ public class CustomUserDetails implements UserDetails {
         for (String role : roles) {
             authorities.add(new SimpleGrantedAuthority(role));
         }
-        System.out.println(authorities.toString());
          
         return authorities;
     }
