@@ -3,7 +3,6 @@ package hcmus.alumni.userservice.controller;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -24,13 +22,9 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.query.QueryUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,7 +37,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import hcmus.alumni.userservice.dto.IVerifyAlumniDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.RoleModel;
@@ -69,6 +62,7 @@ public class UserServiceController {
 	@Autowired
 	private ImageUtils imageUtils;
 
+    @PreAuthorize("hasAnyAuthority('Admin')")
 	@GetMapping("/alumni-verification/count")
 	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam String status) {
 		switch (status) {
@@ -89,6 +83,7 @@ public class UserServiceController {
 		}
 	}
 
+    @PreAuthorize("hasAnyAuthority('Admin')")
 	@GetMapping("/alumni-verification")
 	public ResponseEntity<HashMap<String, Object>> searchAlumniVerification(@RequestParam String status,
 			@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
@@ -149,7 +144,7 @@ public class UserServiceController {
 		if (criteria.equals("email") || criteria.equals("fullName")) {
 			criteriaPredicate = cb.like(userJoin.get(criteria), "%" + keyword + "%");
 		} else if (criteria.equals("studentId") || criteria.equals("beginningYear")) {
-			criteriaPredicate = cb.like(root.get(criteria), "%" + keyword + "%");
+			criteriaPredicate = cb.like(root.get(criteria).as(String.class), "%" + keyword + "%");
 		} else {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
@@ -194,6 +189,7 @@ public class UserServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+    @PreAuthorize("hasAnyAuthority('Admin')")
 	@GetMapping("/alumni-verification/{user_id}")
 	public ResponseEntity<Map<String, Object>> getAlumniVerificationByUserId(@PathVariable String user_id) {
 		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
@@ -223,6 +219,7 @@ public class UserServiceController {
 		return ResponseEntity.ok(response);
 	}
 
+    @PreAuthorize("hasAnyAuthority('Khách, Cựu sinh viên')")
 	@PostMapping("/alumni-verification")
 	public ResponseEntity<String> createAlumniVerification(@RequestHeader("userId") String userId,
 			@RequestParam(value = "avatar", required = false) MultipartFile avatar,
@@ -235,8 +232,9 @@ public class UserServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 		}
 		
-		UserModel user = new UserModel();
-		user.setId(userId);
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		UserModel user = optionalUser.get();
+		user.setSocialMediaLink(socialMediaLink);
 		FacultyModel faculty = new FacultyModel();
 		if (beginningYear.equals(0)) {
 			beginningYear = null;
@@ -245,6 +243,7 @@ public class UserServiceController {
 			faculty = null;
 		} else {
 			faculty.setId(facultyId);
+			user.setFaculty(new FacultyModel(facultyId));
 		}
 		VerifyAlumniModel verifyAlumni = new VerifyAlumniModel(user, studentId, beginningYear, socialMediaLink, faculty);
 
@@ -321,6 +320,7 @@ public class UserServiceController {
 //		}
 //	}
 
+    @PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/alumni-verification/{id}/verify")
 	public ResponseEntity<String> updateAlumniVerificationStatus(@PathVariable String id,
 			@RequestBody Map<String, Object> requestBody) {

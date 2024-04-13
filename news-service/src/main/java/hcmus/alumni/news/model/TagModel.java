@@ -1,26 +1,29 @@
-package hcmus.alumni.userservice.model;
+package hcmus.alumni.news.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "[faculty]")
+@Table(name = "[tag]")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class FacultyModel {
+public class TagModel implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id", nullable = false, columnDefinition = "TINYINT")
@@ -31,18 +34,19 @@ public class FacultyModel {
 
 	@Column(name = "description", columnDefinition = "TINYTEXT")
 	private String description;
-
+	
 	@CreationTimestamp
 	@Column(name = "create_at")
 	private Date createAt;
 
+	@UpdateTimestamp
 	@Column(name = "update_at")
 	private Date updateAt;
 
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
-	private Boolean isDelete;
-
-	public FacultyModel(Integer id) {
+	private Boolean isDelete = false;
+	
+	public TagModel(Integer id) {
 		this.id = id;
 	}
 }
