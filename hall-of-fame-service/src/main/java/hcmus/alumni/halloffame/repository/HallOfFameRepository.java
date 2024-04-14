@@ -33,6 +33,9 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
 	@Query("SELECT COUNT(n) FROM HallOfFameModel n JOIN n.status s WHERE s.id != 4")
 	Long getCountByNotDelete();
 
+	@Query("SELECT n.id FROM UserModel n WHERE n.email = :emailOfUser")
+	String getUserIdByEmail(@Param("emailOfUser") String emailOfUser);
+	
 	@Transactional
 	@Modifying
 	@Query("UPDATE HallOfFameModel n SET n.views = n.views + 1 WHERE n.id = :id")
