@@ -1,5 +1,7 @@
 package hcmus.alumni.userservice.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -10,7 +12,8 @@ import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 
 public interface UserRepository extends JpaRepository<UserModel, String> {
-
+	Optional<UserModel> findById(String id);
+	
 	UserModel findByEmailAndPass(String email, String pass);
 
 	UserModel findByEmail(String email);
