@@ -32,7 +32,8 @@ public class HallOfFameModel implements Serializable {
     @Column(name = "id", length = 36, nullable = false)
     private String id;
     
-    @Column(name = "creator", length = 36, nullable = false)
+    @OneToOne
+    @JoinColumn(name = "creator")
     private UserModel creator;
 
     @Column(name = "title", columnDefinition = "TINYTEXT")
@@ -41,6 +42,9 @@ public class HallOfFameModel implements Serializable {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
+    
     @Column(name = "thumbnail", columnDefinition = "TINYTEXT")
     private String thumbnail;
 
