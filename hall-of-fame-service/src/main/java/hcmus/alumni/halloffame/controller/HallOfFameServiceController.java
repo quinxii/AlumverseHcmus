@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.halloffame.dto.HallOfFameDto;
 import hcmus.alumni.halloffame.dto.IHallOfFameDto;
+import hcmus.alumni.halloffame.model.FacultyModel;
 import hcmus.alumni.halloffame.model.HallOfFameModel;
 import hcmus.alumni.halloffame.model.StatusPostModel;
 import hcmus.alumni.halloffame.model.UserModel;
@@ -70,7 +71,7 @@ public class HallOfFameServiceController {
 	public ResponseEntity<HashMap<String, Object>> getHof(
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-			@RequestParam(value = "title", required = false, defaultValue = "") String title,
+			@RequestParam(value = "title", required = false, defaultValue = "Sample Title") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
@@ -94,8 +95,9 @@ public class HallOfFameServiceController {
 			// TODO: handle exception
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		} catch (Exception e) {
+			result.put("error", e);
 			// TODO: handle exception
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -150,90 +152,91 @@ public class HallOfFameServiceController {
 //		return ResponseEntity.status(HttpStatus.OK).body(result);
 //	}
 //
-//	@PreAuthorize("hasAnyAuthority('Admin')")
-//	@PostMapping("")
-//	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
-//	        @RequestParam(value = "title") String title, @RequestParam(value = "content") String content,
-//	        @RequestParam(value = "thumbnail") MultipartFile thumbnail,
-//	        @RequestParam(value = "faculty") String faculty,
-//	        @RequestParam(value = "beginningYear") Integer beginningYear) {
-//	    if (creator.isEmpty() || title.isEmpty() || content.isEmpty() || thumbnail.isEmpty()) {
-//	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
-//	    }
-//	    if (thumbnail.getSize() > 5 * 1024 * 1024) {
-//	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
-//	    }
-//	    String id = UUID.randomUUID().toString();
+	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PostMapping("")
+	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
+	        @RequestParam(value = "title") String title, @RequestParam(value = "content") String content,
+	        @RequestParam(value = "thumbnail") MultipartFile thumbnail,
+	        @RequestParam(value = "faculty") Integer faculty,
+	        @RequestParam(value = "beginningYear") Integer beginningYear) {
+	    if (creator.isEmpty() || title.isEmpty() || content.isEmpty() || thumbnail.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
+	    }
+	    if (thumbnail.getSize() > 5 * 1024 * 1024) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+	    }
+	    String id = UUID.randomUUID().toString();
+
+	    // Check if the user is trying to upload more than one image for the thumbnail
+	    if (thumbnail.getSize() > 1) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only one image is allowed for the thumbnail");
+	    }
+
+	    try {
+	        // Save thumbnail image
+	        String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
+	        // Save hall of fame to database
+	        HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, "", thumbnailUrl, new FacultyModel(faculty), beginningYear);
+	        halloffameRepository.save(halloffame);
+	    } catch (IOException e) {
+	        System.err.println(e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save thumbnail");
+	    }
+	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
+	}
 //
-//	    // Check if the user is trying to upload more than one image for the thumbnail
-//	    if (thumbnail.getSize() > 1) {
-//	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only one image is allowed for the thumbnail");
-//	    }
 //
-//	    try {
-//	        // Save thumbnail image
-//	        String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
-//	        // Save hall of fame to database
-//	        HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, "", thumbnailUrl, faculty, beginningYear);
-//	        halloffameRepository.save(halloffame);
-//	    } catch (IOException e) {
-//	        System.err.println(e);
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save thumbnail");
-//	    }
-//	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
-//	}
-//
-//
-//	@PreAuthorize("hasAnyAuthority('Admin')")
-//	@PutMapping("/{id}")
-//	public ResponseEntity<String> updateHallOfFame(@PathVariable String id,
-//	        @RequestParam(value = "title", defaultValue = "") String title,
-//	        @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
-//	        @RequestParam(value = "faculty", defaultValue = "") String faculty,
-//	        @RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
-//
-//	    try {
-//	        // Find hall of fame
-//	        Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
-//	        if (optionalHallOfFame.isEmpty()) {
-//	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-//	        }
-//	        HallOfFameModel halloffame = optionalHallOfFame.get();
-//
-//	        // Update fields if provided
-//	        if (!title.equals("")) {
-//	            halloffame.setTitle(title);
-//	        }
-//	        if (thumbnail != null && !thumbnail.isEmpty()) {
-//	            // Check if thumbnail size exceeds the limit
-//	            if (thumbnail.getSize() > 5 * 1024 * 1024) {
-//	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
-//	            }
-//	            // Check if the user is trying to upload more than one image for the thumbnail
-//	            if (halloffame.getThumbnail() != null) {
-//	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only one image is allowed for the thumbnail");
-//	            }
-//	            // Save new thumbnail
-//	            String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
-//	            halloffame.setThumbnail(thumbnailUrl);
-//	        }
-//	        if (!faculty.equals("")) {
-//	            halloffame.setFaculty(faculty);
-//	        }
-//	        if (beginningYear != null) {
-//	            halloffame.setBeginningYear(beginningYear);
-//	        }
-//
-//	        // Save hall of fame
-//	        halloffameRepository.save(halloffame);
-//
-//	    } catch (IOException e) {
-//	        System.err.println(e);
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update hall of fame");
-//	    }
-//
-//	    return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
-//	}
+	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PutMapping("/{id}")
+	public ResponseEntity<String> updateHallOfFame(@PathVariable String id,
+	        @RequestParam(value = "title", defaultValue = "") String title,
+	        @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+	        @RequestParam(value = "faculty", defaultValue = "") Integer faculty,
+	        @RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+		
+	    try {
+	        // Find hall of fame
+	        Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
+	        if (optionalHallOfFame.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+	        }
+	        HallOfFameModel halloffame = optionalHallOfFame.get();
+
+	        // Update fields if provided
+	        if (!title.equals("")) {
+	            halloffame.setTitle(title);
+	        }
+	        if (thumbnail != null && !thumbnail.isEmpty()) {
+	            // Check if thumbnail size exceeds the limit
+	            if (thumbnail.getSize() > 5 * 1024 * 1024) {
+	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+	            }
+	            
+	            // Check if the user is trying to upload more than one image for the thumbnail
+	            if (halloffame.getThumbnail() == null) {
+	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only one image is allowed for the thumbnail");
+	            }
+	            // Save new thumbnail
+	            String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
+	            halloffame.setThumbnail(thumbnailUrl);
+	        }
+	        if (!faculty.equals("")) {
+	            halloffame.setFaculty(new FacultyModel(faculty));
+	        }
+	        if (beginningYear != null) {
+	            halloffame.setBeginningYear(beginningYear);
+	        }
+
+	        // Save hall of fame
+	        halloffameRepository.save(halloffame);
+
+	    } catch (IOException e) {
+	        System.err.println(e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update hall of fame");
+	    }
+
+	    return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
+	}
 //	
 //	@PreAuthorize("hasAnyAuthority('Admin')")
 //	@PutMapping("/{id}/content")
