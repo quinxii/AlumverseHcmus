@@ -34,4 +34,3 @@ public class StatusUserGroupModel implements Serializable {
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
     private Boolean isDelete;
 }
-
