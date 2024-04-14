@@ -43,7 +43,7 @@ import jakarta.persistence.criteria.Selection;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
-@RequestMapping("/hall-of-fame")
+@RequestMapping("/hof")
 public class HallOfFameServiceController {
 	@PersistenceContext
 	private EntityManager em;
