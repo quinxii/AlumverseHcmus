@@ -51,24 +51,24 @@ public class NewsServiceController {
 	@Autowired
 	private ImageUtils imageUtils;
 
-	@GetMapping("/test")
-	public List<INewsDto> test(@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
-			@RequestParam(value = "title", required = false, defaultValue = "") String title,
-			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
-		Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
-		Page<INewsDto> news = newsRepository.searchNews(title, pageable);
-		return news.getContent();
-	}
+	// @GetMapping("/test")
+	// public List<INewsDto> test(@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
+	// 		@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
+	// 		@RequestParam(value = "title", required = false, defaultValue = "") String title,
+	// 		@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+	// 		@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
+	// 	Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
+	// 	Page<INewsDto> news = newsRepository.searchNews(title, pageable);
+	// 	return news.getContent();
+	// }
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> getPendingAlumniVerificationCount(
-			@RequestParam(value = "status", defaultValue = "") String status) {
-		if (status.equals("")) {
+	public ResponseEntity<Long> Count(
+			@RequestParam(value = "statusId", defaultValue = "0") Integer statusId) {
+		if (statusId.equals(0)) {
 			return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByNotDelete());
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatus(status));
+		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatus(statusId));
 	}
 
 	@GetMapping("")

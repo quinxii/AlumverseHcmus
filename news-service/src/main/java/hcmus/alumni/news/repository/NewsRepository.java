@@ -32,8 +32,8 @@ public interface NewsRepository  extends JpaRepository<NewsModel, String> {
 	@Query("SELECT n FROM NewsModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate AND n.publishedAt <= :endDate")
 	Page<INewsDto> getHotNews(Date startDate, Date endDate, Pageable pageable);
 	
-	@Query("SELECT COUNT(n) FROM NewsModel n JOIN n.status s WHERE s.name = :statusName")
-	Long getCountByStatus(@Param("statusName") String statusName);
+	@Query("SELECT COUNT(n) FROM NewsModel n JOIN n.status s WHERE s.id = :statusId")
+	Long getCountByStatus(@Param("statusName") Integer statusId);
 	@Query("SELECT COUNT(n) FROM NewsModel n JOIN n.status s WHERE s.id != 4")
 	Long getCountByNotDelete();
 	
