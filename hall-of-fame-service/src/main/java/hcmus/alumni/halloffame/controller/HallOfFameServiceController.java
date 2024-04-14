@@ -132,7 +132,7 @@ public class HallOfFameServiceController {
 
 	    try {
 	        // Save thumbnail image
-	        String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHallOfFamePath(id), thumbnail, "thumbnail");
+	        String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 	        // Save hall of fame to database
 	        HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, "", thumbnailUrl, faculty, beginningYear);
 	        halloffameRepository.save(halloffame);
@@ -174,7 +174,7 @@ public class HallOfFameServiceController {
 	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only one image is allowed for the thumbnail");
 	            }
 	            // Save new thumbnail
-	            String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHallOfFamePath(id), thumbnail, "thumbnail");
+	            String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 	            halloffame.setThumbnail(thumbnailUrl);
 	        }
 	        if (!faculty.equals("")) {
