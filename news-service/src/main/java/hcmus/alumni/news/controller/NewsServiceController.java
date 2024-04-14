@@ -63,7 +63,7 @@ public class NewsServiceController {
 	// }
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> Count(
+	public ResponseEntity<Long> getNewsCount(
 			@RequestParam(value = "statusId", defaultValue = "0") Integer statusId) {
 		if (statusId.equals(0)) {
 			return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByNotDelete());
