@@ -8,6 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.halloffame.dto.HallOfFameDto;
+import hcmus.alumni.halloffame.dto.IHallOfFameDto;
 import hcmus.alumni.halloffame.model.HallOfFameModel;
 import hcmus.alumni.halloffame.model.StatusPostModel;
 import hcmus.alumni.halloffame.model.UserModel;
@@ -56,9 +60,44 @@ public class HallOfFameServiceController {
 	@GetMapping("/count")
 	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam(value = "status") String status) {
 		if (status.equals("")) {
-			ResponseEntity.status(HttpStatus.OK).body(0);
+			ResponseEntity.status(HttpStatus.OK).body(0L);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(halloffameRepository.getCountByStatus(status));
+	}
+	
+	@GetMapping("")
+	public ResponseEntity<HashMap<String, Object>> getNews(
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "title", required = false, defaultValue = "") String title,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IHallOfFameDto> news = null;
+			if (statusId.equals(0)) {
+				news = halloffameRepository.searchNews(title, pageable);
+			} else {
+				news = halloffameRepository.searchNewsByStatus(title, statusId, pageable);
+			}
+
+			result.put("totalPages", news.getTotalPages());
+			result.put("news", news.getContent());
+		} catch (IllegalArgumentException e) {
+			// TODO: handle exception
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			// TODO: handle exception
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
 	@GetMapping("")
