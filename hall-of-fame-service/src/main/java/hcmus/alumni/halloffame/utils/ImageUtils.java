@@ -1,15 +1,9 @@
 package hcmus.alumni.halloffame.utils;
 
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -30,9 +24,8 @@ public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
 	private final String avatarPath = "images/users/avatar/";
-	private final String noneAvatar = "none";
 	private final String newsPath = "images/news/";
-	private final String halloffamePath = "images/hof/";
+	private final String hofPath = "images/hof/";
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
@@ -179,29 +172,6 @@ public class ImageUtils {
 		return newDoc.body().html();
 	}
 
-	public static String hashImageName(String imageName) throws NoSuchAlgorithmException {
-		// Generate a random salt using a cryptographically secure random number
-		// generator
-		byte[] salt = new byte[saltLength]; // Adjust salt length as needed (16 bytes is common)
-		new SecureRandom().nextBytes(salt);
-
-		// Combine image name and salt for hashing
-		String dataToHash = imageName + Base64.getUrlEncoder().encodeToString(salt);
-
-		// Hash the combined data using a strong algorithm like SHA-256
-		MessageDigest digest = MessageDigest.getInstance("SHA-256");
-		digest.update(dataToHash.getBytes());
-
-		// Convert digest bytes to a hexadecimal string
-		StringBuilder hashedName = new StringBuilder();
-		for (byte b : digest.digest()) {
-			hashedName.append(String.format("%02x", b));
-		}
-
-		// Prepend the encoded salt to the hashed name for storage
-		return hashedName.toString();
-	}
-
 	public String[] extractContentTypeAndDataFromImageBase64(String base64) {
 		String[] strings = base64.split(",");
 		switch (strings[0]) {// check image's extension
@@ -268,7 +238,7 @@ public class ImageUtils {
 		return this.newsPath + id + "/";
 	}
 	
-	public String getHallOfFamePath(String id) {
-		return this.halloffamePath + id + "/";
+	public String getHofPath(String id) {
+		return this.hofPath + id + "/";
 	}
 }
