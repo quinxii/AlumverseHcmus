@@ -25,4 +25,3 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
     int setLastLogin(@Param("email") String email, @Param("lastLogin") Date lastLogin);
 }
 
-
