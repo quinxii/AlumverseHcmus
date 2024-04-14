@@ -26,50 +26,51 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class HallOfFameModel implements Serializable {
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    @Id
-    @Column(name = "id", length = 36, nullable = false)
-    private String id;
-    
-    @OneToOne
-    @JoinColumn(name = "creator")
-    private UserModel creator;
+	@Id
+	@Column(name = "id", length = 36, nullable = false)
+	private String id;
 
-    @Column(name = "title", columnDefinition = "TINYTEXT")
-    private String title;
+	@OneToOne
+	@JoinColumn(name = "creator")
+	private UserModel creator;
 
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content;
+	@Column(name = "title", columnDefinition = "TINYTEXT")
+	private String title;
 
-    @Column(name = "summary", columnDefinition = "TEXT")
-    private String summary;
-    
-    @Column(name = "thumbnail", columnDefinition = "TINYTEXT")
-    private String thumbnail;
+	@Column(name = "content", columnDefinition = "TEXT")
+	private String content;
 
-    @Column(name = "user_id", length = 36)
-    private UserModel userId;
+	@Column(name = "summary", columnDefinition = "TEXT")
+	private String summary;
 
-    @CreationTimestamp
-    @Column(name = "create_at")
-    private Date createAt;
+	@Column(name = "thumbnail", columnDefinition = "TINYTEXT")
+	private String thumbnail;
 
-    @UpdateTimestamp
-    @Column(name = "update_at")
-    private Date updateAt;
-    
-    @Column(name = "published_at")
-    private Date publishedAt;
+	@OneToOne
+	@JoinColumn(name = "user_id")
+	private UserModel userId;
 
-    @OneToOne
-    @JoinColumn(name = "status_id")
-    private StatusPostModel status;
+	@CreationTimestamp
+	@Column(name = "create_at")
+	private Date createAt;
 
-    @Column(name = "views", nullable = false)
-    private Integer views = 0;
+	@UpdateTimestamp
+	@Column(name = "update_at")
+	private Date updateAt;
 
-    @OneToOne
+	@Column(name = "published_at")
+	private Date publishedAt;
+
+	@OneToOne
+	@JoinColumn(name = "status_id")
+	private StatusPostModel status;
+
+	@Column(name = "views", nullable = false)
+	private Integer views = 0;
+
+	@OneToOne
 	@JoinColumn(name = "faculty_id")
 	private FacultyModel faculty;
 
@@ -77,25 +78,30 @@ public class HallOfFameModel implements Serializable {
 	@JoinTable(name = "tag_news", joinColumns = @JoinColumn(name = "news_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
 	private Set<TagModel> tags = new HashSet<>();
 
-    @Column(name = "beginning_year")
-    private Integer beginningYear;
-    
-    public HallOfFameModel() {
+	@Column(name = "beginning_year")
+	private Integer beginningYear;
+
+	public HallOfFameModel() {
 		id = UUID.randomUUID().toString();
 		status = new StatusPostModel(2);
 	}
-    
-	public HallOfFameModel(String id, UserModel creator, String title, String content, String thumbnail, FacultyModel faculty, int beginningYear) {
+
+	public HallOfFameModel(String id, UserModel creator, String title, String content, String thumbnail,
+			FacultyModel faculty, UserModel userId, int beginningYear) {
 		this.id = id;
 		this.creator = creator;
 		this.title = title;
 		this.content = content;
 		this.thumbnail = thumbnail;
 		this.faculty = faculty;
+
+		if (userId != null) {
+			this.userId = userId;
+		}
 		this.beginningYear = beginningYear;
 		this.status = new StatusPostModel(3);
 	}
-	
+
 	public void setTags(Integer[] tags) {
 		Set<TagModel> newTags = new HashSet<>();
 		for (Integer tag : tags) {
