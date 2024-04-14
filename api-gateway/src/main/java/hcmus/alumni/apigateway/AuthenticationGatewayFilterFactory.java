@@ -49,8 +49,10 @@ public class AuthenticationGatewayFilterFactory
 					authHeader = authHeader.substring(7);
 				}
 				try {
-					jwtUtils.validateToken(authHeader);
-					req = updateRequest(exchange, authHeader);
+					if (jwtUtils.validateToken(authHeader)) {
+						req = updateRequest(exchange, authHeader);
+					}
+					
 				} catch (Exception e) {
 					return this.onError(exchange, HttpStatus.FORBIDDEN);
 				}
