@@ -4,10 +4,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -39,7 +35,7 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
 
 	@Transactional
 	@Modifying
-	@Query("UPDATE NewsModel n SET n.views = n.views + 1 WHERE n.id = :id")
+	@Query("UPDATE HallOfFameModel n SET n.views = n.views + 1 WHERE n.id = :id")
 	int viewsIncrement(String id);
 	
 	@Query("SELECT n from HallOfFameModel n JOIN n.status s WHERE s.name = \"Chờ\" AND n.publishedAt <= :now")
