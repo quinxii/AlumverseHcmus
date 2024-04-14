@@ -19,6 +19,6 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
 	@Query("SELECT COUNT(n) FROM HallOfFameModel n JOIN n.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
 	
-	@Query("SELECT n from NewsModel n JOIN n.status s WHERE s.name = \"Chờ\" AND n.publishedAt <= :now")
+	@Query("SELECT n from HallOfFameModel n JOIN n.status s WHERE s.name = \"Chờ\" AND n.publishedAt <= :now")
 	List<HallOfFameModel> getScheduledNews(Date now);
 }
