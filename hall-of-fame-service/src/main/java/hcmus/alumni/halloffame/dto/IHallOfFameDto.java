@@ -38,6 +38,7 @@ public interface IHallOfFameDto {
     Date getUpdateAt();
     Date getPublishedAt();
     User getCreator();
+    User getUserId();
     Set<Tag> getTags();
     Faculty getFaculty();
     StatusPost getStatus();
