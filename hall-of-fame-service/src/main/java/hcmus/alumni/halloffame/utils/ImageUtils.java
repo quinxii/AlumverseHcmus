@@ -32,7 +32,7 @@ public class ImageUtils {
 	private final String avatarPath = "images/users/avatar/";
 	private final String noneAvatar = "none";
 	private final String newsPath = "images/news/";
-	private final String halloffamePath = "images/hall-of-fame/";
+	private final String halloffamePath = "images/hof/";
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
