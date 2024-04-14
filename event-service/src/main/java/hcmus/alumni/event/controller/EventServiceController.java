@@ -1,6 +1,7 @@
 package hcmus.alumni.event.controller;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.event.dto.IEventDto;
+import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPostModel;
 import hcmus.alumni.event.model.FacultyModel;
@@ -71,7 +74,8 @@ public class EventServiceController {
 	        @RequestParam(value = "title", required = false, defaultValue = "") String title,
 	        @RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
+	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
+	        @RequestParam(value = "statusId", required = false) Integer statusId) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
@@ -80,11 +84,8 @@ public class EventServiceController {
 	    try {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 	        Page<IEventDto> events = null;
-	        if (statusId.equals(0)) {
-	            events = eventRepository.searchEvents(title, pageable);
-	        } else {
-	            events = eventRepository.searchEventsByStatus(title, statusId, pageable);
-	        }
+	        
+	        events = eventRepository.searchEvents(title, statusId, facultyId, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -104,6 +105,9 @@ public class EventServiceController {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	    }
 	    eventRepository.incrementEventViews(id);
+	    IEventDto eventDetails = optionalEvent.get();
+	    Long participantCount = eventRepository.getParticipantCountById(id);
+	    eventDetails.setParticipantCount(participantCount);
 	    return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
 	}
     
@@ -113,11 +117,12 @@ public class EventServiceController {
 			@RequestHeader("userId") String creatorId,
 	        @RequestParam(value = "title") String title, 
 	        @RequestParam(value = "thumbnail") MultipartFile thumbnail,
+	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
 	        @RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
 	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
-	        @RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
+	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
 	    if (creatorId.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
 	    }
@@ -128,24 +133,24 @@ public class EventServiceController {
 
 	    try {
 	        // Save thumbnail image
-	        String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail, "thumbnail");
+	        String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail);
 	        // Save event to database
 	        EventModel event = new EventModel();
 	        event.setId(id);
 	        event.setCreator(new UserModel(creatorId));
 	        event.setTitle(title);
 	        event.setThumbnail(thumbnailUrl);
-	        event.setContent("");
+	        event.setContent(content);
 	        event.setOrganizationLocation(organizationLocation);
 	        event.setOrganizationTime(organizationTime);
-	        event.setPublishedAt(new Date(scheduledTimeMili != null ? scheduledTimeMili : System.currentTimeMillis()));
+	        event.setPublishedAt(new Date());
 	        if (tagsId != null) {
 	            event.setTags(tagsId);
 	        }
 	        if (!facultyId.equals(0)) {
 	            event.setFaculty(new FacultyModel(facultyId));
 	        }
-	        event.setStatus(new StatusPostModel(scheduledTimeMili != null ? 1 : 2));
+	        event.setStatus(new StatusPostModel(statusId));
 	        eventRepository.save(event);
 	    } catch (IOException e) {
 	        // TODO Auto-generated catch block
@@ -159,6 +164,7 @@ public class EventServiceController {
 	public ResponseEntity<String> updateEvent(@PathVariable String id,
 	        @RequestParam(value = "title", defaultValue = "") String title,
 	        @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
 	        @RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
 	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
@@ -178,10 +184,14 @@ public class EventServiceController {
 	        EventModel event = optionalEvent.get();
 	        if (thumbnail != null && !thumbnail.isEmpty()) {
 	            // Overwrite old thumbnail
-	            imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail, "thumbnail");
+	            imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail);
 	        }
 	        if (!title.equals("")) {
 	            event.setTitle(title);
+	            isPut = true;
+	        }
+	        if (!content.equals("")) {
+	            event.setContent(content);
 	            isPut = true;
 	        }
 	        if (!organizationLocation.equals("")) {
@@ -215,30 +225,6 @@ public class EventServiceController {
 	}
 
 	@PreAuthorize("hasAnyAuthority('Admin')")
-	@PutMapping("/{id}/content")
-	public ResponseEntity<String> updateEventContent(@PathVariable String id,
-	        @RequestBody(required = false) EventModel updatedEvent) {
-	    if (updatedEvent.getContent() == null) {
-	        return ResponseEntity.status(HttpStatus.OK).body("");
-	    }
-	    // Find event
-	    Optional<EventModel> optionalEvent = eventRepository.findById(id);
-	    if (optionalEvent.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-	    }
-	    EventModel event = optionalEvent.get();
-	    if (!updatedEvent.getContent().equals("")) {
-	        String newContent = imageUtils.updateImgFromHtmlToStorage(event.getContent(), updatedEvent.getContent(), id);
-	        if (newContent.equals(event.getContent())) {
-	            return ResponseEntity.status(HttpStatus.OK).body("");
-	        }
-	        event.setContent(newContent);
-	        eventRepository.save(event);
-	    }
-	    return ResponseEntity.status(HttpStatus.OK).body("");
-	}
-
-	@PreAuthorize("hasAnyAuthority('Admin')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteEvent(@PathVariable String id) {
 	    // Find event
@@ -250,5 +236,20 @@ public class EventServiceController {
 	    event.setStatus(new StatusPostModel(4));
 	    eventRepository.save(event);
 	    return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+	
+	@GetMapping("/{id}/participant")
+	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id) {
+	    Map<String, Object> result = new HashMap<>();
+	    
+	    // Get participant count
+	    Long participantCount = eventRepository.getParticipantCountById(id);
+	    result.put("participantCount", participantCount);
+	    
+	    // Get participant list
+	    List<IParticipantEventDto> participantList = eventRepository.getParticipantsByEventId(id);
+	    result.put("participants", participantList);
+	    
+	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }

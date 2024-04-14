@@ -13,30 +13,39 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.event.dto.IEventDto;
+import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.EventModel;
 
-public interface EventRepository  extends JpaRepository<EventModel, String> {
-	Optional<EventModel> findById(String id);
+public interface EventRepository extends JpaRepository<EventModel, String> {        
+	@Query("SELECT e " +
+	        "FROM EventModel e " +
+	        "LEFT JOIN e.status s " +
+	        "LEFT JOIN e.faculty f " +
+	        "WHERE (:statusId IS NULL OR s.id = :statusId) " +
+	        "AND (:facultyId IS NULL OR f.id = :facultyId) " +
+	        "AND e.title LIKE %:title% " +
+	        "GROUP BY e.id")
+	Page<IEventDto> searchEvents(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, Pageable pageable);
 
-    Optional<IEventDto> findEventById(String id);
-
-    @Query("SELECT e FROM EventModel e JOIN e.status s WHERE s.id != 4 AND e.title like %:title%")
-    Page<IEventDto> searchEvents(String title, Pageable pageable);
-
-    @Query("SELECT e FROM EventModel e JOIN e.status s WHERE s.id = :statusId AND e.title like %:title%")
-    Page<IEventDto> searchEventsByStatus(String title, Integer statusId, Pageable pageable);
-
-    @Query("SELECT COUNT(e) FROM EventModel e JOIN e.status s WHERE s.name = :statusName")
-    Long getCountByStatus(String statusName);
-
-    @Query("SELECT COUNT(e) FROM EventModel e JOIN e.status s WHERE s.id != 4")
-    Long getCountByNotDelete();
-
-    @Query("SELECT e FROM EventModel e JOIN e.status s WHERE s.id = 1 AND e.publishedAt <= :now")
-    List<EventModel> getScheduledEvents(Date now);
+	@Query("SELECT e " +
+	   "FROM EventModel e " +
+	   "WHERE e.id = :id")
+	Optional<IEventDto> findEventById(String id);
 
     @Transactional
     @Modifying
     @Query("UPDATE EventModel e SET e.views = e.views + 1 WHERE e.id = :id")
     int incrementEventViews(String id);
+    
+	@Query("SELECT COUNT(pe.id) " +
+		       "FROM ParticipantEventModel pe " +
+		       "WHERE pe.id.eventId = :id")
+			Long getParticipantCountById(String id);
+    
+    @Query("SELECT pe, u.fullName AS fullName " +
+            "FROM ParticipantEventModel pe " +
+            "JOIN UserModel u ON pe.id.userId = u.id " +
+            "WHERE pe.id.eventId = :id " +
+            "AND pe.isDeleted = false")
+     List<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id);
 }
