@@ -52,8 +52,6 @@ public class EmailSenderUtils {
 
         try {
           SendEnhancedResponseBody response = new SendService().sendEnhancedMessage(sendEnhancedRequestBody);
-          System.out.println(response);
-          System.out.println("Email sent successfully to " + userEmail);
           userUtils.saveActivationCode(emailActivationCodeRepository, userEmail, authorizeCode);
         } catch (IOException e) {
         	System.err.println("Error sending email: " + e.getMessage());
