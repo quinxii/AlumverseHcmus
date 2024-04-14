@@ -20,17 +20,15 @@ spring:
             - Path=/user/**
           filters:
             - name: Authentication
-<<<<<<< HEAD
 
         ## hall of fame service
-        - id: hall-of-fame
-          uri: lb://hall-of-fame-service
+        - id: hof
+          uri: lb://hof-service
           predicates:
-            - Path=/hall-of-fame/**
+            - Path=/hof/**
           filters:
             - name: Authentication
-=======
-            
+   
         ## news service
         - id: news
           uri: lb://news-service
