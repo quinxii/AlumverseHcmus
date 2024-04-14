@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,11 +56,11 @@ public class AuthController {
 						.body(Collections.singletonMap("jwt", jwtUtils.generateToken(cud.getUser())));
 			} else {
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-						.body(Collections.singletonMap("msg", "Email hoặc password không hợp lệ"));
+						.body(Collections.singletonMap("msg", "Invalid email or password"));
 			}
 		} catch (BadCredentialsException e) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-					.body(Collections.singletonMap("msg", "Email hoặc password không hợp lệ"));
+					.body(Collections.singletonMap("msg", "Invalid email or password"));
 			// TODO: handle exception
 		} catch (Exception e) {
 			// Catch any unexpected exceptions to prevent server errors
