@@ -106,8 +106,6 @@ public class EventServiceController {
 	    }
 	    eventRepository.incrementEventViews(id);
 	    IEventDto eventDetails = optionalEvent.get();
-	    Long participantCount = eventRepository.getParticipantCountById(id);
-	    eventDetails.setParticipantCount(participantCount);
 	    return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
 	}
     
@@ -183,7 +181,6 @@ public class EventServiceController {
 	        }
 	        EventModel event = optionalEvent.get();
 	        if (thumbnail != null && !thumbnail.isEmpty()) {
-	            // Overwrite old thumbnail
 	            imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail);
 	        }
 	        if (!title.equals("")) {
@@ -241,13 +238,11 @@ public class EventServiceController {
 	@GetMapping("/{id}/participant")
 	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id) {
 	    Map<String, Object> result = new HashMap<>();
-	    
-	    // Get participant count
-	    Long participantCount = eventRepository.getParticipantCountById(id);
-	    result.put("participantCount", participantCount);
-	    
-	    // Get participant list
+	   
 	    List<IParticipantEventDto> participantList = eventRepository.getParticipantsByEventId(id);
+	    Integer participantCount = participantList.size();
+	    		
+	    result.put("participantCount", participantCount);
 	    result.put("participants", participantList);
 	    
 	    return ResponseEntity.status(HttpStatus.OK).body(result);

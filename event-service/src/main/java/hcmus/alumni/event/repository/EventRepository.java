@@ -18,17 +18,17 @@ import hcmus.alumni.event.model.EventModel;
 
 public interface EventRepository extends JpaRepository<EventModel, String> {        
 	@Query("SELECT e " +
-	        "FROM EventModel e " +
-	        "LEFT JOIN e.status s " +
-	        "LEFT JOIN e.faculty f " +
-	        "WHERE (:statusId IS NULL OR s.id = :statusId) " +
-	        "AND (:facultyId IS NULL OR f.id = :facultyId) " +
-	        "AND e.title LIKE %:title%")
+        "FROM EventModel e " +
+        "LEFT JOIN e.status s " +
+        "LEFT JOIN e.faculty f " +
+        "WHERE (:statusId IS NULL OR s.id = :statusId) " +
+        "AND (:facultyId IS NULL OR f.id = :facultyId) " +
+        "AND e.title LIKE %:title%")
 	Page<IEventDto> searchEvents(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, Pageable pageable);
 
 	@Query("SELECT e " +
-	   "FROM EventModel e " +
-	   "WHERE e.id = :id")
+		"FROM EventModel e " +
+		"WHERE e.id = :id")
 	Optional<IEventDto> findEventById(String id);
 
     @Transactional
@@ -36,15 +36,10 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query("UPDATE EventModel e SET e.views = e.views + 1 WHERE e.id = :id")
     int incrementEventViews(String id);
     
-	@Query("SELECT COUNT(pe.id) " +
-		       "FROM ParticipantEventModel pe " +
-		       "WHERE pe.id.eventId = :id")
-			Long getParticipantCountById(String id);
-    
-    @Query("SELECT pe, u.fullName AS fullName " +
-            "FROM ParticipantEventModel pe " +
-            "JOIN UserModel u ON pe.id.userId = u.id " +
-            "WHERE pe.id.eventId = :id " +
-            "AND pe.isDeleted = false")
+    @Query("SELECT pe.note as note, u.fullName AS fullName " +
+		"FROM ParticipantEventModel pe " +
+		"JOIN UserModel u ON pe.id.userId = u.id " +
+		"WHERE pe.id.eventId = :id " +
+		"AND pe.isDeleted = false")
      List<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id);
 }

@@ -32,6 +32,5 @@ public interface IEventDto {
 	Set<Tag> getTags();
 	Faculty getFaculty();
 	StatusPost getStatus();
-	Long getParticipantCount();
-	void setParticipantCount(Long participantCount);
+	Long getParticipants();
 }
