@@ -21,6 +21,14 @@ spring:
           filters:
             - name: Authentication
             
+        ## event service
+        - id: event
+          uri: lb://event-service
+          predicates:
+            - Path=/event/**
+          filters:
+            - name: Authentication
+            
         ## news service
         - id: news
           uri: lb://news-service
