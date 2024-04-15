@@ -26,6 +26,7 @@ public class ImageUtils {
 	private GCPConnectionUtils gcp;
 	private final String avatarPath = "images/users/avatar/";
 	private final String newsPath = "images/news/";
+	private final String hofPath = "images/hof/";	
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
@@ -236,5 +237,9 @@ public class ImageUtils {
 
 	public String getNewsPath(String id) {
 		return this.newsPath + id + "/";
+	}
+	
+	public String getHofPath(String id) {
+		return this.hofPath + id + "/";
 	}
 }
