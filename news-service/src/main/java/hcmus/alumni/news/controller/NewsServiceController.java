@@ -1,6 +1,7 @@
 package hcmus.alumni.news.controller;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -50,25 +51,24 @@ public class NewsServiceController {
 	@Autowired
 	private ImageUtils imageUtils;
 
-	@GetMapping("/test")
-	public List<INewsDto> test(@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
-			@RequestParam(value = "title", required = false, defaultValue = "") String title,
-			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
-		Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
-		Page<INewsDto> news = newsRepository.searchNews(title, pageable);
-		System.out.println(news.getTotalPages());
-		return news.getContent();
-	}
+	// @GetMapping("/test")
+	// public List<INewsDto> test(@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
+	// 		@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
+	// 		@RequestParam(value = "title", required = false, defaultValue = "") String title,
+	// 		@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+	// 		@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
+	// 	Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
+	// 	Page<INewsDto> news = newsRepository.searchNews(title, pageable);
+	// 	return news.getContent();
+	// }
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> getPendingAlumniVerificationCount(
-			@RequestParam(value = "status", defaultValue = "") String status) {
-		if (status.equals("")) {
+	public ResponseEntity<Long> getNewsCount(
+			@RequestParam(value = "statusId", defaultValue = "0") Integer statusId) {
+		if (statusId.equals(0)) {
 			return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByNotDelete());
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatus(status));
+		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatus(statusId));
 	}
 
 	@GetMapping("")
@@ -96,10 +96,8 @@ public class NewsServiceController {
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
 		} catch (IllegalArgumentException e) {
-			// TODO: handle exception
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		} catch (Exception e) {
-			// TODO: handle exception
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
 
@@ -152,7 +150,6 @@ public class NewsServiceController {
 			}
 			newsRepository.save(news);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			System.err.println(e);
 		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
@@ -207,7 +204,6 @@ public class NewsServiceController {
 				newsRepository.save(news);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			System.err.println(e);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
@@ -249,5 +245,40 @@ public class NewsServiceController {
 			newsRepository.save(news);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@GetMapping("/most-viewed")
+	public ResponseEntity<HashMap<String, Object>> getMostViewed(
+			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
+		if (limit <= 0 || limit > 5) {
+			limit = 5;
+		}
+		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
+		Page<INewsDto> news = newsRepository.getMostViewdNews(pageable);
+
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		result.put("news", news.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/hot")
+	public ResponseEntity<HashMap<String, Object>> getHotNews(
+			@RequestParam(value = "limit", defaultValue = "4") Integer limit) {
+		if (limit <= 0 || limit > 5) {
+			limit = 5;
+		}
+		Calendar cal = Calendar.getInstance();
+		Date endDate = cal.getTime();
+		cal.add(Calendar.WEEK_OF_YEAR, -1);
+		Date startDate = cal.getTime();
+
+		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
+		Page<INewsDto> news = newsRepository.getHotNews(startDate, endDate, pageable);
+
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		result.put("news", news.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }
