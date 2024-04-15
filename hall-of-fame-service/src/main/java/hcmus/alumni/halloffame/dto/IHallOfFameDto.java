@@ -1,11 +1,6 @@
 package hcmus.alumni.halloffame.dto;
 
 import java.util.Date;
-import java.util.Set;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 public interface IHallOfFameDto {
     interface User {
@@ -15,11 +10,6 @@ public interface IHallOfFameDto {
 
     interface StatusPost {
         Integer getId(); // Added
-        String getName();
-    }
-
-    interface Tag {
-        Integer getId();
         String getName();
     }
 
@@ -39,7 +29,6 @@ public interface IHallOfFameDto {
     Date getPublishedAt();
     User getCreator();
     User getUserId();
-    Set<Tag> getTags();
     Faculty getFaculty();
     StatusPost getStatus();
     Integer getBeginningYear();
