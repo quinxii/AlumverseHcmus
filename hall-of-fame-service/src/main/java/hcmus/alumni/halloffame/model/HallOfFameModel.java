@@ -92,5 +92,20 @@ public class HallOfFameModel implements Serializable {
 		this.beginningYear = beginningYear;
 		this.status = new StatusPostModel(3);
 	}
+	
+	public HallOfFameModel(String id, UserModel creator, String title, String thumbnail,
+			FacultyModel faculty, UserModel userId, int beginningYear) {
+		this.id = id;
+		this.creator = creator;
+		this.title = title;
+		this.thumbnail = thumbnail;
+		this.faculty = faculty;
+
+		if (userId != null) {
+			this.userId = userId;
+		}
+		this.beginningYear = beginningYear;
+		this.status = new StatusPostModel(3);
+	}
 
 }
