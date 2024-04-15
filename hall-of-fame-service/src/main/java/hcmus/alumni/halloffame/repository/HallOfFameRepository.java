@@ -27,6 +27,12 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
 	@Query("SELECT n FROM HallOfFameModel n JOIN n.status s WHERE s.id = :statusId AND n.title like %:title%")
 	Page<IHallOfFameDto> searchHofByStatus(String title, Integer statusId, Pageable pageable);
 	
+	@Query("SELECT n FROM HallOfFameModel n WHERE n.faculty.id = :facultyId AND n.title LIKE %:title%")
+    Page<IHallOfFameDto> searchHofByFaculty(@Param("title") String title, @Param("facultyId") Integer facultyId, Pageable pageable);
+
+	@Query("SELECT n FROM HallOfFameModel n WHERE n.beginningYear = :beginningYear AND n.title LIKE %:title%")
+    Page<IHallOfFameDto> searchHofByBeginningYear(@Param("title") String title, @Param("beginningYear") Integer beginningYear, Pageable pageable);
+	
 	@Query("SELECT COUNT(n) FROM HallOfFameModel n JOIN n.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
 	
