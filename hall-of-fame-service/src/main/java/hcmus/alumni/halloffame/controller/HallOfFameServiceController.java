@@ -61,7 +61,7 @@ public class HallOfFameServiceController {
 	private ImageUtils imageUtils;
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam(value = "status") String status) {
+	public ResponseEntity<Long> getHofCount(@RequestParam(value = "status") String status) {
 		if (status.equals("")) {
 			ResponseEntity.status(HttpStatus.OK).body(0L);
 		}
@@ -72,7 +72,7 @@ public class HallOfFameServiceController {
 	public ResponseEntity<HashMap<String, Object>> getHof(
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-			@RequestParam(value = "title", required = false, defaultValue = "Nguyen Nhat Quynh2") String title,
+			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
@@ -160,7 +160,8 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "title") String title, @RequestParam(value = "content") String content,
 			@RequestParam(value = "thumbnail") MultipartFile thumbnail,
 			@RequestParam(value = "faculty") Integer faculty, @RequestParam(value = "emailOfUser") String emailOfUser,
-			@RequestParam(value = "beginningYear") Integer beginningYear) {
+			@RequestParam(value = "beginningYear") Integer beginningYear,
+			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (creator.isEmpty() || title.isEmpty() || content.isEmpty() || thumbnail.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
 		}
@@ -178,7 +179,7 @@ public class HallOfFameServiceController {
 		}
 		try {
 			// Save thumbnail image
-			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
+			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 			// Save hall of fame to database
 			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, content, thumbnailUrl,
 					new FacultyModel(faculty), userModel, beginningYear);
@@ -190,8 +191,6 @@ public class HallOfFameServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
-//
-//
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateHallOfFame(@PathVariable String id,
@@ -225,7 +224,7 @@ public class HallOfFameServiceController {
 							.body("Only one image is allowed for the thumbnail");
 				}
 				// Save new thumbnail
-				String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getNewsPath(id), thumbnail, "thumbnail");
+				String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 				halloffame.setThumbnail(thumbnailUrl);
 			}
 			if (!faculty.equals("")) {
@@ -259,7 +258,7 @@ public class HallOfFameServiceController {
 		if (updatedHallOfFame.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
-		// Find news
+		// Find hof
 		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
 		if (optionalHallOfFame.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
