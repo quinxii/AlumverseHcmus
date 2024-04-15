@@ -2,21 +2,16 @@ package hcmus.alumni.halloffame.model;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import jakarta.persistence.FetchType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.JoinTable;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -74,10 +69,6 @@ public class HallOfFameModel implements Serializable {
 	@JoinColumn(name = "faculty_id")
 	private FacultyModel faculty;
 
-	@ManyToMany(fetch = FetchType.EAGER)
-	@JoinTable(name = "tag_hof", joinColumns = @JoinColumn(name = "news_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
-	private Set<TagModel> tags = new HashSet<>();
-
 	@Column(name = "beginning_year")
 	private Integer beginningYear;
 
@@ -102,11 +93,4 @@ public class HallOfFameModel implements Serializable {
 		this.status = new StatusPostModel(3);
 	}
 
-	public void setTags(Integer[] tags) {
-		Set<TagModel> newTags = new HashSet<>();
-		for (Integer tag : tags) {
-			newTags.add(new TagModel(tag));
-		}
-		this.tags = newTags;
-	}
 }
