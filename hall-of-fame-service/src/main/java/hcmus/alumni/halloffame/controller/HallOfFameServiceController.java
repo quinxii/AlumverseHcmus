@@ -144,12 +144,12 @@ public class HallOfFameServiceController {
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PostMapping("")
 	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
-			@RequestParam(value = "title") String title, @RequestParam(value = "content") String content,
+			@RequestParam(value = "title") String title,
 			@RequestParam(value = "thumbnail") MultipartFile thumbnail,
 			@RequestParam(value = "faculty") Integer faculty, @RequestParam(value = "emailOfUser") String emailOfUser,
 			@RequestParam(value = "beginningYear") Integer beginningYear,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
-		if (creator.isEmpty() || title.isEmpty() || content.isEmpty() || thumbnail.isEmpty()) {
+		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
 		}
 		if (thumbnail.getSize() > 5 * 1024 * 1024) {
@@ -168,7 +168,7 @@ public class HallOfFameServiceController {
 			// Save thumbnail image
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 			// Save hall of fame to database
-			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, content, thumbnailUrl,
+			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, thumbnailUrl,
 					new FacultyModel(faculty), userModel, beginningYear);
 			halloffameRepository.save(halloffame);
 		} catch (IOException e) {
