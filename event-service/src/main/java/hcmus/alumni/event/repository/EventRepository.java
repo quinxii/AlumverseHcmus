@@ -23,8 +23,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 	        "LEFT JOIN e.faculty f " +
 	        "WHERE (:statusId IS NULL OR s.id = :statusId) " +
 	        "AND (:facultyId IS NULL OR f.id = :facultyId) " +
-	        "AND e.title LIKE %:title% " +
-	        "GROUP BY e.id")
+	        "AND e.title LIKE %:title%")
 	Page<IEventDto> searchEvents(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, Pageable pageable);
 
 	@Query("SELECT e " +
