@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.halloffame.dto.IHallOfFameDto;
 import hcmus.alumni.halloffame.model.FacultyModel;
 import hcmus.alumni.halloffame.model.HallOfFameModel;
+import hcmus.alumni.halloffame.model.StatusPostModel;
 import hcmus.alumni.halloffame.model.UserModel;
 import hcmus.alumni.halloffame.repository.HallOfFameRepository;
 import hcmus.alumni.halloffame.utils.ImageUtils;
@@ -205,11 +206,6 @@ public class HallOfFameServiceController {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 				}
 
-				// Check if the user is trying to upload more than one image for the thumbnail
-				if (halloffame.getThumbnail() == null) {
-					return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-							.body("Only one image is allowed for the thumbnail");
-				}
 				// Save new thumbnail
 				String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 				halloffame.setThumbnail(thumbnailUrl);
@@ -266,11 +262,13 @@ public class HallOfFameServiceController {
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteHallOfFame(@PathVariable String id) {
 	    Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
-	    if (!optionalHallOfFame.isPresent()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hall of Fame entry not found");
+	    if (optionalHallOfFame.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
 	    }
-	    halloffameRepository.deleteById(id);
-	    return ResponseEntity.status(HttpStatus.OK).body("Deleted successfully!");
+	    HallOfFameModel hof = optionalHallOfFame.get();
+	    hof.setStatus(new StatusPostModel(4));
+	    halloffameRepository.save(hof);
+	    return ResponseEntity.status(HttpStatus.OK).body("Updated status successfully!");
 	}
 	
 	@GetMapping("/{id}")
