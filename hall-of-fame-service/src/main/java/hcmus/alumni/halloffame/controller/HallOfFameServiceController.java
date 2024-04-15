@@ -57,91 +57,45 @@ public class HallOfFameServiceController {
 	}
 
 	@GetMapping("")
-	public ResponseEntity<HashMap<String, Object>> getHof(
-			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-			@RequestParam(value = "title", required = false, defaultValue = "") String title,
-			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-		HashMap<String, Object> result = new HashMap<String, Object>();
+    public ResponseEntity<HashMap<String, Object>> getHof(
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+            @RequestParam(value = "title", required = false, defaultValue = "") String title,
+            @RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+            @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+            @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId,
+            @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+            @RequestParam(value = "beginningYear", required = false, defaultValue = "0") Integer beginningYear) {
+        if (pageSize == 0 || pageSize > 50) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        HashMap<String, Object> result = new HashMap<>();
 
-		try {
-			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IHallOfFameDto> hof = null;
-			if (statusId.equals(0)) {
-				hof = halloffameRepository.searchHof(title, pageable);
-			} else {
-				hof = halloffameRepository.searchHofByStatus(title, statusId, pageable);
-			}
+        try {
+            Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+            Page<IHallOfFameDto> hof = null;
+            if (statusId.equals(0) && facultyId.equals(0)) {
+                hof = halloffameRepository.searchHof(title, pageable);
+            } else if (!statusId.equals(0) && facultyId.equals(0)) {
+                hof = halloffameRepository.searchHofByStatus(title, statusId, pageable);
+            } else if (statusId.equals(0) && !facultyId.equals(0)) {
+                hof = halloffameRepository.searchHofByFaculty(title, facultyId, pageable);
+            } else {
+                hof = halloffameRepository.searchHofByBeginningYear(title, beginningYear, pageable);
+            }
 
-			result.put("totalPages", hof.getTotalPages());
-			result.put("hof", hof.getContent());
-		} catch (IllegalArgumentException e) {
-			// TODO: handle exception
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			result.put("error", e);
-			// TODO: handle exception
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
-		}
+            result.put("totalPages", hof.getTotalPages());
+            result.put("hof", hof.getContent());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            result.put("error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
 
-		return ResponseEntity.status(HttpStatus.OK).body(result);
-	}
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
 
-//
-//	@GetMapping("")
-//	public ResponseEntity<HashMap<String, Object>> getHallOfFame(
-//			@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-//			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
-//			@RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
-//			@RequestParam(value = "createAtOrder", required = false, defaultValue = "desc") String createAtOrder) {
-//		// Initiate
-//		CriteriaBuilder cb = em.getCriteriaBuilder();
-//		CriteriaQuery<HallOfFameDto> cq = cb.createQuery(HallOfFameDto.class);
-//		// From
-//		Root<HallOfFameModel> root = cq.from(HallOfFameModel.class);
-//
-//		// Join
-//		Join<HallOfFameModel, StatusPostModel> statusJoin = root.join("status", JoinType.INNER);
-//		
-//		// Select
-//		Selection<String> idSelection = root.get("id");
-//		Selection<String> titleSelection = root.get("title");
-//		Selection<String> contentSelection = root.get("content");
-//		Selection<String> thumbnailSelection = root.get("thumbnail");
-//		Selection<Integer> viewsSelection = root.get("views");
-//		Selection<String> facultySelection = root.get("faculty");
-//		Selection<Integer> beginningYearSelection = root.get("beginningYear");
-//		cq.multiselect(idSelection, titleSelection, contentSelection, thumbnailSelection, viewsSelection, facultySelection, beginningYearSelection);
-//		
-//		// Where
-//		Predicate titlePredicate = cb.like(root.get("title"), "%" + keyword + "%");
-//		Predicate statusPredicate = cb.equal(statusJoin.get("name"), "Bình thường");
-//		cq.where(titlePredicate, statusPredicate);
-//		
-//		// Order by
-//		List<Order> orderList = new ArrayList<Order>();
-//		if (createAtOrder.equals("asc")) {
-//			orderList.add(cb.asc(root.get("createAt")));
-//		} else if (createAtOrder.equals("desc")) {
-//			orderList.add(cb.desc(root.get("createAt")));
-//		}
-//		cq.orderBy(orderList);
-//		
-//		HashMap<String, Object> result = new HashMap<String, Object>();
-//		TypedQuery<HallOfFameDto> typedQuery = em.createQuery(cq);
-//		result.put("itemNumber", typedQuery.getResultList().size());
-//		typedQuery.setFirstResult(offset);
-//		typedQuery.setMaxResults(limit);
-//		result.put("items", typedQuery.getResultList());
-//		
-//		return ResponseEntity.status(HttpStatus.OK).body(result);
-//	}
-//
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PostMapping("")
 	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
@@ -233,7 +187,6 @@ public class HallOfFameServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
 	}
 
-	
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/{id}/content")
 	public ResponseEntity<String> updateHallOfFameContent(@PathVariable String id,
