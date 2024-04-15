@@ -75,7 +75,7 @@ public class HallOfFameModel implements Serializable {
 	private FacultyModel faculty;
 
 	@ManyToMany(fetch = FetchType.EAGER)
-	@JoinTable(name = "tag_news", joinColumns = @JoinColumn(name = "news_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
+	@JoinTable(name = "tag_hof", joinColumns = @JoinColumn(name = "news_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
 	private Set<TagModel> tags = new HashSet<>();
 
 	@Column(name = "beginning_year")
