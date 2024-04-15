@@ -1,9 +1,7 @@
 package hcmus.alumni.halloffame.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,25 +26,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import hcmus.alumni.halloffame.dto.HallOfFameDto;
 import hcmus.alumni.halloffame.dto.IHallOfFameDto;
 import hcmus.alumni.halloffame.model.FacultyModel;
 import hcmus.alumni.halloffame.model.HallOfFameModel;
-import hcmus.alumni.halloffame.model.StatusPostModel;
 import hcmus.alumni.halloffame.model.UserModel;
 import hcmus.alumni.halloffame.repository.HallOfFameRepository;
 import hcmus.alumni.halloffame.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Order;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Selection;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
