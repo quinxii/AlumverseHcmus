@@ -1,6 +1,7 @@
 package hcmus.alumni.halloffame.controller;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -109,7 +110,7 @@ public class HallOfFameServiceController {
 	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title,
 			@RequestParam(value = "thumbnail") MultipartFile thumbnail,
-			@RequestParam(value = "faculty") Integer faculty, @RequestParam(value = "emailOfUser") String emailOfUser,
+			@RequestParam(value = "facultyId") Integer facultyId, @RequestParam(value = "emailOfUser") String emailOfUser,
 			@RequestParam(value = "beginningYear") Integer beginningYear,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
@@ -132,7 +133,17 @@ public class HallOfFameServiceController {
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 			// Save hall of fame to database
 			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, thumbnailUrl,
-					new FacultyModel(faculty), userModel, beginningYear);
+					new FacultyModel(facultyId), userModel, beginningYear);
+			// Lên lịch
+			if (scheduledTimeMili != null) {
+				halloffame.setPublishedAt(new Date(scheduledTimeMili));
+				halloffame.setStatus(new StatusPostModel(1));
+			} else {
+				halloffame.setPublishedAt(new Date());
+			}
+			if (!facultyId.equals(0)) {
+				halloffame.setFaculty(new FacultyModel(facultyId));
+			}
 			halloffameRepository.save(halloffame);
 		} catch (IOException e) {
 			System.err.println(e);
