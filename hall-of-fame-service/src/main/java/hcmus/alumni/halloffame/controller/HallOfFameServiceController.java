@@ -74,14 +74,22 @@ public class HallOfFameServiceController {
         try {
             Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
             Page<IHallOfFameDto> hof = null;
-            if (statusId.equals(0) && facultyId.equals(0)) {
+            if (statusId.equals(0) && facultyId.equals(0) && beginningYear.equals(0)) {
                 hof = halloffameRepository.searchHof(title, pageable);
-            } else if (!statusId.equals(0) && facultyId.equals(0)) {
+            } else if (!statusId.equals(0) && facultyId.equals(0) && beginningYear.equals(0)) {
                 hof = halloffameRepository.searchHofByStatus(title, statusId, pageable);
-            } else if (statusId.equals(0) && !facultyId.equals(0)) {
+            } else if (statusId.equals(0) && !facultyId.equals(0) && beginningYear.equals(0)) {
                 hof = halloffameRepository.searchHofByFaculty(title, facultyId, pageable);
-            } else {
+            } else if (statusId.equals(0) && facultyId.equals(0) && !beginningYear.equals(0)) {
                 hof = halloffameRepository.searchHofByBeginningYear(title, beginningYear, pageable);
+            } else if (!statusId.equals(0) && !facultyId.equals(0) && beginningYear.equals(0)) {
+                hof = halloffameRepository.searchHofByStatusAndFaculty(title, statusId, facultyId, pageable);
+            } else if (!statusId.equals(0) && facultyId.equals(0) && !beginningYear.equals(0)) {
+                hof = halloffameRepository.searchHofByStatusAndBeginningYear(title, statusId, beginningYear, pageable);
+            } else if (statusId.equals(0) && !facultyId.equals(0) && !beginningYear.equals(0)) {
+                hof = halloffameRepository.searchHofByFacultyAndBeginningYear(title, facultyId, beginningYear, pageable);
+            } else if (!statusId.equals(0) && !facultyId.equals(0) && !beginningYear.equals(0)) {
+                hof = halloffameRepository.searchHofByAll(title, statusId, facultyId, beginningYear, pageable);
             }
 
             result.put("totalPages", hof.getTotalPages());
