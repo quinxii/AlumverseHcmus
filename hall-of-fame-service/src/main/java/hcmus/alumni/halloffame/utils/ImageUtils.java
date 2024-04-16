@@ -24,7 +24,6 @@ import lombok.Getter;
 public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
-	private final String avatarPath = "images/users/avatar/";
 	private final String hofPath = "images/hof/";	
 	public static int saltLength = 16;
 
