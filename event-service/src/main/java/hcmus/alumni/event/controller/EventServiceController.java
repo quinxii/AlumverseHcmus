@@ -1,21 +1,12 @@
 package hcmus.alumni.event.controller;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,7 +22,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,17 +38,10 @@ import hcmus.alumni.event.repository.EventRepository;
 import hcmus.alumni.event.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Order;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Selection;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
-@RequestMapping("/event")
+@RequestMapping("/events")
 public class EventServiceController {
 	@PersistenceContext
 	private EntityManager em;
@@ -67,7 +50,7 @@ public class EventServiceController {
 	@Autowired
     private ImageUtils imageUtils;
 	
-	@GetMapping("/")
+	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
@@ -105,12 +88,11 @@ public class EventServiceController {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	    }
 	    eventRepository.incrementEventViews(id);
-	    IEventDto eventDetails = optionalEvent.get();
 	    return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
 	}
     
 	@PreAuthorize("hasAnyAuthority('Admin')")
-	@PostMapping("/")
+	@PostMapping("")
 	public ResponseEntity<String> createEvent(
 			@RequestHeader("userId") String creatorId,
 	        @RequestParam(value = "title") String title, 

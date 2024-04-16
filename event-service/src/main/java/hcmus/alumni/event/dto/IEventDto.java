@@ -3,8 +3,6 @@ package hcmus.alumni.event.dto;
 import java.util.Date;
 import java.util.Set;
 
-import hcmus.alumni.event.model.TagModel;
-
 public interface IEventDto {
 	interface User{
 		String getFullName();
