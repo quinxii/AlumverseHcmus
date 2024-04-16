@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,11 +28,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
 import hcmus.alumni.news.model.UserModel;
+import hcmus.alumni.news.repository.CommentNewsRepository;
 import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
@@ -49,18 +50,9 @@ public class NewsServiceController {
 	@Autowired
 	private NewsRepository newsRepository;
 	@Autowired
+	private CommentNewsRepository commentNewsRepository;
+	@Autowired
 	private ImageUtils imageUtils;
-
-	// @GetMapping("/test")
-	// public List<INewsDto> test(@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-	// 		@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
-	// 		@RequestParam(value = "title", required = false, defaultValue = "") String title,
-	// 		@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-	// 		@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
-	// 	Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
-	// 	Page<INewsDto> news = newsRepository.searchNews(title, pageable);
-	// 	return news.getContent();
-	// }
 
 	@GetMapping("/count")
 	public ResponseEntity<Long> getNewsCount(
@@ -68,7 +60,7 @@ public class NewsServiceController {
 		if (statusId.equals(0)) {
 			return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByNotDelete());
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatus(statusId));
+		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatusId(statusId));
 	}
 
 	@GetMapping("")
@@ -278,6 +270,42 @@ public class NewsServiceController {
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	// Get comments of a news
+	@GetMapping("/{id}/comments")
+	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, pageable);
+
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/comments/{commentId}")
+	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			@PathVariable String commentId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, pageable);
+
+		result.put("comments", comments.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
