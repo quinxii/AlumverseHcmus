@@ -1,6 +1,5 @@
 package hcmus.alumni.event.repository;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
