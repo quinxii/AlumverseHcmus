@@ -83,8 +83,8 @@ public class EventModel implements Serializable {
     @Column(name = "views", nullable = false)
     private Integer views = 0;
     
-    @Column(name = "participants")
-    private Integer participants;
+    @Column(name = "participants", columnDefinition = "INT DEFAULT(0)")
+    private Integer participants = 0;
     
     public void setTags(Integer[] tags) {
 		Set<TagModel> newTags = new HashSet<>();
