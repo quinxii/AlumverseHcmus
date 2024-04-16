@@ -128,6 +128,9 @@ public class HallOfFameServiceController {
 		if (!userId.equals("")) {
 			userModel = new UserModel(userId);
 		}
+		else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not existed");
+		}
 		try {
 			// Save thumbnail image
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
