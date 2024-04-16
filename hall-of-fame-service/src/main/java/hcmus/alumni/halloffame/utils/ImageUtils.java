@@ -25,7 +25,6 @@ public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
 	private final String avatarPath = "images/users/avatar/";
-	private final String newsPath = "images/news/";
 	private final String hofPath = "images/hof/";	
 	public static int saltLength = 16;
 
@@ -115,7 +114,7 @@ public class ImageUtils {
 			Integer contentImgIdx = 0;
 			for (Element img : imgTags) {
 				String src = img.attr("src");
-				String newSrc = this.saveBase64ImageToStorage(this.getNewsPath(id), src, contentImgIdx.toString());
+				String newSrc = this.saveBase64ImageToStorage(this.getHofPath(id), src, contentImgIdx.toString());
 				img.attr("src", newSrc);
 				contentImgIdx++;
 			}
@@ -158,7 +157,7 @@ public class ImageUtils {
 				for (String addedImg : addedImgs) {
 					int smalletMissingIdx = this.findSmallestMissingContentIdx(contentIdxs);
 					String newIdx = String.valueOf(smalletMissingIdx);
-					String newSrc = this.saveBase64ImageToStorage(this.getNewsPath(id), addedImg, newIdx);
+					String newSrc = this.saveBase64ImageToStorage(this.getHofPath(id), addedImg, newIdx);
 					newDoc.select("img[src=" + addedImg + "]").attr("src", newSrc);
 					contentIdxs.add(smalletMissingIdx);
 				}
@@ -233,10 +232,6 @@ public class ImageUtils {
 			}
 		}
 		return flags.length;
-	}
-
-	public String getNewsPath(String id) {
-		return this.newsPath + id + "/";
 	}
 	
 	public String getHofPath(String id) {
