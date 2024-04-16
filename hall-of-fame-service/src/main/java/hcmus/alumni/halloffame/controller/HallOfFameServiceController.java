@@ -124,12 +124,15 @@ public class HallOfFameServiceController {
 		if (!emailOfUser.equals("")) {
 			userId = halloffameRepository.getUserIdByEmail(emailOfUser);
 		}
+		else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not existed");
+		}
 		UserModel userModel = null;
 		if (!userId.equals("")) {
 			userModel = new UserModel(userId);
 		}
 		else {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not existed");
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
 		}
 		try {
 			// Save thumbnail image
