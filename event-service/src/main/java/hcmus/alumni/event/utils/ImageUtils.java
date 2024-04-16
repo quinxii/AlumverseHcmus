@@ -13,7 +13,7 @@ import com.google.cloud.storage.StorageException;
 public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
-	private final String eventPath = "images/event/";
+	private final String eventPath = "images/events/";
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
