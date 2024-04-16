@@ -25,7 +25,7 @@ spring:
         - id: event
           uri: lb://event-service
           predicates:
-            - Path=/event/**
+            - Path=/events/**
           filters:
             - name: Authentication
             
