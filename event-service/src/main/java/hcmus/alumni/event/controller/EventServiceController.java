@@ -55,7 +55,7 @@ public class EventServiceController {
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 	        @RequestParam(value = "title", required = false, defaultValue = "") String title,
-	        @RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+	        @RequestParam(value = "orderBy", required = false, defaultValue = "organizationTime") String orderBy,
 	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
 	        @RequestParam(value = "statusId", required = false) Integer statusId) {
