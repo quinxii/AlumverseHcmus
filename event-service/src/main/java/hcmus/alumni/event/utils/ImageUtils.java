@@ -1,19 +1,6 @@
 package hcmus.alumni.event.utils;
 
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,7 +13,7 @@ import com.google.cloud.storage.StorageException;
 public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
-	private final String eventPath = "images/event/";
+	private final String eventPath = "images/events/";
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
