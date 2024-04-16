@@ -64,9 +64,9 @@ public class HallOfFameServiceController {
             @RequestParam(value = "title", required = false, defaultValue = "") String title,
             @RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
             @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-            @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId,
-            @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
-            @RequestParam(value = "beginningYear", required = false, defaultValue = "0") Integer beginningYear) {
+            @RequestParam(value = "statusId", required = false, defaultValue = "") Integer statusId,
+            @RequestParam(value = "facultyId", required = false, defaultValue = "") Integer facultyId,
+            @RequestParam(value = "beginningYear", required = false, defaultValue = "") Integer beginningYear) {
         if (pageSize == 0 || pageSize > 50) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
@@ -75,23 +75,8 @@ public class HallOfFameServiceController {
         try {
             Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
             Page<IHallOfFameDto> hof = null;
-            if (statusId.equals(0) && facultyId.equals(0) && beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHof(title, pageable);
-            } else if (!statusId.equals(0) && facultyId.equals(0) && beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHofByStatus(title, statusId, pageable);
-            } else if (statusId.equals(0) && !facultyId.equals(0) && beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHofByFaculty(title, facultyId, pageable);
-            } else if (statusId.equals(0) && facultyId.equals(0) && !beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHofByBeginningYear(title, beginningYear, pageable);
-            } else if (!statusId.equals(0) && !facultyId.equals(0) && beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHofByStatusAndFaculty(title, statusId, facultyId, pageable);
-            } else if (!statusId.equals(0) && facultyId.equals(0) && !beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHofByStatusAndBeginningYear(title, statusId, beginningYear, pageable);
-            } else if (statusId.equals(0) && !facultyId.equals(0) && !beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHofByFacultyAndBeginningYear(title, facultyId, beginningYear, pageable);
-            } else if (!statusId.equals(0) && !facultyId.equals(0) && !beginningYear.equals(0)) {
-                hof = halloffameRepository.searchHofByAll(title, statusId, facultyId, beginningYear, pageable);
-            }
+            
+            hof = halloffameRepository.searchHof(title, statusId, facultyId, beginningYear, pageable);
 
             result.put("totalPages", hof.getTotalPages());
             result.put("hof", hof.getContent());
