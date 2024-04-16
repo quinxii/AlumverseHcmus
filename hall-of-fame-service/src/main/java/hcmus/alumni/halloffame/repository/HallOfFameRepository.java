@@ -33,6 +33,20 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
 	@Query("SELECT n FROM HallOfFameModel n WHERE n.beginningYear = :beginningYear AND n.title LIKE %:title%")
     Page<IHallOfFameDto> searchHofByBeginningYear(@Param("title") String title, @Param("beginningYear") Integer beginningYear, Pageable pageable);
 	
+	@Query("SELECT n FROM HallOfFameModel n JOIN n.status s JOIN n.faculty f WHERE s.id = :statusId AND f.id = :facultyId AND n.title LIKE %:title%")
+	Page<IHallOfFameDto> searchHofByStatusAndFaculty(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, Pageable pageable);
+
+	@Query("SELECT n FROM HallOfFameModel n JOIN n.status s JOIN n.faculty f WHERE s.id = :statusId AND f.id = :facultyId AND n.beginningYear = :beginningYear AND n.title LIKE %:title%")
+	Page<IHallOfFameDto> searchHofByStatusAndFacultyAndBeginningYear(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, @Param("beginningYear") Integer beginningYear, Pageable pageable);
+
+	@Query("SELECT n FROM HallOfFameModel n JOIN n.faculty f WHERE f.id = :facultyId AND n.beginningYear = :beginningYear AND n.title LIKE %:title%")
+	Page<IHallOfFameDto> searchHofByFacultyAndBeginningYear(@Param("title") String title, @Param("facultyId") Integer facultyId, @Param("beginningYear") Integer beginningYear, Pageable pageable);
+
+	@Query("SELECT n FROM HallOfFameModel n JOIN n.status s JOIN n.faculty f WHERE s.id = :statusId AND f.id = :facultyId AND n.beginningYear = :beginningYear AND n.title LIKE %:title%")
+	Page<IHallOfFameDto> searchHofByAll(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, @Param("beginningYear") Integer beginningYear, Pageable pageable);
+
+	@Query("SELECT n FROM HallOfFameModel n JOIN n.status s WHERE s.id = :statusId AND n.beginningYear = :beginningYear AND n.title LIKE %:title%")
+	Page<IHallOfFameDto> searchHofByStatusAndBeginningYear(@Param("title") String title, @Param("statusId") Integer statusId, @Param("beginningYear") Integer beginningYear, Pageable pageable);
 	@Query("SELECT COUNT(n) FROM HallOfFameModel n JOIN n.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
 	
