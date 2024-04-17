@@ -23,6 +23,8 @@ public interface IEventDto {
 	String getTitle();
 	String getContent();
 	String getThumbnail();
+	String getOrganizationLocation();
+	Date getOrganizationTime();
 	Integer getViews();
 	Date getUpdateAt();
 	Date getPublishedAt();
