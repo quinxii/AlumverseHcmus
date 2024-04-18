@@ -1,4 +1,4 @@
-package hcmus.alumni.news.config;
+package hcmus.alumni.event.config;
 
 import java.io.IOException;
 import java.util.ArrayList;

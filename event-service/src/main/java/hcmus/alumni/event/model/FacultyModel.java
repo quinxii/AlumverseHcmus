@@ -1,4 +1,4 @@
-package hcmus.alumni.news.model;
+package hcmus.alumni.event.model;
 
 import java.util.Date;
 
