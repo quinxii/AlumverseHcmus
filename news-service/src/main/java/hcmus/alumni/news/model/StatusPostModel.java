@@ -37,4 +37,3 @@ public class StatusPostModel implements Serializable {
 		this.id = id;
 	}
 }
-
