@@ -35,12 +35,9 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Modifying
     @Query("UPDATE EventModel e SET e.views = e.views + 1 WHERE e.id = :id")
     int incrementEventViews(String id);
-    
-    @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2")
-    Page<IEventDto> getMostParticipantsEvents(Pageable pageable);
 
-    @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate AND n.publishedAt <= :endDate")
-    Page<IEventDto> getHotEvents(Date startDate, Date endDate, Pageable pageable);
+    @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate")
+    Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
     
     @Query("SELECT pe.note as note, u.fullName AS fullName " +
 		"FROM ParticipantEventModel pe " +

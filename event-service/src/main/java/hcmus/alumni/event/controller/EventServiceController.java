@@ -217,21 +217,6 @@ public class EventServiceController {
 	    eventRepository.save(event);
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	
-	@GetMapping("/most-participants")
-	public ResponseEntity<HashMap<String, Object>> getMostViewedEvents(
-	        @RequestParam(value = "limit", defaultValue = "5") Integer limit) {
-	    if (limit <= 0 || limit > 5) {
-	        limit = 5;
-	    }
-	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
-	    Page<IEventDto> events = eventRepository.getMostParticipantsEvents(pageable);
-
-	    HashMap<String, Object> result = new HashMap<>();
-	    result.put("events", events.getContent());
-
-	    return ResponseEntity.status(HttpStatus.OK).body(result);
-	}
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotEvents(
@@ -240,12 +225,10 @@ public class EventServiceController {
 	        limit = 5;
 	    }
 	    Calendar cal = Calendar.getInstance();
-	    Date endDate = cal.getTime();
-	    cal.add(Calendar.WEEK_OF_YEAR, -1);
 	    Date startDate = cal.getTime();
 
 	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
-	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, endDate, pageable);
+	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, pageable);
 
 	    HashMap<String, Object> result = new HashMap<>();
 	    result.put("events", events.getContent());
