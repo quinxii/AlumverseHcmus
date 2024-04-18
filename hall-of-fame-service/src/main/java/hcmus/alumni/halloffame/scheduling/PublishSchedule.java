@@ -21,7 +21,7 @@ public class PublishSchedule {
 	@Autowired
 	private HallOfFameRepository hofRepository;
 
-	@Scheduled(cron = "0 0 * * * ?")
+	@Scheduled(cron = "0 0/15 * * * ?")
 	public void publishNews() {
 		try {
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
