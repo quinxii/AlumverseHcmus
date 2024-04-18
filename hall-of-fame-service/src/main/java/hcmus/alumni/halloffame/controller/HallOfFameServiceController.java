@@ -58,44 +58,44 @@ public class HallOfFameServiceController {
 	}
 
 	@GetMapping("")
-    public ResponseEntity<HashMap<String, Object>> getHof(
-            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-            @RequestParam(value = "title", required = false, defaultValue = "") String title,
-            @RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-            @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-            @RequestParam(value = "statusId", required = false, defaultValue = "") Integer statusId,
-            @RequestParam(value = "facultyId", required = false, defaultValue = "") Integer facultyId,
-            @RequestParam(value = "beginningYear", required = false, defaultValue = "") Integer beginningYear) {
-        if (pageSize == 0 || pageSize > 50) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-        HashMap<String, Object> result = new HashMap<>();
+	public ResponseEntity<HashMap<String, Object>> getHof(
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "statusId", required = false) Integer statusId,
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
+			@RequestParam(value = "beginningYear", required = false, defaultValue = "0") Integer beginningYear) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<>();
 
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-            Page<IHallOfFameDto> hof = null;
-            
-            hof = halloffameRepository.searchHof(title, statusId, facultyId, beginningYear, pageable);
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IHallOfFameDto> hof = null;
 
-            result.put("totalPages", hof.getTotalPages());
-            result.put("hof", hof.getContent());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        } catch (Exception e) {
-            result.put("error", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
-        }
+			hof = halloffameRepository.searchHof(title, statusId, facultyId, beginningYear, pageable);
 
-        return ResponseEntity.status(HttpStatus.OK).body(result);
-    }
+			result.put("totalPages", hof.getTotalPages());
+			result.put("hof", hof.getContent());
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			result.put("error", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PostMapping("")
 	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
-			@RequestParam(value = "title") String title,
-			@RequestParam(value = "thumbnail") MultipartFile thumbnail,
-			@RequestParam(value = "facultyId") Integer facultyId, @RequestParam(value = "emailOfUser") String emailOfUser,
+			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
+			@RequestParam(value = "facultyId") Integer facultyId,
+			@RequestParam(value = "emailOfUser") String emailOfUser,
 			@RequestParam(value = "beginningYear") Integer beginningYear,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
@@ -108,15 +108,13 @@ public class HallOfFameServiceController {
 		String userId = "";
 		if (!emailOfUser.equals("")) {
 			userId = halloffameRepository.getUserIdByEmail(emailOfUser);
-		}
-		else {
+		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not existed");
 		}
 		UserModel userModel = null;
 		if (!userId.equals("")) {
 			userModel = new UserModel(userId);
-		}
-		else {
+		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
 		}
 		try {
@@ -183,7 +181,11 @@ public class HallOfFameServiceController {
 
 			if (!emailOfUser.equals("")) {
 				String userId = halloffameRepository.getUserIdByEmail(emailOfUser);
-				halloffame.setUserId(new UserModel(userId));
+				if (userId == null || userId.isEmpty()) {
+					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
+				} else {
+					halloffame.setUserId(new UserModel(userId)); 
+				}
 			}
 
 			// Save hall of fame
@@ -211,7 +213,8 @@ public class HallOfFameServiceController {
 		}
 		HallOfFameModel halloffame = optionalHallOfFame.get();
 		if (!updatedHallOfFame.getContent().equals("")) {
-			String newContent = imageUtils.updateImgFromHtmlToStorage(halloffame.getContent(), updatedHallOfFame.getContent(), id);
+			String newContent = imageUtils.updateImgFromHtmlToStorage(halloffame.getContent(),
+					updatedHallOfFame.getContent(), id);
 			if (newContent.equals(halloffame.getContent())) {
 				return ResponseEntity.status(HttpStatus.OK).body("");
 			}
@@ -220,24 +223,27 @@ public class HallOfFameServiceController {
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteHallOfFame(@PathVariable String id) {
-	    Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
-	    if (optionalHallOfFame.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-	    }
-	    HallOfFameModel hof = optionalHallOfFame.get();
-	    hof.setStatus(new StatusPostModel(4));
-	    halloffameRepository.save(hof);
-	    return ResponseEntity.status(HttpStatus.OK).body("Updated status successfully!");
+		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
+		if (optionalHallOfFame.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+		}
+		HallOfFameModel hof = optionalHallOfFame.get();
+		hof.setStatus(new StatusPostModel(4));
+		halloffameRepository.save(hof);
+		return ResponseEntity.status(HttpStatus.OK).body("Updated status successfully!");
 	}
-	
+
 	@GetMapping("/{id}")
-	public ResponseEntity<HallOfFameModel> getHallOfFameById(@PathVariable String id) {
-	    Optional<HallOfFameModel> halloffame = halloffameRepository.findById(id);
-	    return halloffame.map(ResponseEntity::ok)
-	        .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+	public ResponseEntity<IHallOfFameDto> getHallOfFameById(@PathVariable String id) {
+		Optional<IHallOfFameDto> optionalHof = halloffameRepository.findHallOfFameById(id);
+		if (optionalHof.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		} 
+		halloffameRepository.viewsIncrement(id);
+		return ResponseEntity.status(HttpStatus.OK).body(optionalHof.get());
 	}
 }

@@ -20,7 +20,7 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
 
 	Optional<HallOfFameModel> findById(String id);
 
-	@Query("SELECT h " + "FROM HallOfFameModel h " + " JOIN h.status s " + " JOIN h.faculty f "
+	@Query("SELECT h " + "FROM HallOfFameModel h " + "LEFT JOIN h.status s " + "LEFT JOIN h.faculty f "
 			+ "WHERE (:statusId IS NULL OR s.id = :statusId) " + "AND (:facultyId IS NULL OR f.id = :facultyId) "
 			+ "AND (:beginningYear IS NULL OR h.beginningYear = :beginningYear) " + "AND h.title LIKE %:title%")
 	Page<IHallOfFameDto> searchHof(@Param("title") String title, @Param("statusId") Integer statusId,
