@@ -1,13 +1,9 @@
 package hcmus.alumni.apigateway;
 
-import io.jsonwebtoken.Claims;
-
 import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,9 +11,11 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+
 import hcmus.alumni.apigateway.filter.RouteValidator;
 import hcmus.alumni.apigateway.utils.JwtUtils;
+import io.jsonwebtoken.Claims;
+import reactor.core.publisher.Mono;
 
 @Component
 public class AuthenticationGatewayFilterFactory
@@ -51,8 +49,10 @@ public class AuthenticationGatewayFilterFactory
 					authHeader = authHeader.substring(7);
 				}
 				try {
-					jwtUtils.validateToken(authHeader);
-					req = updateRequest(exchange, authHeader);
+					if (jwtUtils.validateToken(authHeader)) {
+						req = updateRequest(exchange, authHeader);
+					}
+					
 				} catch (Exception e) {
 					return this.onError(exchange, HttpStatus.FORBIDDEN);
 				}

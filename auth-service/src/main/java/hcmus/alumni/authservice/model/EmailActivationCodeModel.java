@@ -55,4 +55,3 @@ public class EmailActivationCodeModel implements Serializable {
     }
 }
 
-
