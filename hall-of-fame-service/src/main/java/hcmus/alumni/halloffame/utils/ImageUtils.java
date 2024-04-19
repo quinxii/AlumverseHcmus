@@ -1,9 +1,12 @@
 package hcmus.alumni.halloffame.utils;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -24,6 +27,11 @@ import lombok.Getter;
 public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
+	@Autowired
+	private ImageCompression imageCompression;
+
+	private final int resizeMaxWidth = 1000;
+	private final int resizeMaxHeight = 1000;
 	private final String hofPath = "images/hof/";	
 	public static int saltLength = 16;
 
@@ -36,8 +44,10 @@ public class ImageUtils {
 
 		String newFilename = uploadDirectory + imageName;
 
-		// Convert MultipartFile to byte array
-		byte[] imageBytes = imageFile.getBytes();
+		// Resize then compress image
+		BufferedImage bufferedImage = ImageIO.read(imageFile.getInputStream());
+		bufferedImage = imageCompression.resizeImage(bufferedImage, resizeMaxWidth, resizeMaxHeight);
+		byte[] imageBytes = imageCompression.compressImage(bufferedImage, imageFile.getContentType(), 0.8f);
 
 		BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
 				.setContentType(imageFile.getContentType()).setCacheControl("no-cache").build();

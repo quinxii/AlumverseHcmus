@@ -1,9 +1,13 @@
 package hcmus.alumni.news.utils;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+
+import javax.imageio.ImageIO;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,6 +27,11 @@ import lombok.Getter;
 public class ImageUtils {
 	@Autowired
 	private GCPConnectionUtils gcp;
+	@Autowired
+	private ImageCompression imageCompression;
+
+	private final int resizeMaxWidth = 1000;
+	private final int resizeMaxHeight = 1000;
 	private final String avatarPath = "images/users/avatar/";
 	private final String newsPath = "images/news/";
 	public static int saltLength = 16;
@@ -36,8 +45,10 @@ public class ImageUtils {
 
 		String newFilename = uploadDirectory + imageName;
 
-		// Convert MultipartFile to byte array
-		byte[] imageBytes = imageFile.getBytes();
+		// Resize then compress image
+		BufferedImage bufferedImage = ImageIO.read(imageFile.getInputStream());
+		bufferedImage = imageCompression.resizeImage(bufferedImage, resizeMaxWidth, resizeMaxHeight);
+		byte[] imageBytes = imageCompression.compressImage(bufferedImage, imageFile.getContentType(), 0.8f);
 
 		BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
 				.setContentType(imageFile.getContentType()).setCacheControl("no-cache").build();
@@ -96,7 +107,6 @@ public class ImageUtils {
 			}
 			gcp.getStorage().delete(gcp.getBucketName(), extractedImageName);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -118,7 +128,6 @@ public class ImageUtils {
 				contentImgIdx++;
 			}
 		} catch (IOException e) {
-			// TODO: handle exception
 			System.err.println(e);
 		}
 		doc.outputSettings().indentAmount(0).prettyPrint(false);
@@ -161,7 +170,6 @@ public class ImageUtils {
 					contentIdxs.add(smalletMissingIdx);
 				}
 			} catch (IOException e) {
-				// TODO: handle exception
 				System.err.println(e);
 				return null;
 			}
@@ -174,15 +182,14 @@ public class ImageUtils {
 	public String[] extractContentTypeAndDataFromImageBase64(String base64) {
 		String[] strings = base64.split(",");
 		switch (strings[0]) {// check image's extension
-		case "data:image/jpeg;base64":
-			strings[0] = "image/jpeg";
-			break;
-		case "data:image/png;base64":
-			strings[0] = "image/png";
-			break;
-		default:
-			strings[0] = null;
-			break;
+			case "data:image/jpeg;base64":
+				strings[0] = "image/jpeg";
+				break;
+			case "data:image/png;base64":
+				strings[0] = "image/png";
+				break;
+			default:
+				throw new IllegalArgumentException("Unsupported image format: " + strings[0]);
 		}
 		return strings;
 	}
