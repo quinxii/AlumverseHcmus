@@ -1,6 +1,7 @@
 package hcmus.alumni.event.controller;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -215,6 +216,24 @@ public class EventServiceController {
 	    event.setStatus(new StatusPostModel(4));
 	    eventRepository.save(event);
 	    return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@GetMapping("/hot")
+	public ResponseEntity<HashMap<String, Object>> getHotEvents(
+	        @RequestParam(value = "limit", defaultValue = "5") Integer limit) {
+	    if (limit <= 0 || limit > 5) {
+	        limit = 5;
+	    }
+	    Calendar cal = Calendar.getInstance();
+	    Date startDate = cal.getTime();
+
+	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
+	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, pageable);
+
+	    HashMap<String, Object> result = new HashMap<>();
+	    result.put("events", events.getContent());
+
+	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 	
 	@GetMapping("/{id}/participant")
