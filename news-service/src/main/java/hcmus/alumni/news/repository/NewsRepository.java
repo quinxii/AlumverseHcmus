@@ -44,4 +44,9 @@ public interface NewsRepository  extends JpaRepository<NewsModel, String> {
 	@Modifying
 	@Query("UPDATE NewsModel n SET n.views = n.views + 1 WHERE n.id = :id")
 	int viewsIncrement(String id);
+
+	@Transactional
+	@Modifying
+	@Query("UPDATE NewsModel n SET n.childrenCommentNumber = n.childrenCommentNumber + :count WHERE n.id = :id")
+	int commentCountIncrement(String id,@Param("count") Integer count);
 }

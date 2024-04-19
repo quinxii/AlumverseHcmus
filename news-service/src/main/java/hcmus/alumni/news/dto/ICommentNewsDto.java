@@ -12,6 +12,7 @@ public interface ICommentNewsDto {
     String getId();
     User getCreator();
     String getContent();
+    Integer getChildrenCommentNumber();
     Date getCreateAt();
     Date getUpdateAt();
-} 
+}

@@ -74,9 +74,16 @@ public class NewsModel implements Serializable {
 	@Column(name = "views", nullable = false)
 	private Integer views = 0;
 
+	@Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
+	private Integer childrenCommentNumber = 0;
+
 	public NewsModel() {
 		id = UUID.randomUUID().toString();
 		status = new StatusPostModel(2);
+	}
+
+	public NewsModel(String id) {
+		this.id = id;
 	}
 
 	public NewsModel(String id, UserModel creator, String title, String summary, String content, String thumbnail) {

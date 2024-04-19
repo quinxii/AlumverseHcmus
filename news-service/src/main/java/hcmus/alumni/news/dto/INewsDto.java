@@ -25,6 +25,7 @@ public interface INewsDto {
 	String getContent();
 	String getThumbnail();
 	Integer getViews();
+	Integer getChildrenCommentNumber();
 	Date getUpdateAt();
 	Date getPublishedAt();
 	User getCreator();

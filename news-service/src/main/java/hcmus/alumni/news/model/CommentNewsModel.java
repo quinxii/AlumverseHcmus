@@ -2,6 +2,7 @@ package hcmus.alumni.news.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -43,6 +44,9 @@ public class CommentNewsModel implements Serializable {
     @Column(name = "content", columnDefinition = "TEXT")
 	private String content;
 
+	@Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
+	private Integer childrenCommentNumber = 0;
+
     @CreationTimestamp
 	@Column(name = "create_at")
 	private Date createAt;
@@ -53,4 +57,12 @@ public class CommentNewsModel implements Serializable {
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
+
+	public CommentNewsModel(String userId, String newsId, String parentId, String content) {
+		this.id = UUID.randomUUID().toString();
+		this.creator = new UserModel(userId);
+		this.news = new NewsModel(newsId);
+		this.parentId = parentId;
+		this.content = content;
+	}
 }
