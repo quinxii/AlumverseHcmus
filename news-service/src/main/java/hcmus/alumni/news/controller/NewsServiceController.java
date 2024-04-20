@@ -42,7 +42,6 @@ import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.ws.rs.HeaderParam;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
