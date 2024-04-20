@@ -2,11 +2,11 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Spring Boot-ServiceDiscoveryApplication<com.codingworld-service-discovery>",
+            "name": "Spring Boot-ServiceDiscoveryApplication<service-discovery>",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "mainClass": "hcmus.alumni.servicediscovery.ServiceDiscoveryApplication",
-            "projectName": "com.codingworld-service-discovery",
+            "projectName": "service-discovery",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         },
