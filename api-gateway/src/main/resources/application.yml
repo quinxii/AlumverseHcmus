@@ -44,6 +44,14 @@ spring:
             - Path=/news/**
           filters:
             - name: Authentication
+            
+        ## search service
+        - id: search
+          uri: lb://search-service
+          predicates:
+            - Path=/search/**
+          filters:
+            - name: Authentication
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
