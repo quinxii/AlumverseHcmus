@@ -23,7 +23,7 @@ public class PublishSchedule {
 	@Autowired
 	private NewsRepository newsRepository;
 
-	@Scheduled(cron = "0 0 * * * ?")
+	@Scheduled(cron = "0 0/15 * * * ?")
 	public void publishNews() {
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
 		Date now = cal.getTime();

@@ -1,9 +1,11 @@
 package hcmus.alumni.news.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
+import hcmus.alumni.news.model.CommentNewsModel;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
@@ -39,6 +42,7 @@ import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.ws.rs.HeaderParam;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
@@ -275,6 +279,7 @@ public class NewsServiceController {
 	}
 
 	// Get comments of a news
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -292,7 +297,9 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	@GetMapping("/comments/{commentId}")
+	// Get children comments of a comment
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -302,11 +309,90 @@ public class NewsServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		// Check if parent comment deleted
+		Optional<CommentNewsModel> parentComment = commentNewsRepository.findById(commentId);
+		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
 		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, pageable);
 
 		result.put("comments", comments.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@PostMapping("/{id}/comments")
+	public ResponseEntity<String> createComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String id, @RequestBody CommentNewsModel comment) {
+		comment.setId(UUID.randomUUID().toString());
+		comment.setNews(new NewsModel(id));
+		comment.setCreator(new UserModel(creator));
+		commentNewsRepository.save(comment);
+		newsRepository.commentCountIncrement(id, 1);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@PutMapping("/comments/{commentId}")
+	public ResponseEntity<String> updateComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId, @RequestBody CommentNewsModel updatedComment) {
+		if (updatedComment.getContent() == null) {
+			return ResponseEntity.status(HttpStatus.OK).body("");
+		}
+		int updates = commentNewsRepository.updateComment(commentId, creator, updatedComment.getContent());
+		if (updates == 0) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@DeleteMapping("/comments/{commentId}")
+	public ResponseEntity<String> deleteComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId) {
+		// Check if comment exists
+		Optional<CommentNewsModel> originalComment = commentNewsRepository.findById(commentId);
+		if (originalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		String newsId = originalComment.get().getNews().getId();
+
+		// Initilize variables
+		List<CommentNewsModel> childrenComments = new ArrayList<CommentNewsModel>();
+		List<String> allParentId = new ArrayList<String>();
+		int totalDelete = 1;
+
+		// Get children comments
+		String curCommentId = commentId;
+		allParentId.add(curCommentId);
+		childrenComments.addAll(commentNewsRepository.getChildrenComment(curCommentId));
+
+		// Start the loop
+		while (!childrenComments.isEmpty()) {
+			CommentNewsModel curComment = childrenComments.get(0);
+			curCommentId = curComment.getId();
+			List<CommentNewsModel> temp = commentNewsRepository.getChildrenComment(curCommentId);
+			if (!temp.isEmpty()) {
+				allParentId.add(curCommentId);
+				childrenComments.addAll(temp);
+			}
+
+			childrenComments.remove(0);
+		}
+
+		// Delete all comments and update comment count
+		commentNewsRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			totalDelete += commentNewsRepository.deleteChildrenComment(parentId);
+		}
+		newsRepository.commentCountIncrement(newsId, -totalDelete);
+
+		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 }
