@@ -256,16 +256,18 @@ public class EventServiceController {
 	
 	@GetMapping("/{id}/participants")
 	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id,
-			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+	    if (pageSize == 0 || pageSize > 50) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    }
 	    Map<String, Object> result = new HashMap<>();
-	   
-	    List<IParticipantEventDto> participantList = participantEventRepository.getParticipantsByEventId(id);
-	    Integer participantCount = participantList.size();
-	    		
-	    result.put("participantCount", participantCount);
-	    result.put("participants", participantList);
-	    
+
+	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+	    Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, pageable);
+
+	    result.put("participants", participantsPage.getContent());
+
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 	
@@ -278,9 +280,10 @@ public class EventServiceController {
 	    participant.setId(new ParticipantEventId(id, userId));
 	    participant.setNote(note);
 	    participantEventRepository.save(participant);
+	    //db còn cái trigger cho participant nên tui tạm phong ấn thằng này
 //	    eventRepository.participantCountIncrement(id, 1);
 
-	    return ResponseEntity.status(HttpStatus.CREATED).body("Participant added successfully.");
+	    return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
 	@DeleteMapping("/{id}/participants")
@@ -293,7 +296,7 @@ public class EventServiceController {
 	    // Update participant count for the event
 	    eventRepository.participantCountIncrement(id, -1);
 
-	    return ResponseEntity.status(HttpStatus.OK).body("Participant deleted successfully.");
+	    return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 	
 	@GetMapping("/{id}/comments")

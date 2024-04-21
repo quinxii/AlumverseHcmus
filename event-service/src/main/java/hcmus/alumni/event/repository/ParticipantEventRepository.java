@@ -1,7 +1,5 @@
 package hcmus.alumni.event.repository;
 
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,7 +19,7 @@ public interface ParticipantEventRepository extends JpaRepository<ParticipantEve
 		"JOIN UserModel u ON pe.id.userId = u.id " +
 		"WHERE pe.id.eventId = :id " +
 		"AND pe.isDelete = false")
-	List<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id);
+	Page<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id, Pageable pageable);
 
 	@Transactional
 	@Modifying
