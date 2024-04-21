@@ -1,6 +1,7 @@
 package hcmus.alumni.userservice.model;
 
 import java.io.Serializable;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -13,7 +14,6 @@ import javax.persistence.Table;
 import hcmus.alumni.userservice.common.Privacy;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "[alumni]")
