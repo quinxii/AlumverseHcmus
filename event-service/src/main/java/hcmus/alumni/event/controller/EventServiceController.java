@@ -1,6 +1,7 @@
 package hcmus.alumni.event.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,19 +24,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.event.dto.ICommentEventDto;
 import hcmus.alumni.event.dto.IEventDto;
 import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPostModel;
 import hcmus.alumni.event.model.FacultyModel;
+import hcmus.alumni.event.model.ParticipantEventId;
+import hcmus.alumni.event.model.ParticipantEventModel;
 import hcmus.alumni.event.model.UserModel;
+import hcmus.alumni.event.model.CommentEventModel;
+import hcmus.alumni.event.repository.CommentEventRepository;
 import hcmus.alumni.event.repository.EventRepository;
+import hcmus.alumni.event.repository.ParticipantEventRepository;
 import hcmus.alumni.event.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -49,6 +57,10 @@ public class EventServiceController {
 	@Autowired
 	private EventRepository eventRepository;
 	@Autowired
+	private ParticipantEventRepository participantEventRepository;
+	@Autowired
+	private CommentEventRepository commentEventRepository;
+	@Autowired
     private ImageUtils imageUtils;
 	
 	@GetMapping("")
@@ -59,7 +71,8 @@ public class EventServiceController {
 	        @RequestParam(value = "orderBy", required = false, defaultValue = "organizationTime") String orderBy,
 	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
-	        @RequestParam(value = "statusId", required = false) Integer statusId) {
+	        @RequestParam(value = "statusId", required = false) Integer statusId,
+	        @RequestParam(value = "fromToday", required = false, defaultValue = "true") boolean fromToday) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
@@ -69,7 +82,12 @@ public class EventServiceController {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 	        Page<IEventDto> events = null;
 	        
-	        events = eventRepository.searchEvents(title, statusId, facultyId, pageable);
+	        Date startDate = null;
+	        if (fromToday) {
+	        	Calendar cal = Calendar.getInstance();
+	        	startDate = cal.getTime();
+	        }
+	        events = eventRepository.searchEvents(title, statusId, facultyId, startDate, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -236,16 +254,169 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 	
-	@GetMapping("/{id}/participant")
-	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id) {
+	@GetMapping("/{id}/participants")
+	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 	    Map<String, Object> result = new HashMap<>();
 	   
-	    List<IParticipantEventDto> participantList = eventRepository.getParticipantsByEventId(id);
+	    List<IParticipantEventDto> participantList = participantEventRepository.getParticipantsByEventId(id);
 	    Integer participantCount = participantList.size();
 	    		
 	    result.put("participantCount", participantCount);
 	    result.put("participants", participantList);
 	    
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+	
+	@PostMapping("/{id}/participants")
+	public ResponseEntity<String> addParticipant(
+	        @PathVariable String id,
+	        @RequestHeader("userId") String userId,
+	        @RequestParam(value = "note", required = false) String note) {
+	    ParticipantEventModel participant = new ParticipantEventModel();
+	    participant.setId(new ParticipantEventId(id, userId));
+	    participant.setNote(note);
+	    participantEventRepository.save(participant);
+//	    eventRepository.participantCountIncrement(id, 1);
+
+	    return ResponseEntity.status(HttpStatus.CREATED).body("Participant added successfully.");
+	}
+
+	@DeleteMapping("/{id}/participants")
+	public ResponseEntity<String> deleteParticipant(
+	        @PathVariable String id,
+	        @RequestHeader("userId") String userId) {
+	    // Delete the participant
+	    participantEventRepository.deleteByEventIdAndUserId(id, userId);
+
+	    // Update participant count for the event
+	    eventRepository.participantCountIncrement(id, -1);
+
+	    return ResponseEntity.status(HttpStatus.OK).body("Participant deleted successfully.");
+	}
+	
+	@GetMapping("/{id}/comments")
+	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentEventDto> comments = commentEventRepository.getComments(id, pageable);
+
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/comments/{commentId}/children")
+	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			@PathVariable String commentId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		// Check if parent comment deleted
+		Optional<CommentEventModel> parentComment = commentEventRepository.findById(commentId);
+		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, pageable);
+
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PostMapping("/{id}/comments")
+	public ResponseEntity<CommentEventModel> createComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String id, @RequestBody CommentEventModel comment) {
+		comment.setId(UUID.randomUUID().toString());
+		comment.setEvent(new EventModel(id));
+		comment.setCreator(new UserModel(creator));
+		commentEventRepository.save(comment);
+		
+		//Hiện tại children_comment_number của comment chỉ dùng để đếm comment con trực tiếp thôi, chứ không đếm comment cháu chắt
+		//Còn nếu ông muốn đếm cả comment cháu chắt thì hú tui
+		if (comment.getParentId() != null) {
+	        commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
+	    }
+		eventRepository.commentCountIncrement(id, 1);
+		return ResponseEntity.status(HttpStatus.CREATED).body(comment);
+	}
+
+	@PutMapping("/comments/{commentId}")
+	public ResponseEntity<String> updateComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId, @RequestBody CommentEventModel updatedComment) {
+		if (updatedComment.getContent() == null) {
+			return ResponseEntity.status(HttpStatus.OK).body("");
+		}
+		int updates = commentEventRepository.updateComment(commentId, creator, updatedComment.getContent());
+		if (updates == 0) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@DeleteMapping("/comments/{commentId}")
+	public ResponseEntity<String> deleteComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId) {
+		// Check if comment exists
+		Optional<CommentEventModel> originalComment = commentEventRepository.findById(commentId);
+		if (originalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		String newsId = originalComment.get().getEvent().getId();
+		
+		//Hiện tại children_comment_number của comment chỉ dùng để đếm comment con trực tiếp thôi, chứ không đếm comment cháu chắt
+		//Còn nếu ông muốn đếm cả comment cháu chắt thì hú tui
+		String parentId = originalComment.get().getParentId();
+	    if (parentId != null) {
+	        commentEventRepository.commentCountIncrement(parentId, -1);
+	    }
+
+		// Initilize variables
+		List<CommentEventModel> childrenComments = new ArrayList<CommentEventModel>();
+		List<String> allParentId = new ArrayList<String>();
+		int totalDelete = 1;
+
+		// Get children comments
+		String curCommentId = commentId;
+		allParentId.add(curCommentId);
+		childrenComments.addAll(commentEventRepository.getChildrenComment(curCommentId));
+
+		// Start the loop
+		while (!childrenComments.isEmpty()) {
+			CommentEventModel curComment = childrenComments.get(0);
+			curCommentId = curComment.getId();
+			List<CommentEventModel> temp = commentEventRepository.getChildrenComment(curCommentId);
+			if (!temp.isEmpty()) {
+				allParentId.add(curCommentId);
+				childrenComments.addAll(temp);
+			}
+
+			childrenComments.remove(0);
+		}
+
+		// Delete all comments and update comment count
+		commentEventRepository.deleteComment(commentId, creator);
+		for (String iParentId : allParentId) {
+			totalDelete += commentEventRepository.deleteChildrenComment(iParentId);
+		}
+		eventRepository.commentCountIncrement(newsId, -totalDelete);
+
+		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 }

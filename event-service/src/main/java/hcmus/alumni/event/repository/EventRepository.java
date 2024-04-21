@@ -23,8 +23,14 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
         "LEFT JOIN e.faculty f " +
         "WHERE (:statusId IS NULL OR s.id = :statusId) " +
         "AND (:facultyId IS NULL OR f.id = :facultyId) " +
-        "AND e.title LIKE %:title%")
-	Page<IEventDto> searchEvents(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, Pageable pageable);
+        "AND e.title LIKE %:title% " +
+        "AND (:startDate IS NULL OR e.publishedAt >= :startDate)")
+	Page<IEventDto> searchEvents(
+			@Param("title") String title, 
+			@Param("statusId") Integer statusId, 
+			@Param("facultyId") Integer facultyId,
+			@Param("startDate") Date startDate,
+			Pageable pageable);
 
 	@Query("SELECT e " +
 		"FROM EventModel e " +
@@ -39,10 +45,13 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate")
     Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
     
-    @Query("SELECT pe.note as note, u.fullName AS fullName " +
-		"FROM ParticipantEventModel pe " +
-		"JOIN UserModel u ON pe.id.userId = u.id " +
-		"WHERE pe.id.eventId = :id " +
-		"AND pe.isDeleted = false")
-     List<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id);
+    @Transactional
+	@Modifying
+	@Query("UPDATE EventModel n SET n.participants = n.participants + :count WHERE n.id = :id")
+	int participantCountIncrement(String id,@Param("count") Integer count);
+    
+    @Transactional
+	@Modifying
+	@Query("UPDATE EventModel n SET n.childrenCommentNumber = n.childrenCommentNumber + :count WHERE n.id = :id")
+	int commentCountIncrement(String id,@Param("count") Integer count);
 }
