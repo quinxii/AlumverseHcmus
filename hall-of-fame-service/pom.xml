@@ -7,7 +7,7 @@
 		<version>3.2.4</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>hcmus.alumni.news</groupId>
+	<groupId>hcmus.alumni.halloffame</groupId>
 	<artifactId>news-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>news-service</name>
