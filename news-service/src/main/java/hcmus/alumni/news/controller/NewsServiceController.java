@@ -332,6 +332,11 @@ public class NewsServiceController {
 		comment.setNews(new NewsModel(id));
 		comment.setCreator(new UserModel(creator));
 		commentNewsRepository.save(comment);
+
+		if (comment.getParentId() != null) {
+			commentNewsRepository.commentCountIncrement(comment.getParentId(), 1);
+		}
+
 		newsRepository.commentCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
@@ -362,6 +367,9 @@ public class NewsServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
 		String newsId = originalComment.get().getNews().getId();
+		if (originalComment.get().getParentId() != null) {
+			commentNewsRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
+		}
 
 		// Initilize variables
 		List<CommentNewsModel> childrenComments = new ArrayList<CommentNewsModel>();
