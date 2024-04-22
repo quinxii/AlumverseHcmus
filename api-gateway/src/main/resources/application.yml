@@ -44,6 +44,14 @@ spring:
             - Path=/news/**
           filters:
             - name: Authentication
+            
+        ## group service
+        - id: group
+          uri: lb://group-service
+          predicates:
+            - Path=/groups/**
+          filters:
+            - name: Authentication
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
