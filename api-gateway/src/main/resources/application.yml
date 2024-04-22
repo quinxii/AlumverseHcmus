@@ -45,6 +45,14 @@ spring:
           filters:
             - name: Authentication
 
+        ## counsel service
+        - id: counsel
+          uri: lb://counsel-service
+          predicates:
+            - Path=/counsel/**
+          filters:
+            - name: Authentication
+
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
       globalcors:

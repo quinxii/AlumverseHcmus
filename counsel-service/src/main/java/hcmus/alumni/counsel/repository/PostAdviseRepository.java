@@ -39,11 +39,6 @@ public interface PostAdviseRepository  extends JpaRepository<PostAdviseModel, St
 	
 	@Query("SELECT n from PostAdviseModel n JOIN n.status s WHERE s.id = 1 AND n.publishedAt <= :now")
 	List<PostAdviseModel> getScheduledNews(Date now);
-	
-	@Transactional
-	@Modifying
-	@Query("UPDATE PostAdviseModel n SET n.views = n.views + 1 WHERE n.id = :id")
-	int viewsIncrement(String id);
 
 	@Transactional
 	@Modifying

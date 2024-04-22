@@ -16,8 +16,8 @@ import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 
 public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAdviseModel, String> {
 
-    @Query("SELECT c FROM CommentPostAdviseModel c WHERE c.news.id = :newsId AND c.isDelete = false AND c.parentId IS NULL")
-    Page<ICommentPostAdviseDto> getComments(String newsId, Pageable pageable);
+    @Query("SELECT c FROM CommentPostAdviseModel c WHERE c.postAdvise.id = :postAdviseId AND c.isDelete = false AND c.parentId IS NULL")
+    Page<ICommentPostAdviseDto> getComments(String postAdviseId, Pageable pageable);
 
     @Query("SELECT c FROM CommentPostAdviseModel c WHERE c.isDelete = false AND c.parentId = :commentId")
     Page<ICommentPostAdviseDto> getChildrenComment(String commentId, Pageable pageable);
