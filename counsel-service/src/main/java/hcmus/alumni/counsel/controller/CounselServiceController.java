@@ -34,34 +34,18 @@ import hcmus.alumni.counsel.model.StatusPostModel;
 import hcmus.alumni.counsel.model.UserModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/counsel")
 public class CounselServiceController {
-	@PersistenceContext
-	private EntityManager em;
-
 	@Autowired
 	private PostAdviseRepository postAdviseRepository;
 	@Autowired
 	private CommentPostAdviseRepository commentPostAdviseRepository;
 
-	// @GetMapping("/count")
-	// public ResponseEntity<Long> getNewsCount(
-	// @RequestParam(value = "statusId", defaultValue = "0") Integer statusId) {
-	// if (statusId.equals(0)) {
-	// return
-	// ResponseEntity.status(HttpStatus.OK).body(postAdviseRepository.getCountByNotDelete());
-	// }
-	// return
-	// ResponseEntity.status(HttpStatus.OK).body(postAdviseRepository.getCountByStatusId(statusId));
-	// }
-
 	@GetMapping("")
-	public ResponseEntity<HashMap<String, Object>> getNews(
+	public ResponseEntity<HashMap<String, Object>> getPosts(
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -89,7 +73,7 @@ public class CounselServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IPostAdviseDto> getNewsById(@PathVariable String id) {
+	public ResponseEntity<IPostAdviseDto> getPostById(@PathVariable String id) {
 		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id);
 		if (optionalPost.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -113,7 +97,7 @@ public class CounselServiceController {
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PutMapping("/{id}")
-	public ResponseEntity<String> updatePostAdvise(
+	public ResponseEntity<String> updatePost(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id,
 			@RequestBody PostAdviseModel updatedPostAdvise) {
@@ -127,6 +111,12 @@ public class CounselServiceController {
 		}
 
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
+
+		// Check if user is creator
+		if (!postAdvise.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
+		}
+
 		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
 			postAdvise.setTitle(updatedPostAdvise.getTitle());
 		}
@@ -143,7 +133,7 @@ public class CounselServiceController {
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@DeleteMapping("/{id}")
-	public ResponseEntity<String> deleteNews(
+	public ResponseEntity<String> deletePost(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id) {
 		// Find advise post
@@ -152,20 +142,20 @@ public class CounselServiceController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post advise not found");
 		}
 
-		PostAdviseModel postAdivse = optionalPostAdvise.get();
+		PostAdviseModel postAdvise = optionalPostAdvise.get();
 		// Check if user is creator
-		if (!postAdivse.getCreator().getId().equals(creator)) {
+		if (!postAdvise.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
 		}
 
-		postAdivse.setStatus(new StatusPostModel(4));
-		postAdviseRepository.save(postAdivse);
+		postAdvise.setStatus(new StatusPostModel(4));
+		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
 	// Get comments of a news
 	@GetMapping("/{id}/comments")
-	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+	public ResponseEntity<HashMap<String, Object>> getPostComments(@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 		if (pageSize == 0 || pageSize > 50) {
@@ -184,7 +174,7 @@ public class CounselServiceController {
 
 	// Get children comments of a comment
 	@GetMapping("/comments/{commentId}/children")
-	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+	public ResponseEntity<HashMap<String, Object>> getPostChildrenComments(
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -233,11 +223,18 @@ public class CounselServiceController {
 		if (updatedComment.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
-		int updates = commentPostAdviseRepository.updateComment(commentId, creator,
-				updatedComment.getContent());
-		if (updates == 0) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+
+		// Check if user is comment's creator
+		Optional<CommentPostAdviseModel> optionalComment = commentPostAdviseRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Comment not found");
 		}
+		CommentPostAdviseModel comment = optionalComment.get();
+		if (!comment.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
+
+		commentPostAdviseRepository.updateComment(commentId, creator, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
@@ -250,6 +247,11 @@ public class CounselServiceController {
 		if (originalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
+		// Check if user is comment's creator
+		if (!originalComment.get().getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
+
 		String postId = originalComment.get().getPostAdvise().getId();
 		if (originalComment.get().getParentId() != null) {
 			commentPostAdviseRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
