@@ -1,8 +1,6 @@
 package hcmus.alumni.counsel.controller;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +26,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
 import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.IPostAdviseDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
@@ -38,7 +34,6 @@ import hcmus.alumni.counsel.model.StatusPostModel;
 import hcmus.alumni.counsel.model.UserModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
-import hcmus.alumni.counsel.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -53,8 +48,6 @@ public class CounselServiceController {
 	private PostAdviseRepository postAdviseRepository;
 	@Autowired
 	private CommentPostAdviseRepository commentPostAdviseRepository;
-	@Autowired
-	private ImageUtils imageUtils;
 
 	// @GetMapping("/count")
 	// public ResponseEntity<Long> getNewsCount(
@@ -67,55 +60,42 @@ public class CounselServiceController {
 	// ResponseEntity.status(HttpStatus.OK).body(postAdviseRepository.getCountByStatusId(statusId));
 	// }
 
-	// @GetMapping("")
-	// public ResponseEntity<HashMap<String, Object>> getNews(
-	// @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-	// @RequestParam(value = "pageSize", required = false, defaultValue = "10") int
-	// pageSize,
-	// @RequestParam(value = "title", required = false, defaultValue = "") String
-	// title,
-	// @RequestParam(value = "orderBy", required = false, defaultValue =
-	// "publishedAt") String orderBy,
-	// @RequestParam(value = "order", required = false, defaultValue = "desc")
-	// String order,
-	// @RequestParam(value = "statusId", required = false, defaultValue = "0")
-	// Integer statusId) {
-	// if (pageSize == 0 || pageSize > 50) {
-	// return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	// }
-	// HashMap<String, Object> result = new HashMap<String, Object>();
+	@GetMapping("")
+	public ResponseEntity<HashMap<String, Object>> getNews(
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "title", required = false, defaultValue = "") String title,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
 
-	// try {
-	// Pageable pageable = PageRequest.of(page, pageSize,
-	// Sort.by(Sort.Direction.fromString(order), orderBy));
-	// Page<IPostAdviseDto> news = null;
-	// if (statusId.equals(0)) {
-	// news = postAdviseRepository.searchNews(title, pageable);
-	// } else {
-	// news = postAdviseRepository.searchNewsByStatus(title, statusId, pageable);
-	// }
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize,
+					Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, pageable);
 
-	// result.put("totalPages", news.getTotalPages());
-	// result.put("news", news.getContent());
-	// } catch (IllegalArgumentException e) {
-	// return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	// } catch (Exception e) {
-	// return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-	// }
+			result.put("totalPages", posts.getTotalPages());
+			result.put("posts", posts.getContent());
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
 
-	// return ResponseEntity.status(HttpStatus.OK).body(result);
-	// }
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 
-	// @GetMapping("/{id}")
-	// public ResponseEntity<IPostAdviseDto> getNewsById(@PathVariable String id) {
-	// Optional<IPostAdviseDto> optionalNews =
-	// postAdviseRepository.findNewsById(id);
-	// if (optionalNews.isEmpty()) {
-	// return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-	// }
-	// postAdviseRepository.viewsIncrement(id);
-	// return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
-	// }
+	@GetMapping("/{id}")
+	public ResponseEntity<IPostAdviseDto> getNewsById(@PathVariable String id) {
+		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id);
+		if (optionalPost.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
+	}
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PostMapping("")
@@ -145,7 +125,6 @@ public class CounselServiceController {
 		if (optionalPostAdvise.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
 		}
-		// System.out.println(updatedPostAdvise.toString());
 
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
 		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
@@ -162,211 +141,150 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	// @PreAuthorize("hasAnyAuthority('Admin')")
-	// @DeleteMapping("/{id}")
-	// public ResponseEntity<String> deleteNews(@PathVariable String id) {
-	// // Find news
-	// Optional<PostAdviseModel> optionalNews = postAdviseRepository.findById(id);
-	// if (optionalNews.isEmpty()) {
-	// return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-	// }
-	// PostAdviseModel news = optionalNews.get();
-	// news.setStatus(new StatusPostModel(4));
-	// postAdviseRepository.save(news);
-	// return ResponseEntity.status(HttpStatus.OK).body("");
-	// }
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@DeleteMapping("/{id}")
+	public ResponseEntity<String> deleteNews(
+			@RequestHeader("userId") String creator,
+			@PathVariable String id) {
+		// Find advise post
+		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
+		if (optionalPostAdvise.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post advise not found");
+		}
 
-	// @PreAuthorize("hasAnyAuthority('Admin')")
-	// @PutMapping("/{id}/content")
-	// public ResponseEntity<String> updateNewsContent(@PathVariable String id,
-	// @RequestBody(required = false) PostAdviseModel updatedNews) {
-	// if (updatedNews.getContent() == null) {
-	// return ResponseEntity.status(HttpStatus.OK).body("");
-	// }
-	// // Find news
-	// Optional<PostAdviseModel> optionalNews = postAdviseRepository.findById(id);
-	// if (optionalNews.isEmpty()) {
-	// return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-	// }
-	// PostAdviseModel news = optionalNews.get();
-	// if (!updatedNews.getContent().equals("")) {
-	// String newContent = imageUtils.updateImgFromHtmlToStorage(news.getContent(),
-	// updatedNews.getContent(), id);
-	// if (newContent.equals(news.getContent())) {
-	// return ResponseEntity.status(HttpStatus.OK).body("");
-	// }
-	// news.setContent(newContent);
-	// postAdviseRepository.save(news);
-	// }
-	// return ResponseEntity.status(HttpStatus.OK).body("");
-	// }
+		PostAdviseModel postAdivse = optionalPostAdvise.get();
+		// Check if user is creator
+		if (!postAdivse.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
+		}
 
-	// @GetMapping("/most-viewed")
-	// public ResponseEntity<HashMap<String, Object>> getMostViewed(
-	// @RequestParam(value = "limit", defaultValue = "5") Integer limit) {
-	// if (limit <= 0 || limit > 5) {
-	// limit = 5;
-	// }
-	// Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC,
-	// "views"));
-	// Page<IPostAdviseDto> news = postAdviseRepository.getMostViewdNews(pageable);
+		postAdivse.setStatus(new StatusPostModel(4));
+		postAdviseRepository.save(postAdivse);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
 
-	// HashMap<String, Object> result = new HashMap<String, Object>();
-	// result.put("news", news.getContent());
+	// Get comments of a news
+	@GetMapping("/{id}/comments")
+	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
 
-	// return ResponseEntity.status(HttpStatus.OK).body(result);
-	// }
+		Pageable pageable = PageRequest.of(page, pageSize,
+				Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getComments(id, pageable);
 
-	// @GetMapping("/hot")
-	// public ResponseEntity<HashMap<String, Object>> getHotNews(
-	// @RequestParam(value = "limit", defaultValue = "4") Integer limit) {
-	// if (limit <= 0 || limit > 5) {
-	// limit = 5;
-	// }
-	// Calendar cal = Calendar.getInstance();
-	// Date endDate = cal.getTime();
-	// cal.add(Calendar.WEEK_OF_YEAR, -1);
-	// Date startDate = cal.getTime();
+		result.put("comments", comments.getContent());
 
-	// Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC,
-	// "views"));
-	// Page<IPostAdviseDto> news = postAdviseRepository.getHotNews(startDate,
-	// endDate, pageable);
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 
-	// HashMap<String, Object> result = new HashMap<String, Object>();
-	// result.put("news", news.getContent());
+	// Get children comments of a comment
+	@GetMapping("/comments/{commentId}/children")
+	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			@PathVariable String commentId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
 
-	// return ResponseEntity.status(HttpStatus.OK).body(result);
-	// }
+		// Check if parent comment deleted
+		Optional<CommentPostAdviseModel> parentComment = commentPostAdviseRepository.findById(commentId);
+		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
 
-	// // Get comments of a news
-	// // @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
-	// @GetMapping("/{id}/comments")
-	// public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable
-	// String id,
-	// @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-	// @RequestParam(value = "pageSize", required = false, defaultValue = "10") int
-	// pageSize) {
-	// if (pageSize == 0 || pageSize > 50) {
-	// return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	// }
-	// HashMap<String, Object> result = new HashMap<String, Object>();
+		Pageable pageable = PageRequest.of(page, pageSize,
+				Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getChildrenComment(commentId, pageable);
 
-	// Pageable pageable = PageRequest.of(page, pageSize,
-	// Sort.by(Sort.Direction.DESC, "createAt"));
-	// Page<ICommentPostAdviseDto> comments =
-	// commentPostAdviseRepository.getComments(id, pageable);
+		result.put("comments", comments.getContent());
 
-	// result.put("comments", comments.getContent());
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 
-	// return ResponseEntity.status(HttpStatus.OK).body(result);
-	// }
+	@PostMapping("/{id}/comments")
+	public ResponseEntity<String> createComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String id, @RequestBody CommentPostAdviseModel comment) {
+		comment.setId(UUID.randomUUID().toString());
+		comment.setPostAdvise(new PostAdviseModel(id));
+		comment.setCreator(new UserModel(creator));
+		System.out.println(comment.toString());
 
-	// // Get children comments of a comment
-	// // @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
-	// @GetMapping("/comments/{commentId}/children")
-	// public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
-	// @PathVariable String commentId,
-	// @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-	// @RequestParam(value = "pageSize", required = false, defaultValue = "10") int
-	// pageSize) {
-	// if (pageSize == 0 || pageSize > 50) {
-	// return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	// }
-	// HashMap<String, Object> result = new HashMap<String, Object>();
+		if (comment.getParentId() != null) {
+			commentPostAdviseRepository.commentCountIncrement(comment.getParentId(), 1);
+		}
 
-	// // Check if parent comment deleted
-	// Optional<CommentPostAdviseModel> parentComment =
-	// commentPostAdviseRepository.findById(commentId);
-	// if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
-	// return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	// }
+		commentPostAdviseRepository.save(comment);
+		postAdviseRepository.commentCountIncrement(id, 1);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
 
-	// Pageable pageable = PageRequest.of(page, pageSize,
-	// Sort.by(Sort.Direction.DESC, "createAt"));
-	// Page<ICommentPostAdviseDto> comments =
-	// commentPostAdviseRepository.getChildrenComment(commentId, pageable);
+	@PutMapping("/comments/{commentId}")
+	public ResponseEntity<String> updateComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId, @RequestBody CommentPostAdviseModel updatedComment) {
+		if (updatedComment.getContent() == null) {
+			return ResponseEntity.status(HttpStatus.OK).body("");
+		}
+		int updates = commentPostAdviseRepository.updateComment(commentId, creator,
+				updatedComment.getContent());
+		if (updates == 0) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
 
-	// result.put("comments", comments.getContent());
+	@DeleteMapping("/comments/{commentId}")
+	public ResponseEntity<String> deleteComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId) {
+		// Check if comment exists
+		Optional<CommentPostAdviseModel> originalComment = commentPostAdviseRepository.findById(commentId);
+		if (originalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		String postId = originalComment.get().getPostAdvise().getId();
+		if (originalComment.get().getParentId() != null) {
+			commentPostAdviseRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
+		}
 
-	// return ResponseEntity.status(HttpStatus.OK).body(result);
-	// }
+		// Initilize variables
+		List<CommentPostAdviseModel> childrenComments = new ArrayList<CommentPostAdviseModel>();
+		List<String> allParentId = new ArrayList<String>();
+		int totalDelete = 1;
 
-	// // @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
-	// @PostMapping("/{id}/comments")
-	// public ResponseEntity<String> createComment(
-	// @RequestHeader("userId") String creator,
-	// @PathVariable String id, @RequestBody CommentPostAdviseModel comment) {
-	// comment.setId(UUID.randomUUID().toString());
-	// comment.setNews(new PostAdviseModel(id));
-	// comment.setCreator(new UserModel(creator));
-	// commentPostAdviseRepository.save(comment);
-	// postAdviseRepository.commentCountIncrement(id, 1);
-	// return ResponseEntity.status(HttpStatus.CREATED).body(null);
-	// }
+		// Get children comments
+		String curCommentId = commentId;
+		allParentId.add(curCommentId);
+		childrenComments.addAll(commentPostAdviseRepository.getChildrenComment(curCommentId));
 
-	// // @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
-	// @PutMapping("/comments/{commentId}")
-	// public ResponseEntity<String> updateComment(
-	// @RequestHeader("userId") String creator,
-	// @PathVariable String commentId, @RequestBody CommentPostAdviseModel
-	// updatedComment) {
-	// if (updatedComment.getContent() == null) {
-	// return ResponseEntity.status(HttpStatus.OK).body("");
-	// }
-	// int updates = commentPostAdviseRepository.updateComment(commentId, creator,
-	// updatedComment.getContent());
-	// if (updates == 0) {
-	// return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
-	// }
-	// return ResponseEntity.status(HttpStatus.OK).body(null);
-	// }
+		// Start the loop
+		while (!childrenComments.isEmpty()) {
+			CommentPostAdviseModel curComment = childrenComments.get(0);
+			curCommentId = curComment.getId();
+			List<CommentPostAdviseModel> temp = commentPostAdviseRepository.getChildrenComment(curCommentId);
+			if (!temp.isEmpty()) {
+				allParentId.add(curCommentId);
+				childrenComments.addAll(temp);
+			}
 
-	// // @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
-	// @DeleteMapping("/comments/{commentId}")
-	// public ResponseEntity<String> deleteComment(
-	// @RequestHeader("userId") String creator,
-	// @PathVariable String commentId) {
-	// // Check if comment exists
-	// Optional<CommentPostAdviseModel> originalComment =
-	// commentPostAdviseRepository.findById(commentId);
-	// if (originalComment.isEmpty()) {
-	// return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
-	// }
-	// String newsId = originalComment.get().getNews().getId();
+			childrenComments.remove(0);
+		}
 
-	// // Initilize variables
-	// List<CommentPostAdviseModel> childrenComments = new
-	// ArrayList<CommentPostAdviseModel>();
-	// List<String> allParentId = new ArrayList<String>();
-	// int totalDelete = 1;
+		// Delete all comments and update comment count
+		commentPostAdviseRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			totalDelete += commentPostAdviseRepository.deleteChildrenComment(parentId);
+		}
+		postAdviseRepository.commentCountIncrement(postId, -totalDelete);
 
-	// // Get children comments
-	// String curCommentId = commentId;
-	// allParentId.add(curCommentId);
-	// childrenComments.addAll(commentPostAdviseRepository.getChildrenComment(curCommentId));
-
-	// // Start the loop
-	// while (!childrenComments.isEmpty()) {
-	// CommentPostAdviseModel curComment = childrenComments.get(0);
-	// curCommentId = curComment.getId();
-	// List<CommentPostAdviseModel> temp =
-	// commentPostAdviseRepository.getChildrenComment(curCommentId);
-	// if (!temp.isEmpty()) {
-	// allParentId.add(curCommentId);
-	// childrenComments.addAll(temp);
-	// }
-
-	// childrenComments.remove(0);
-	// }
-
-	// // Delete all comments and update comment count
-	// commentPostAdviseRepository.deleteComment(commentId, creator);
-	// for (String parentId : allParentId) {
-	// totalDelete += commentPostAdviseRepository.deleteChildrenComment(parentId);
-	// }
-	// postAdviseRepository.commentCountIncrement(newsId, -totalDelete);
-
-	// return ResponseEntity.status(HttpStatus.OK).body(null);
-	// }
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
 }

@@ -5,6 +5,7 @@ import java.util.Set;
 
 public interface IPostAdviseDto {
 	interface User{
+		String getId();
 		String getFullName();
 		String getAvatarUrl();
 	}

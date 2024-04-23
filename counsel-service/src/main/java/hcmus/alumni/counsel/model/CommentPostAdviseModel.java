@@ -19,7 +19,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "[comment_news]")
+@Table(name = "[comment_post_advise]")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
