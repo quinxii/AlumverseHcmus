@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import hcmus.alumni.group.model.StatusPostModel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -59,8 +60,9 @@ public class GroupModel implements Serializable {
     @Column(name = "update_at")
     private Date updateAt;
 
-    @Column(name = "status_id")
-    private Integer statusId;
+    @ManyToOne
+    @JoinColumn(name = "status_id")
+    private StatusPostModel status;
 
     public enum Privacy {
         PUBLIC, PRIVATE
