@@ -26,13 +26,13 @@ public class ImageUtils {
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
-	public String saveImageToStorage(String uploadDirectory, MultipartFile imageFile)
+	public String saveImageToStorage(String uploadDirectory, MultipartFile imageFile, String fileName)
 			throws IOException {
 		if (imageFile == null) {
 			return null;
 		}
 
-		String newFilename = uploadDirectory;
+		String newFilename = uploadDirectory + "/" + fileName;
 
 		// Resize then compress image
 		BufferedImage bufferedImage = ImageIO.read(imageFile.getInputStream());

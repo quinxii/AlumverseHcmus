@@ -1,7 +1,9 @@
 package hcmus.alumni.group.controller;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,7 +23,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.group.model.GroupModel;
+import hcmus.alumni.group.model.GroupModel.Privacy;
+import hcmus.alumni.group.model.UserModel;
 import hcmus.alumni.group.utils.ImageUtils;
 import hcmus.alumni.group.dto.IGroupDto;
 import hcmus.alumni.group.repository.GroupRepository;
@@ -81,20 +87,111 @@ public class GroupServiceController {
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PostMapping("")
 	public ResponseEntity<String> createGroup(
-	    @RequestHeader("userId") String creatorId,
-	    @RequestParam(value = "name") String name
-	    
+			@RequestHeader("userId") String creatorId,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "type", required = false, defaultValue = "") String type,
+            @RequestParam(value = "website", required = false, defaultValue = "") String website,
+            @RequestParam(value = "privacy", required = false, defaultValue = "PUBLIC") Privacy privacy,
+            @RequestParam(value = "avatar") MultipartFile avatar,
+            @RequestParam(value = "cover") MultipartFile cover
 	) {
-		
-		return null;
+		if (name.isEmpty() || avatar.isEmpty() || cover.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name, avatar and cover must not be empty");
+        }
+		if (avatar.getSize() > 5 * 1024 * 1024 || cover.getSize() > 5 * 1024 * 1024) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+	    }
+        String id = UUID.randomUUID().toString();
+        try {
+            String avatarUrl = null;
+            String coverUrl = null;
+
+            // Save avatar image
+            if (avatar != null) {
+                avatarUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), avatar, "avatar");
+            }
+
+            // Save cover image
+            if (cover != null) {
+                coverUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), cover, "cover");
+            }
+
+            // Create group model
+            GroupModel groupModel = new GroupModel();
+            groupModel.setId(id);
+            groupModel.setName(name);
+            groupModel.setType(type);
+            groupModel.setWebsite(website);
+            groupModel.setPrivacy(privacy);
+            groupModel.setCreator(new UserModel(creatorId)); // Assuming UserModel constructor takes userId
+            groupModel.setAvatarUrl(avatarUrl);
+            groupModel.setCoverUrl(coverUrl);
+
+            groupRepository.save(groupModel);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save images");
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
 	@PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateGroup(@PathVariable String id,
-	    @RequestParam(value = "name", defaultValue = "") String name
+            @RequestParam(value = "name", defaultValue = "") String name,
+            @RequestParam(value = "type", defaultValue = "") String type,
+            @RequestParam(value = "website", defaultValue = "") String website,
+            @RequestParam(value = "privacy", defaultValue = "") Privacy privacy,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
+            @RequestParam(value = "cover", required = false) MultipartFile cover
 	) {
-		return null;
+        try {
+    		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
+            if (optionalGroup.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Group not found");
+            }
+
+            GroupModel groupModel = optionalGroup.get();
+            boolean isPut = false;
+            
+            // Update name
+            if (!name.isEmpty()) {
+                groupModel.setName(name);
+            }
+
+            // Update type
+            if (!type.isEmpty()) {
+                groupModel.setType(type);
+            }
+
+            // Update website
+            if (!website.isEmpty()) {
+                groupModel.setWebsite(website);
+            }
+
+            // Update privacy
+            if (privacy != null) {
+                groupModel.setPrivacy(privacy);
+            }
+
+            // Update avatar
+            if (avatar != null) {
+                String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), avatar, "avatar");
+                groupModel.setAvatarUrl(avatarUrl);
+            }
+
+            // Update cover
+            if (cover != null) {
+                String coverUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), cover, "cover");
+                groupModel.setCoverUrl(coverUrl);
+            }
+            if (isPut)
+            	groupRepository.save(groupModel);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save images");
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
 	@PreAuthorize("hasAnyAuthority('Admin')")

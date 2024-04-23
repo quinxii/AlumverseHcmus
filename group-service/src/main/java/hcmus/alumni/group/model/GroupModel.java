@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import hcmus.alumni.group.model.StatusPostModel;
 import jakarta.persistence.Column;
@@ -57,6 +58,7 @@ public class GroupModel implements Serializable {
     @Column(name = "create_at")
     private Date createAt;
 
+    @UpdateTimestamp
     @Column(name = "update_at")
     private Date updateAt;
 

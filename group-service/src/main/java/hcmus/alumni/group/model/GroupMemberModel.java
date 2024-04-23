@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -21,15 +22,8 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GroupMemberModel implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @Column(name = "group_id", length = 36, nullable = false)
-    private String groupId;
-
-    @Id
-    @Column(name = "user_id", length = 36, nullable = false)
-    private String userId;
+    @EmbeddedId
+    private GroupMemberId id;
 
     @Column(name = "role", columnDefinition = "ENUM('ADMIN', 'MOD', 'MEMBER') NOT NULL")
     @Enumerated(EnumType.STRING)

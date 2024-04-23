@@ -7,7 +7,7 @@
 		<version>3.2.4</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>hcmus.alumni.event</groupId>
+	<groupId>hcmus.alumni.group</groupId>
 	<artifactId>group-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>group-service</name>
@@ -91,6 +91,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<mainClass>hcmus.alumni.group.GroupServiceApplication</mainClass>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

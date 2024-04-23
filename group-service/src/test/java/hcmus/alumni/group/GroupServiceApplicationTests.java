@@ -1,10 +1,10 @@
-package hcmus.alumni.event;
+package hcmus.alumni.group;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class EventServiceApplicationTests {
+class GroupServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
