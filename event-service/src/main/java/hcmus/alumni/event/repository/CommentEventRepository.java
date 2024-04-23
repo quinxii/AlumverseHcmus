@@ -35,7 +35,7 @@ public interface CommentEventRepository extends JpaRepository<CommentEventModel,
 	
 	@Transactional
 	@Modifying
-	@Query("UPDATE CommentEventModel c SET c.isDelete = true WHERE c.parentId = :parentId")
+	@Query("UPDATE CommentEventModel c SET c.isDelete = true WHERE c.parentId = :parentId AND c.isDelete = false")
 	int deleteChildrenComment(@Param("parentId") String parentId);
 	
 	@Transactional

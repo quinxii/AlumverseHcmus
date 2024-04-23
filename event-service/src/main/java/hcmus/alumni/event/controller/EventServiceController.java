@@ -71,8 +71,9 @@ public class EventServiceController {
 	        @RequestParam(value = "orderBy", required = false, defaultValue = "organizationTime") String orderBy,
 	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
+	        @RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
 	        @RequestParam(value = "statusId", required = false) Integer statusId,
-	        @RequestParam(value = "fromToday", required = false, defaultValue = "true") boolean fromToday) {
+	        @RequestParam(value = "isUpcoming", required = false, defaultValue = "true") boolean isUpcoming) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
@@ -82,12 +83,9 @@ public class EventServiceController {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 	        Page<IEventDto> events = null;
 	        
-	        Date startDate = null;
-	        if (fromToday) {
-	        	Calendar cal = Calendar.getInstance();
-	        	startDate = cal.getTime();
-	        }
-	        events = eventRepository.searchEvents(title, statusId, facultyId, startDate, pageable);
+	        Calendar cal = Calendar.getInstance();
+	        Date startDate = cal.getTime();
+	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, isUpcoming, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -254,6 +252,25 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 	
+	@GetMapping("/participated")
+	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
+	        @RequestHeader("userId") String userId,
+	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+	    if (pageSize == 0 || pageSize > 50) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    }
+	    HashMap<String, Object> result = new HashMap<>();
+
+	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
+        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, pageable);
+
+        result.put("totalPages", events.getTotalPages());
+        result.put("events", events.getContent());
+
+	    return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+	
 	@GetMapping("/{id}/participants")
 	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -275,10 +292,15 @@ public class EventServiceController {
 	public ResponseEntity<String> addParticipant(
 	        @PathVariable String id,
 	        @RequestHeader("userId") String userId,
-	        @RequestParam(value = "note", required = false) String note) {
-	    ParticipantEventModel participant = new ParticipantEventModel();
+	        @RequestBody ParticipantEventModel participantEvent) {
+		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
+		if (optionalEvent.isEmpty()) 
+		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants()) 
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Số lượng người tham gia đã đạt tối đa!");
+		
+	    ParticipantEventModel participant = participantEvent;
 	    participant.setId(new ParticipantEventId(id, userId));
-	    participant.setNote(note);
 	    participantEventRepository.save(participant);
 	    //db còn cái trigger cho participant nên tui tạm phong ấn thằng này
 //	    eventRepository.participantCountIncrement(id, 1);

@@ -86,6 +86,12 @@ public class EventModel implements Serializable {
 	@Column(name = "participants", columnDefinition = "INT DEFAULT(0)")
 	private Integer participants = 0;
 	
+	@Column(name = "minimum_participants", columnDefinition = "INT DEFAULT(0)")
+	private Integer minimumParticipants = 0;
+	
+	@Column(name = "maximum_participants", columnDefinition = "INT DEFAULT(0)")
+	private Integer maximumParticipants = 0;
+	
 	@Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
 	private Integer childrenCommentNumber = 0;
 	

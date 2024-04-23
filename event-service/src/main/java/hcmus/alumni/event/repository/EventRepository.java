@@ -21,15 +21,19 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
         "FROM EventModel e " +
         "LEFT JOIN e.status s " +
         "LEFT JOIN e.faculty f " +
+        "LEFT JOIN e.tags t " +
         "WHERE (:statusId IS NULL OR s.id = :statusId) " +
         "AND (:facultyId IS NULL OR f.id = :facultyId) " +
         "AND e.title LIKE %:title% " +
-        "AND (:startDate IS NULL OR e.publishedAt >= :startDate)")
+        "AND (CASE WHEN :isUpcoming = true THEN e.organizationTime >= :startDate ELSE e.organizationTime < :startDate END) " +
+        "AND (:tagsId IS NULL OR t.id IN :tagsId)")
 	Page<IEventDto> searchEvents(
-			@Param("title") String title, 
-			@Param("statusId") Integer statusId, 
+			@Param("title") String title,
+			@Param("statusId") Integer statusId,
 			@Param("facultyId") Integer facultyId,
+			@Param("tagsId") List<Integer> tagsId,
 			@Param("startDate") Date startDate,
+			@Param("isUpcoming") boolean isUpcoming,
 			Pageable pageable);
 
 	@Query("SELECT e " +
@@ -44,6 +48,9 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 
     @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate")
     Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
+    
+    @Query("SELECT e FROM EventModel e LEFT JOIN ParticipantEventModel p ON p.id.eventId = e.id WHERE p.id.userId = :userId")
+    Page<IEventDto> getUserParticipatedEvents(@Param("userId") String userId, Pageable pageable);
     
     @Transactional
 	@Modifying
