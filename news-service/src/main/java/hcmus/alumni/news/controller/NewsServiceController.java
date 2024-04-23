@@ -74,20 +74,20 @@ public class NewsServiceController {
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
+			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
+			@RequestParam(value = "statusId", required = false) Integer statusId) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		tagsId = tagsId.isEmpty() ? null : tagsId;
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 			Page<INewsDto> news = null;
-			if (statusId.equals(0)) {
-				news = newsRepository.searchNews(title, pageable);
-			} else {
-				news = newsRepository.searchNewsByStatus(title, statusId, pageable);
-			}
+
+			news = newsRepository.searchNews(title, facultyId, tagsId, statusId, pageable);
 
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
@@ -246,8 +246,8 @@ public class NewsServiceController {
 	@GetMapping("/most-viewed")
 	public ResponseEntity<HashMap<String, Object>> getMostViewed(
 			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
-		if (limit <= 0 || limit > 5) {
-			limit = 5;
+		if (limit <= 0 || limit > 10) {
+			limit = 10;
 		}
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
 		Page<INewsDto> news = newsRepository.getMostViewdNews(pageable);
@@ -260,9 +260,9 @@ public class NewsServiceController {
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotNews(
-			@RequestParam(value = "limit", defaultValue = "4") Integer limit) {
-		if (limit <= 0 || limit > 5) {
-			limit = 5;
+			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
+		if (limit <= 0 || limit > 10) {
+			limit = 10;
 		}
 		Calendar cal = Calendar.getInstance();
 		Date endDate = cal.getTime();
