@@ -24,8 +24,12 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
 	Optional<IPostAdviseDto> findPostAdviseById(String id);
 
-	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.title like %:title%")
-	Page<IPostAdviseDto> searchPostAdvise(String title, Pageable pageable);
+	@Query("SELECT DISTINCT pa FROM PostAdviseModel pa " +
+			"JOIN pa.status s " +
+			"WHERE (:tagsId IS NULL OR element(pa.tags).id IN :tagsId) " +
+			"AND s.id = 2 " +
+			"AND pa.title like %:title%")
+	Page<IPostAdviseDto> searchPostAdvise(String title, List<Integer> tagsId, Pageable pageable);
 
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = :statusId AND pa.title like %:title%")
 	Page<IPostAdviseDto> searchPostAdviseByStatus(String title, Integer statusId, Pageable pageable);

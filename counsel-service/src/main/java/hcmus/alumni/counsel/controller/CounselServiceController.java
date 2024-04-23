@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.hibernate.query.sqm.UnknownPathException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,22 +52,25 @@ public class CounselServiceController {
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-			@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		tagsId = tagsId.isEmpty() ? null : tagsId;
 
 		try {
-			Pageable pageable = PageRequest.of(page, pageSize,
-					Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, pageable);
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, tagsId, pageable);
 
 			result.put("totalPages", posts.getTotalPages());
 			result.put("posts", posts.getContent());
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
+			System.err.println(e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		} catch (Exception e) {
+			System.err.println(e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
 
