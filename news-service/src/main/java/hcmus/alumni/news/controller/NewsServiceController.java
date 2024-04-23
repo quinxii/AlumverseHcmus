@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -36,13 +37,13 @@ import hcmus.alumni.news.model.CommentNewsModel;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
+import hcmus.alumni.news.model.TagModel;
 import hcmus.alumni.news.model.UserModel;
 import hcmus.alumni.news.repository.CommentNewsRepository;
 import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.ws.rs.HeaderParam;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
@@ -81,7 +82,6 @@ public class NewsServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
-		tagsId = tagsId.isEmpty() ? null : tagsId;
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
@@ -94,6 +94,7 @@ public class NewsServiceController {
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
 
@@ -243,14 +244,22 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@GetMapping("/most-viewed")
+	@GetMapping("/{id}/related")
 	public ResponseEntity<HashMap<String, Object>> getMostViewed(
+			@PathVariable String id,
 			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
 		if (limit <= 0 || limit > 10) {
 			limit = 10;
 		}
-		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
-		Page<INewsDto> news = newsRepository.getMostViewdNews(pageable);
+		Optional<NewsModel> optionalNews = newsRepository.findById(id);
+		if (optionalNews.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		}
+		Integer facultyId = optionalNews.get().getFaculty().getId();
+		List<Integer> tagsId = optionalNews.get().getTags().stream().map(TagModel::getId).collect(Collectors.toList());
+
+		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
+		Page<INewsDto> news = newsRepository.getRelatedNews(id, facultyId, tagsId, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());
@@ -260,13 +269,20 @@ public class NewsServiceController {
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotNews(
-			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
+			@RequestParam(value = "limit", defaultValue = "5") Integer limit,
+			@RequestParam(value = "weeks", defaultValue = "2") Integer weeks) {
 		if (limit <= 0 || limit > 10) {
 			limit = 10;
 		}
+		if (weeks < 0) {
+			weeks = -weeks;
+		} else if (weeks == 0) {
+			weeks = 2;
+		}
+
 		Calendar cal = Calendar.getInstance();
 		Date endDate = cal.getTime();
-		cal.add(Calendar.WEEK_OF_YEAR, -1);
+		cal.add(Calendar.WEEK_OF_YEAR, -weeks);
 		Date startDate = cal.getTime();
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
@@ -349,10 +365,16 @@ public class NewsServiceController {
 		if (updatedComment.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
-		int updates = commentNewsRepository.updateComment(commentId, creator, updatedComment.getContent());
-		if (updates == 0) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		// Check if user is comment's creator
+		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Comment not found");
 		}
+		if (!optionalComment.get().getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
+
+		commentNewsRepository.updateComment(commentId, creator, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
@@ -365,6 +387,10 @@ public class NewsServiceController {
 		Optional<CommentNewsModel> originalComment = commentNewsRepository.findById(commentId);
 		if (originalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		// Check if user is comment's creator
+		if (!originalComment.get().getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
 		}
 		String newsId = originalComment.get().getNews().getId();
 		if (originalComment.get().getParentId() != null) {
