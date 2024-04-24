@@ -23,4 +23,10 @@ public interface GroupRepository extends JpaRepository<GroupModel, String> {
 	   "FROM GroupModel g " +
 	   "WHERE g.id = :id")
 	Optional<IGroupDto> findGroupById(String id);
+	
+	@Query("SELECT gm.group FROM GroupMemberModel gm WHERE gm.id.userId = :userId AND gm.isDelete = false")
+    Page<IGroupDto> findGroupsByUserId(
+        @Param("userId") String userId,
+        Pageable pageable
+    );
 }
