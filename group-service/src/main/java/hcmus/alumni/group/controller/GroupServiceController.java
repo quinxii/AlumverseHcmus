@@ -404,8 +404,9 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("Request status updated successfully");
     }
     
-    @GetMapping("/posts")
+    @GetMapping("{id}/posts")
     public ResponseEntity<HashMap<String, Object>> searchGroupPosts(
+    		@PathVariable String id,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
             @RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -416,7 +417,7 @@ public class GroupServiceController {
         }
         HashMap<String, Object> result = new HashMap<>();
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(title, tagsId, statusId, pageable);
+        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts({id}, title, tagsId, statusId, pageable);
 
         result.put("totalPages", posts.getTotalPages());
         result.put("posts", posts.getContent());

@@ -21,8 +21,10 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	        "LEFT JOIN FETCH p.tags t " + 
 	        "WHERE (:title IS NULL OR p.title LIKE %:title%) " +
 	        "AND (:tagsId IS NULL OR t.id IN :tagsId) " + 
-	        "AND (:statusId IS NULL OR s.id = :statusId)")
+	        "AND (:statusId IS NULL OR s.id = :statusId) " +
+	        "AND p.groupId = :groupId")
 	Page<IPostGroupDto> searchGroupPosts(
+			@Param("groupId") String groupId,
 	        @Param("title") String title,
 	        @Param("tagsId") List<Integer> tagsId,
 	        @Param("statusId") Integer statusId,
