@@ -1,5 +1,7 @@
 package hcmus.alumni.group.dto;
 
+import hcmus.alumni.group.common.Privacy;
+
 public interface IGroupDto {
     interface User {
         String getFullName();
@@ -7,8 +9,7 @@ public interface IGroupDto {
     }
     
     interface Status {
-        String getFullName();
-        String getAvatarUrl();
+        String getName();
     }
 
     String getId();
@@ -19,9 +20,5 @@ public interface IGroupDto {
     String getCoverUrl();
     String getWebsite();
     Status getStatus();
-
-    enum Privacy {
-        PUBLIC, PRIVATE
-    }
 }
 

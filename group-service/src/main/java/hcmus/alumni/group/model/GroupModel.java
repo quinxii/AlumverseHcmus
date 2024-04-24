@@ -3,10 +3,11 @@ package hcmus.alumni.group.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import hcmus.alumni.group.model.StatusPostModel;
+import hcmus.alumni.group.common.Privacy;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,12 +19,13 @@ import jakarta.persistence.Table;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Set;
 
 @Entity
 @Table(name = "`group`")
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 public class GroupModel implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -64,9 +66,5 @@ public class GroupModel implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "status_id")
-    private StatusPostModel status;
-
-    public enum Privacy {
-        PUBLIC, PRIVATE
-    }
+    private StatusUserGroupModel status;
 }

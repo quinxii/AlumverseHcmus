@@ -1,6 +1,6 @@
 package hcmus.alumni.group.model;
 
-import java.util.Date;
+import java.io.Serializable;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,41 +8,32 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
-import org.hibernate.annotations.CreationTimestamp;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "[faculty]")
+@Table(name = "[status_user_group]")
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class FacultyModel {
+public class StatusUserGroupModel implements Serializable {
+	private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "id", nullable = false, columnDefinition = "TINYINT")
-	private Integer id;
-
+    private Integer id;
+	
 	@Column(name = "name", length = 100, nullable = false, unique = true)
-	private String name;
-
+    private String name;
+	
 	@Column(name = "description", columnDefinition = "TINYTEXT")
-	private String description;
-
-	@CreationTimestamp
-	@Column(name = "create_at")
-	private Date createAt;
-
-	@Column(name = "update_at")
-	private Date updateAt;
-
+    private String description;
+	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
-	private Boolean isDelete;
-
-	public FacultyModel(Integer id) {
+    private Boolean isDelete = false;
+	
+	public StatusUserGroupModel(Integer id) {
 		this.id = id;
 	}
 }
