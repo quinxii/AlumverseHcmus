@@ -12,9 +12,10 @@ import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.ParticipantEventModel;
 
 public interface ParticipantEventRepository extends JpaRepository<ParticipantEventModel, String> {
-	@Query("SELECT pe.note AS note, " +
+	@Query("SELECT u.id AS id, " +
 		"u.fullName AS fullName, " +
-		"u.avatarUrl AS avatarUrl " +
+		"u.avatarUrl AS avatarUrl, " +
+		"pe.note AS note " +
 		"FROM ParticipantEventModel pe " +
 		"JOIN UserModel u ON pe.id.userId = u.id " +
 		"WHERE pe.id.eventId = :id " +

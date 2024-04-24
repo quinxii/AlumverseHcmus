@@ -49,8 +49,16 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate")
     Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
     
-    @Query("SELECT e FROM EventModel e LEFT JOIN ParticipantEventModel p ON p.id.eventId = e.id WHERE p.id.userId = :userId")
-    Page<IEventDto> getUserParticipatedEvents(@Param("userId") String userId, Pageable pageable);
+    @Query("SELECT e FROM EventModel e " + 
+    		"LEFT JOIN ParticipantEventModel p " + 
+    		"ON p.id.eventId = e.id " + 
+    		"WHERE p.id.userId = :userId " + 
+    		"AND (CASE WHEN :isUpcoming = true THEN e.organizationTime >= :startDate ELSE e.organizationTime < :startDate END) ")
+    Page<IEventDto> getUserParticipatedEvents(
+    		@Param("userId") String userId, 
+    		@Param("startDate") Date startDate,
+    		@Param("isUpcoming") boolean isUpcoming, 
+    		Pageable pageable);
     
     @Transactional
 	@Modifying

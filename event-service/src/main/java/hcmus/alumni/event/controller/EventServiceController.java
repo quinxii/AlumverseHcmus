@@ -256,14 +256,17 @@ public class EventServiceController {
 	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
 	        @RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+	        @RequestParam(value = "isUpcoming", required = false, defaultValue = "true") boolean isUpcoming) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
 
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
-        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, pageable);
+	    Calendar cal = Calendar.getInstance();
+        Date startDate = cal.getTime();
+        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, isUpcoming, pageable);
 
         result.put("totalPages", events.getTotalPages());
         result.put("events", events.getContent());
