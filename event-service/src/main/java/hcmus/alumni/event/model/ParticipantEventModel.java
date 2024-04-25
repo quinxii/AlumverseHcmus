@@ -2,6 +2,8 @@ package hcmus.alumni.event.model;
 
 import java.util.Date;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -23,10 +25,11 @@ public class ParticipantEventModel {
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
+    @CreationTimestamp
     @Column(name = "create_at")
     private Date createdAt;
 
     @Column(name = "is_delete")
-    private boolean isDeleted;
+    private boolean isDelete;
 }
 

@@ -21,10 +21,20 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
         "FROM EventModel e " +
         "LEFT JOIN e.status s " +
         "LEFT JOIN e.faculty f " +
+        "LEFT JOIN e.tags t " +
         "WHERE (:statusId IS NULL OR s.id = :statusId) " +
         "AND (:facultyId IS NULL OR f.id = :facultyId) " +
-        "AND e.title LIKE %:title%")
-	Page<IEventDto> searchEvents(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, Pageable pageable);
+        "AND e.title LIKE %:title% " +
+        "AND (CASE WHEN :isUpcoming = true THEN e.organizationTime >= :startDate ELSE e.organizationTime < :startDate END) " +
+        "AND (:tagsId IS NULL OR t.id IN :tagsId)")
+	Page<IEventDto> searchEvents(
+			@Param("title") String title,
+			@Param("statusId") Integer statusId,
+			@Param("facultyId") Integer facultyId,
+			@Param("tagsId") List<Integer> tagsId,
+			@Param("startDate") Date startDate,
+			@Param("isUpcoming") boolean isUpcoming,
+			Pageable pageable);
 
 	@Query("SELECT e " +
 		"FROM EventModel e " +
@@ -39,10 +49,24 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate")
     Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
     
-    @Query("SELECT pe.note as note, u.fullName AS fullName " +
-		"FROM ParticipantEventModel pe " +
-		"JOIN UserModel u ON pe.id.userId = u.id " +
-		"WHERE pe.id.eventId = :id " +
-		"AND pe.isDeleted = false")
-     List<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id);
+    @Query("SELECT e FROM EventModel e " + 
+    		"LEFT JOIN ParticipantEventModel p " + 
+    		"ON p.id.eventId = e.id " + 
+    		"WHERE p.id.userId = :userId " + 
+    		"AND (CASE WHEN :isUpcoming = true THEN e.organizationTime >= :startDate ELSE e.organizationTime < :startDate END) ")
+    Page<IEventDto> getUserParticipatedEvents(
+    		@Param("userId") String userId, 
+    		@Param("startDate") Date startDate,
+    		@Param("isUpcoming") boolean isUpcoming, 
+    		Pageable pageable);
+    
+    @Transactional
+	@Modifying
+	@Query("UPDATE EventModel n SET n.participants = n.participants + :count WHERE n.id = :id")
+	int participantCountIncrement(String id,@Param("count") Integer count);
+    
+    @Transactional
+	@Modifying
+	@Query("UPDATE EventModel n SET n.childrenCommentNumber = n.childrenCommentNumber + :count WHERE n.id = :id")
+	int commentCountIncrement(String id,@Param("count") Integer count);
 }
