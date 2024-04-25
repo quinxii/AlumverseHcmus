@@ -36,7 +36,7 @@ public class NewsModel implements Serializable {
 	@JoinColumn(name = "creator", nullable = false)
 	private UserModel creator;
 
-	@Column(name = "title", columnDefinition = "TINITEXT")
+	@Column(name = "title", columnDefinition = "TINYTEXT")
 	private String title;
 	
 	@Column(name = "summary", columnDefinition = "TEXT")
