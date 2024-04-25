@@ -61,16 +61,16 @@ public class HallOfFameServiceController {
 	public ResponseEntity<HashMap<String, Object>> getHof(
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "statusId", required = false) Integer statusId,
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
-			@RequestParam(value = "beginningYear", required = false, defaultValue = "0") Integer beginningYear) {
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
-		HashMap<String, Object> result = new HashMap<>();
+		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
@@ -148,7 +148,8 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
 			@RequestParam(value = "faculty", defaultValue = "") Integer faculty,
 			@RequestParam(value = "emailOfUser") String emailOfUser,
-			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
+			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId){
 
 		try {
 			// Find hall of fame
@@ -187,16 +188,19 @@ public class HallOfFameServiceController {
 					halloffame.setUserId(new UserModel(userId)); 
 				}
 			}
+			if (!statusId.equals(0)) {
+				halloffame.setStatus(new StatusPostModel(statusId));
+			}
 
 			// Save hall of fame
 			halloffameRepository.save(halloffame);
+			return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
 
 		} catch (IOException e) {
 			System.err.println(e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update hall of fame");
 		}
 
-		return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
 	}
 
 	@PreAuthorize("hasAnyAuthority('Admin')")
