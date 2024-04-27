@@ -9,9 +9,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.event.dto.IParticipantEventDto;
+import hcmus.alumni.event.model.ParticipantEventId;
 import hcmus.alumni.event.model.ParticipantEventModel;
 
-public interface ParticipantEventRepository extends JpaRepository<ParticipantEventModel, String> {
+public interface ParticipantEventRepository extends JpaRepository<ParticipantEventModel, ParticipantEventId> {
 	@Query("SELECT u.id AS id, " +
 		"u.fullName AS fullName, " +
 		"u.avatarUrl AS avatarUrl, " +
