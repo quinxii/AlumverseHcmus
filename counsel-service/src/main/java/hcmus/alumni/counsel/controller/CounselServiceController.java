@@ -3,9 +3,11 @@ package hcmus.alumni.counsel.controller;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -97,16 +99,17 @@ public class CounselServiceController {
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PostMapping("")
-	public ResponseEntity<String> createPostAdvise(@RequestHeader("userId") String creator,
+	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseModel reqPostAdvise) {
 		if (creator.isEmpty() || reqPostAdvise.getTitle().isEmpty() || reqPostAdvise.getContent().isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Collections.singletonMap("msg", "Title and content must not be empty"));
 		}
 		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise.getTitle(), reqPostAdvise.getContent(),
 				reqPostAdvise.getTags());
 		postAdvise.setPublishedAt(new Date());
 		postAdviseRepository.save(postAdvise);
-		return ResponseEntity.status(HttpStatus.CREATED).body(postAdvise.getId());
+		return ResponseEntity.status(HttpStatus.CREATED).body(Collections.singletonMap("id", postAdvise.getId()));
 	}
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
