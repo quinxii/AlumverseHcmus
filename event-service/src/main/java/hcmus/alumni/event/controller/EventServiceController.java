@@ -73,7 +73,7 @@ public class EventServiceController {
 	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
 	        @RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
 	        @RequestParam(value = "statusId", required = false) Integer statusId,
-	        @RequestParam(value = "isUpcoming", required = false, defaultValue = "true") boolean isUpcoming) {
+	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
@@ -85,7 +85,7 @@ public class EventServiceController {
 	        
 	        Calendar cal = Calendar.getInstance();
 	        Date startDate = cal.getTime();
-	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, isUpcoming, pageable);
+	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, mode, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -119,6 +119,8 @@ public class EventServiceController {
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
 	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
+	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
 	    if (creatorId.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
@@ -147,6 +149,8 @@ public class EventServiceController {
 	        if (!facultyId.equals(0)) {
 	            event.setFaculty(new FacultyModel(facultyId));
 	        }
+	        event.setMinimumParticipants(minimumParticipants);
+	        event.setMaximumParticipants(maximumParticipants);
 	        event.setStatus(new StatusPostModel(statusId));
 	        eventRepository.save(event);
 	    } catch (IOException e) {
@@ -166,6 +170,8 @@ public class EventServiceController {
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
 	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
+	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 	    if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
@@ -204,6 +210,14 @@ public class EventServiceController {
 	        }
 	        if (!facultyId.equals(0)) {
 	            event.setFaculty(new FacultyModel(facultyId));
+	            isPut = true;
+	        }
+	        if (minimumParticipants != null) {
+	        	event.setMinimumParticipants(minimumParticipants);
+	            isPut = true;
+	        }
+	        if (maximumParticipants != null) {
+	        	event.setMaximumParticipants(maximumParticipants);
 	            isPut = true;
 	        }
 	        if (!statusId.equals(0)) {
@@ -257,7 +271,7 @@ public class EventServiceController {
 	        @RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-	        @RequestParam(value = "isUpcoming", required = false, defaultValue = "true") boolean isUpcoming) {
+	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
@@ -266,7 +280,7 @@ public class EventServiceController {
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
 	    Calendar cal = Calendar.getInstance();
         Date startDate = cal.getTime();
-        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, isUpcoming, pageable);
+        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, mode, pageable);
 
         result.put("totalPages", events.getTotalPages());
         result.put("events", events.getContent());

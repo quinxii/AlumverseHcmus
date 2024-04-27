@@ -25,7 +25,11 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
         "WHERE (:statusId IS NULL OR s.id = :statusId) " +
         "AND (:facultyId IS NULL OR f.id = :facultyId) " +
         "AND e.title LIKE %:title% " +
-        "AND (CASE WHEN :isUpcoming = true THEN e.organizationTime >= :startDate ELSE e.organizationTime < :startDate END) " +
+        "AND (CASE " +
+        "       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
+        "       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
+        "       ELSE true " +
+        "   END) " +
         "AND (:tagsId IS NULL OR t.id IN :tagsId)")
 	Page<IEventDto> searchEvents(
 			@Param("title") String title,
@@ -33,12 +37,12 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			@Param("facultyId") Integer facultyId,
 			@Param("tagsId") List<Integer> tagsId,
 			@Param("startDate") Date startDate,
-			@Param("isUpcoming") boolean isUpcoming,
+			@Param("mode") Integer mode,
 			Pageable pageable);
 
 	@Query("SELECT e " +
-		"FROM EventModel e " +
-		"WHERE e.id = :id")
+			"FROM EventModel e " +
+			"WHERE e.id = :id")
 	Optional<IEventDto> findEventById(String id);
 
     @Transactional
@@ -49,16 +53,20 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate")
     Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
     
-    @Query("SELECT e FROM EventModel e " + 
-    		"LEFT JOIN ParticipantEventModel p " + 
-    		"ON p.id.eventId = e.id " + 
-    		"WHERE p.id.userId = :userId " + 
-    		"AND (CASE WHEN :isUpcoming = true THEN e.organizationTime >= :startDate ELSE e.organizationTime < :startDate END) ")
-    Page<IEventDto> getUserParticipatedEvents(
-    		@Param("userId") String userId, 
-    		@Param("startDate") Date startDate,
-    		@Param("isUpcoming") boolean isUpcoming, 
-    		Pageable pageable);
+	@Query("SELECT e FROM EventModel e " + 
+		"LEFT JOIN ParticipantEventModel p " + 
+		"ON p.id.eventId = e.id " + 
+		"WHERE p.id.userId = :userId " + 
+		"AND (CASE " +
+		"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
+		"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
+		"       ELSE true " +
+		"   END)")
+	Page<IEventDto> getUserParticipatedEvents(
+			@Param("userId") String userId, 
+			@Param("startDate") Date startDate,
+			@Param("mode") Integer mode,
+			Pageable pageable);
     
     @Transactional
 	@Modifying
