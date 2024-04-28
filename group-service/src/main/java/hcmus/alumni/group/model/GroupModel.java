@@ -67,4 +67,8 @@ public class GroupModel implements Serializable {
     @ManyToOne
     @JoinColumn(name = "status_id")
     private StatusUserGroupModel status;
+    
+    public GroupModel(String id) {
+    	this.id = id;
+    }
 }

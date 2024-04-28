@@ -23,15 +23,7 @@ import java.util.Date;
 @NoArgsConstructor
 public class RequestJoinGroupModel implements Serializable {
 	@EmbeddedId
-    private GroupUserId id;
-	
-	@ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private UserModel user;
-
-    @ManyToOne
-    @JoinColumn(name = "group_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private GroupModel group;
+	private GroupUserId id;
 
     @CreationTimestamp
     @Column(name = "create_at")
@@ -39,7 +31,7 @@ public class RequestJoinGroupModel implements Serializable {
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isDelete = false;
-    
+
     public void setIsDelete(boolean isDelete) {
         this.isDelete = isDelete;
     }

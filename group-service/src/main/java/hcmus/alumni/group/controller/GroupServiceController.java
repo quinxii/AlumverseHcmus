@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.group.common.Privacy;
-import hcmus.alumni.group.common.Role;
+import hcmus.alumni.group.common.GroupMemberRole;
 import hcmus.alumni.group.model.GroupModel;
 import hcmus.alumni.group.model.UserModel;
 import hcmus.alumni.group.model.StatusPostModel;
@@ -112,9 +113,10 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(optionalGroup.get());
 	}
 	
-	@GetMapping("/joined-groups")
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@GetMapping("/joined")
 	public ResponseEntity<HashMap<String, Object>> getJoinedGroups(
-		@RequestHeader("userid") String requestingUserId,
+		@RequestHeader("userId") String requestingUserId,
 		@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 		@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 	    
@@ -196,7 +198,7 @@ public class GroupServiceController {
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateGroup(@PathVariable String id,
-			@RequestHeader("userid") String requestingUserId,
+			@RequestHeader("userId") String requestingUserId,
             @RequestParam(value = "name", required = false, defaultValue = "") String name,
             @RequestParam(value = "type", required = false, defaultValue = "") String type,
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
@@ -265,7 +267,7 @@ public class GroupServiceController {
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteGroup(
 			@PathVariable String id,
-			@RequestHeader("userid") String requestingUserId) {
+			@RequestHeader("userId") String requestingUserId) {
 		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
 	    if (optionalGroup.isEmpty()) {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
@@ -320,10 +322,10 @@ public class GroupServiceController {
     public ResponseEntity<String> deleteGroupMember(
     		@PathVariable String id, 
     		@PathVariable String userId,
-    		@RequestHeader("userid") String requestingUserId) {
+    		@RequestHeader("userId") String requestingUserId) {
     	Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
     	GroupMemberModel member = optionalMember.get();
-        if (member.getRole() != Role.ADMIN && member.getRole() != Role.MOD) {
+        if (!requestingUserId.equals(userId) && member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
         	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to kick member in this group");
         }
         
@@ -360,25 +362,39 @@ public class GroupServiceController {
     public ResponseEntity<String> addRequestJoin(
     		@PathVariable String id,
     		@RequestHeader("userId") String userId) {
-    	RequestJoinGroupModel newRequestJoin = new RequestJoinGroupModel();
-    	GroupUserId groupUserId = new GroupUserId();
-        groupUserId.setGroupId(id);
-        groupUserId.setUserId(userId);
-        newRequestJoin.setId(groupUserId);
-        requestJoinGroupRepository.save(newRequestJoin);
-        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+    	
+    	// Check if the user is already a member of the group
+        Optional<GroupMemberModel> existingMemberOptional = groupMemberRepository.findByGroupIdAndUserId(id, userId);
+        if (existingMemberOptional.isPresent() && !existingMemberOptional.get().isDelete()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You're already in this group.");
+        }
+
+        // Check if there's a pending request to join the group
+        Optional<RequestJoinGroupModel> pendingRequestOptional = requestJoinGroupRepository.findByGroupIdAndUserId(id, userId);
+        if (pendingRequestOptional.isPresent() && !pendingRequestOptional.get().isDelete()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Your request to join this group is pending.");
+        }
+    	
+		RequestJoinGroupModel newRequestJoin = new RequestJoinGroupModel();
+		GroupUserId groupUserId = new GroupUserId();
+		groupUserId.setGroup(new GroupModel(id));
+		groupUserId.setUser(new UserModel(userId));
+		newRequestJoin.setId(groupUserId);
+		newRequestJoin.setCreateAt(new Date());
+		requestJoinGroupRepository.save(newRequestJoin);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 
     @PutMapping("/{id}/requests/{userId}")
     public ResponseEntity<String> updateRequestJoinStatus(
         @PathVariable String id,
         @PathVariable String userId,
-        @RequestHeader("userid") String requestingUserId,
+        @RequestHeader("userId") String requestingUserId,
         @RequestParam(value = "status") String status
     ) {
     	Optional<GroupMemberModel> optionalRequestingMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
     	GroupMemberModel requestingMember = optionalRequestingMember.get();
-        if (requestingMember.getRole() != Role.ADMIN && requestingMember.getRole() != Role.MOD) {
+        if (requestingMember.getRole() != GroupMemberRole.ADMIN && requestingMember.getRole() != GroupMemberRole.MOD) {
         	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to verifify request join in this group");
         }
         
@@ -390,13 +406,14 @@ public class GroupServiceController {
 		RequestJoinGroupModel request = optionalRequest.get();
 		if (status.equalsIgnoreCase("approved")) {
 		    // Add group member
-		    GroupMemberModel member = new GroupMemberModel();
-		    GroupUserId groupUserId = new GroupUserId();
-		    groupUserId.setGroupId(id);
-		    groupUserId.setUserId(userId);
-		    member.setId(groupUserId);
-		    member.setRole(Role.MEMBER);
-		    groupMemberRepository.save(member);
+			GroupMemberModel member = new GroupMemberModel();
+			GroupUserId groupUserId = new GroupUserId();
+			groupUserId.setGroup(new GroupModel(id));
+			groupUserId.setUser(new UserModel(userId));
+			member.setId(groupUserId);
+			member.setCreateAt(new Date());
+			member.setRole(GroupMemberRole.MEMBER);
+			groupMemberRepository.save(member);
 		} 
 		
 		requestJoinGroupRepository.deleteRequestJoin(id, userId);
@@ -417,7 +434,7 @@ public class GroupServiceController {
         }
         HashMap<String, Object> result = new HashMap<>();
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts({id}, title, tagsId, statusId, pageable);
+        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(id, title, tagsId, statusId, pageable);
 
         result.put("totalPages", posts.getTotalPages());
         result.put("posts", posts.getContent());
@@ -435,7 +452,7 @@ public class GroupServiceController {
 
     @PostMapping("{id}/posts")
     public ResponseEntity<String> addGroupPost(@PathVariable String id, //group id
-    		@RequestHeader("userid") String creator,
+    		@RequestHeader("userId") String creator,
     		@RequestParam(value = "title", required = false, defaultValue = "") String title, 
 	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
 	        @RequestParam(value = "tagsId", required = false, defaultValue = "") Integer[] tagsId,
@@ -443,7 +460,7 @@ public class GroupServiceController {
     	
     	Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, creator);
     	GroupMemberModel member = optionalMember.get();
-        if (member.getRole() != Role.ADMIN && member.getRole() != Role.MOD) {
+        if (member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
         	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to create post in this group");
         }
 

@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import hcmus.alumni.group.common.Role;
+import hcmus.alumni.group.common.GroupMemberRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -27,20 +27,12 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GroupMemberModel implements Serializable {
-    @EmbeddedId
-    private GroupUserId id;
-    
-    @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private UserModel user;
-
-    @ManyToOne
-    @JoinColumn(name = "group_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private GroupModel group;
+	@EmbeddedId
+	private GroupUserId id;
 
     @Column(name = "role", columnDefinition = "ENUM('ADMIN', 'MOD', 'MEMBER') NOT NULL")
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private GroupMemberRole role;
 
     @CreationTimestamp
     @Column(name = "create_at")
@@ -48,9 +40,8 @@ public class GroupMemberModel implements Serializable {
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isDelete = false;
-    
+
     public void setIsDelete(boolean isDelete) {
         this.isDelete = isDelete;
     }
 }
-

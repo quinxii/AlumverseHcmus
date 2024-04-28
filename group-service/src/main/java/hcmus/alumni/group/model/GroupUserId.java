@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.io.Serializable;
 
 @Embeddable
@@ -12,11 +14,11 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupUserId implements Serializable {
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private GroupModel group;
 
-    @Column(name = "group_id")
-    private String groupId;
-
-    @Column(name = "user_id")
-    private String userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private UserModel user;
 }
-
