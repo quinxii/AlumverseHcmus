@@ -3,6 +3,7 @@ package hcmus.alumni.counsel.model;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,6 +12,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -19,7 +21,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -41,6 +45,10 @@ public class PostAdviseModel implements Serializable {
 
     @Column(name = "title", columnDefinition = "TINYTEXT")
     private String title;
+
+    @OrderBy("pitctureOrder ASC")
+    @OneToMany(mappedBy = "postAdvise", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PicturePostAdviseModel> pictures;
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
@@ -88,5 +96,9 @@ public class PostAdviseModel implements Serializable {
         this.title = title;
         this.content = content;
         this.tags = tags;
+    }
+
+    public void addPicture(PicturePostAdviseModel picture) {
+        this.pictures.add(picture);
     }
 }

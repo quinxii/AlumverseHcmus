@@ -1,6 +1,7 @@
 package hcmus.alumni.counsel.dto;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 public interface IPostAdviseDto {
@@ -16,9 +17,14 @@ public interface IPostAdviseDto {
 		Integer getId();
 		String getName();
 	}
+	interface Pictures {
+		String getId();
+		String getPictureUrl();
+	}
 	
 	String getId();
 	String getTitle();
+	List<Pictures> getPictures();
 	String getContent();
 	Integer getChildrenCommentNumber();
 	Date getUpdateAt();

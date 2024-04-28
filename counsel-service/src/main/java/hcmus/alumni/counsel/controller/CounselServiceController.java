@@ -1,9 +1,13 @@
 package hcmus.alumni.counsel.controller;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,14 +32,18 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.IPostAdviseDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
+import hcmus.alumni.counsel.model.PicturePostAdviseModel;
 import hcmus.alumni.counsel.model.PostAdviseModel;
 import hcmus.alumni.counsel.model.StatusPostModel;
 import hcmus.alumni.counsel.model.UserModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
+import hcmus.alumni.counsel.utils.ImageUtils;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
@@ -45,6 +53,10 @@ public class CounselServiceController {
 	private PostAdviseRepository postAdviseRepository;
 	@Autowired
 	private CommentPostAdviseRepository commentPostAdviseRepository;
+	@Autowired
+	private ImageUtils imageUtils;
+
+	private final int MAX_IMAGE_SIZE_PER_POST = 5;
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
@@ -87,16 +99,17 @@ public class CounselServiceController {
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PostMapping("")
-	public ResponseEntity<String> createPostAdvise(@RequestHeader("userId") String creator,
+	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseModel reqPostAdvise) {
 		if (creator.isEmpty() || reqPostAdvise.getTitle().isEmpty() || reqPostAdvise.getContent().isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Collections.singletonMap("msg", "Title and content must not be empty"));
 		}
 		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise.getTitle(), reqPostAdvise.getContent(),
 				reqPostAdvise.getTags());
 		postAdvise.setPublishedAt(new Date());
 		postAdviseRepository.save(postAdvise);
-		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+		return ResponseEntity.status(HttpStatus.CREATED).body(Collections.singletonMap("id", postAdvise.getId()));
 	}
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
@@ -136,6 +149,89 @@ public class CounselServiceController {
 	}
 
 	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PutMapping("/{id}/images")
+	public ResponseEntity<String> createPostAdviseImages(@RequestHeader("userId") String creator,
+			@PathVariable String id,
+			@RequestParam(value = "addedImages", required = false) List<MultipartFile> addedImages,
+			@RequestParam(value = "deletedImageIds", required = false) List<String> deletedImageIds) {
+		if (addedImages == null && deletedImageIds == null) {
+			return ResponseEntity.status(HttpStatus.OK).body(null);
+		}
+
+		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
+		if (optionalPostAdvise.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid post id");
+		}
+
+		PostAdviseModel postAdvise = optionalPostAdvise.get();
+		// Check if user is creator
+		if (!postAdvise.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
+		}
+		List<PicturePostAdviseModel> images = postAdvise.getPictures();
+
+		if (addedImages != null && deletedImageIds != null
+				&& images.size() + addedImages.size() - deletedImageIds.size() > MAX_IMAGE_SIZE_PER_POST) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Exceed images can be uploaded per post");
+		}
+
+		// Delete images
+		if (deletedImageIds != null && deletedImageIds.size() != 0) {
+			List<PicturePostAdviseModel> deletedImages = new ArrayList<PicturePostAdviseModel>();
+			for (PicturePostAdviseModel image : images) {
+				if (deletedImageIds.contains(image.getId())) {
+					try {
+						boolean successful = imageUtils.deleteImageFromStorageByUrl(image.getPictureUrl());
+						if (successful) {
+							deletedImages.add(image);
+						} else {
+							return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+									.body("Error deleting images");
+						}
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+					} catch (IOException e) {
+						e.printStackTrace();
+						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+					}
+
+				}
+			}
+			// Remove deleted images from list
+			if (deletedImages.size() != 0) {
+				images.removeAll(deletedImages);
+			}
+			// Update picture order after deleting
+			for (int i = 0; i < images.size(); i++) {
+				images.get(i).setPitctureOrder(i);
+			}
+		}
+		int imagesSize = images.size();
+
+		// Add new images
+		if (addedImages != null && addedImages.size() != 0) {
+			try {
+				for (int i = 0; i < addedImages.size(); i++) {
+					int order = imagesSize + i;
+					String pictureId = UUID.randomUUID().toString();
+					String pictureUrl = imageUtils.saveImageToStorage(imageUtils.getCounselPath(id),
+							addedImages.get(i),
+							pictureId);
+					postAdvise.getPictures()
+							.add(new PicturePostAdviseModel(pictureId, postAdvise, pictureUrl, order));
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving images");
+			}
+		}
+
+		postAdviseRepository.save(postAdvise);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deletePost(
 			@RequestHeader("userId") String creator,
@@ -152,6 +248,7 @@ public class CounselServiceController {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
 		}
 
+		postAdvise.getPictures().clear();
 		postAdvise.setStatus(new StatusPostModel(4));
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -202,6 +299,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
@@ -220,6 +318,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String creator,
@@ -242,6 +341,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
 			@RequestHeader("userId") String creator,
