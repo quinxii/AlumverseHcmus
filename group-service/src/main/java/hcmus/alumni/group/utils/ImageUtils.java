@@ -2,6 +2,7 @@ package hcmus.alumni.group.utils;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 
 import javax.imageio.ImageIO;
 
@@ -26,13 +27,13 @@ public class ImageUtils {
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
-	public String saveImageToStorage(String uploadDirectory, MultipartFile imageFile, String fileName)
+	public String saveImageToStorage(String uploadDirectory, MultipartFile imageFile, String imageName)
 			throws IOException {
 		if (imageFile == null) {
 			return null;
 		}
 
-		String newFilename = uploadDirectory + "/" + fileName;
+		String newFilename = uploadDirectory + imageName;
 
 		// Resize then compress image
 		BufferedImage bufferedImage = ImageIO.read(imageFile.getInputStream());
@@ -53,30 +54,23 @@ public class ImageUtils {
 		return imageUrl;
 	}
 
-	public void deleteImageFromStorageByUrl(String oldImageUrl) {
+	public boolean deleteImageFromStorageByUrl(String oldImageUrl) throws FileNotFoundException, IOException {
 		if (oldImageUrl == null) {
-			return;
+			return false;
 		}
 		// Get image name
 		String regex = gcp.getDomainName() + gcp.getBucketName() + "/";
 		String extractedImageName = oldImageUrl.replaceAll(regex, "");
 
-		try {
-			Blob blob = gcp.getStorage().get(gcp.getBucketName(), extractedImageName);
-			if (blob == null) {
-				System.out.println("null");
-				return;
-			}
-			gcp.getStorage().delete(gcp.getBucketName(), extractedImageName);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		Blob blob = gcp.getStorage().get(gcp.getBucketName(), extractedImageName);
+		if (blob == null) {
+			return false;
 		}
+		return gcp.getStorage().delete(gcp.getBucketName(), extractedImageName);
 
-		return;
 	}
 	
 	public String getGroupPath(String id) {
-		return groupPath + id;
+		return groupPath + id + "/";
 	}
 }

@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,11 +15,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -42,6 +46,10 @@ public class PostGroupModel implements Serializable {
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
+    
+    @OrderBy("pitctureOrder ASC")
+    @OneToMany(mappedBy = "postGroup", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PicturePostGroupModel> pictures;
 
     @Column(name = "group_id", length = 36)
     private String groupId;
@@ -72,16 +80,22 @@ public class PostGroupModel implements Serializable {
     @Column(name = "children_comment_number", columnDefinition = "INT DEFAULT 0")
     private Integer childrenCommentNumber = 0;
     
-    public void setTags(Integer[] tags) {
-		Set<TagModel> newTags = new HashSet<>();
-		for (Integer tag : tags) {
-			newTags.add(new TagModel(tag));
-		}
-		this.tags = newTags;
-	}
-    
     public PostGroupModel(String id) {
 		this.id = id;
 	}
+    
+    public PostGroupModel(String groupid, String creator, String title, String content, Set<TagModel> tags, StatusPostModel status) {
+        this.id = java.util.UUID.randomUUID().toString();
+        this.groupId = groupid;
+        this.creator = new UserModel(creator);
+        this.title = title;
+        this.content = content;
+        this.tags = tags;
+        this.status = status;
+    }
+    
+    public void addPicture(PicturePostGroupModel picture) {
+        this.pictures.add(picture);
+    }
 }
 

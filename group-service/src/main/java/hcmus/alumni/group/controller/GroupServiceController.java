@@ -1,6 +1,7 @@
 package hcmus.alumni.group.controller;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,7 @@ import hcmus.alumni.group.model.RequestJoinGroupModel;
 import hcmus.alumni.group.model.PostGroupModel;
 import hcmus.alumni.group.model.StatusPostModel;
 import hcmus.alumni.group.model.CommentPostGroupModel;
+import hcmus.alumni.group.model.PicturePostGroupModel;
 import hcmus.alumni.group.utils.ImageUtils;
 import hcmus.alumni.group.dto.IGroupDto;
 import hcmus.alumni.group.dto.IGroupMemberDto;
@@ -73,6 +75,8 @@ public class GroupServiceController {
 	private CommentPostGroupRepository commentPostGroupRepository;
 	@Autowired
 	private ImageUtils imageUtils;
+	
+	private final int MAX_IMAGE_SIZE_PER_POST = 5;
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getGroups(
@@ -450,13 +454,11 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
     }
 
+    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
     @PostMapping("{id}/posts")
     public ResponseEntity<String> addGroupPost(@PathVariable String id, //group id
     		@RequestHeader("userId") String creator,
-    		@RequestParam(value = "title", required = false, defaultValue = "") String title, 
-	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
-	        @RequestParam(value = "tagsId", required = false, defaultValue = "") Integer[] tagsId,
-	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
+    		@RequestBody PostGroupModel reqPostModel) {
     	
     	Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, creator);
     	GroupMemberModel member = optionalMember.get();
@@ -465,58 +467,130 @@ public class GroupServiceController {
         }
 
     	String postId = UUID.randomUUID().toString();
-    	PostGroupModel newPost = new PostGroupModel();
-    	newPost.setId(postId);
-    	newPost.setCreator(new UserModel(creator));
-    	newPost.setGroupId(id);
-    	newPost.setTitle(title);
-    	newPost.setContent(content);
-    	newPost.setTags(tagsId);
-    	newPost.setStatus(new StatusPostModel(statusId));
+    	PostGroupModel newPost = new PostGroupModel(id, creator, reqPostModel.getTitle(), reqPostModel.getContent(), reqPostModel.getTags(), reqPostModel.getStatus());
+    	newPost.setPublishedAt(new Date());
+    	
         postGroupRepository.save(newPost);
-        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newPost.getId());
     }
 
+    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
     @PutMapping("/posts/{postId}")
     public ResponseEntity<String> updateGroupPost(
     		@PathVariable String postId, 
     		@RequestHeader("userId") String creator,
-    		@RequestParam(value = "title", required = false, defaultValue = "") String title, 
-	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
-	        @RequestParam(value = "tagsId", required = false) Integer[] tagsId,
-	        @RequestParam(value = "statusId", required = false) Integer statusId) {
+    		@RequestBody PostGroupModel reqPostModel) {
         Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
         if (optionalPost.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
         }
         PostGroupModel post = optionalPost.get();
-        if (!creator.equals(post.getCreator())) {
+        if (!creator.equals(post.getCreator().getId())) {
         	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
         }
-        boolean isPut = false;
         
-        if (!title.isEmpty()) {
-        	post.setTitle(title);
-            isPut = true;
+        if (!reqPostModel.getTitle().isEmpty() && reqPostModel.getTitle() != null) {
+        	post.setTitle(reqPostModel.getTitle());
         }
-        if (!content.isEmpty()) {
-        	post.setContent(content);
-            isPut = true;
+        if (!reqPostModel.getContent().isEmpty() && reqPostModel.getContent() != null) {
+        	post.setContent(reqPostModel.getContent());
         }
-        if (tagsId != null) {
-        	post.setTags(tagsId);
-            isPut = true;
+        if (reqPostModel.getTags() != null) {
+        	post.setTags(reqPostModel.getTags());
         }
-        if (statusId != null) {
-        	post.setStatus(new StatusPostModel(statusId));
-            isPut = true;
+        if (reqPostModel.getStatus() != null) {
+        	post.setStatus(reqPostModel.getStatus());
         }
         
-        if (isPut)
-        	postGroupRepository.save(post);
+        postGroupRepository.save(post);
+        
         return ResponseEntity.status(HttpStatus.OK).body("Post updated successfully");
     }
+    
+    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PutMapping("/posts/{id}/images")
+	public ResponseEntity<String> createPostGroupImages(@RequestHeader("userId") String creator,
+			@PathVariable String id,
+			@RequestParam(value = "addedImages", required = false) List<MultipartFile> addedImages,
+			@RequestParam(value = "deletedImageIds", required = false) List<String> deletedImageIds) {
+		if (addedImages == null && deletedImageIds == null) {
+			return ResponseEntity.status(HttpStatus.OK).body(null);
+		}
 
+		Optional<PostGroupModel> optionalPostGroup = postGroupRepository.findById(id);
+		if (optionalPostGroup.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid post id");
+		}
+
+		PostGroupModel postGroup = optionalPostGroup.get();
+		// Check if user is creator
+		if (!postGroup.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
+		}
+		List<PicturePostGroupModel> images = postGroup.getPictures();
+
+		if (addedImages != null && deletedImageIds != null
+				&& images.size() + addedImages.size() - deletedImageIds.size() > MAX_IMAGE_SIZE_PER_POST) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Exceed images can be uploaded per post");
+		}
+
+		// Delete images
+		if (deletedImageIds != null && deletedImageIds.size() != 0) {
+			List<PicturePostGroupModel> deletedImages = new ArrayList<PicturePostGroupModel>();
+			for (PicturePostGroupModel image : images) {
+				if (deletedImageIds.contains(image.getId())) {
+					try {
+						boolean successful = imageUtils.deleteImageFromStorageByUrl(image.getPictureUrl());
+						if (successful) {
+							deletedImages.add(image);
+						} else {
+							return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+									.body("Error deleting images");
+						}
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+					} catch (IOException e) {
+						e.printStackTrace();
+						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+					}
+
+				}
+			}
+			// Remove deleted images from list
+			if (deletedImages.size() != 0) {
+				images.removeAll(deletedImages);
+			}
+			// Update picture order after deleting
+			for (int i = 0; i < images.size(); i++) {
+				images.get(i).setPitctureOrder(i);
+			}
+		}
+		int imagesSize = images.size();
+
+		// Add new images
+		if (addedImages != null && addedImages.size() != 0) {
+			try {
+				for (int i = 0; i < addedImages.size(); i++) {
+					int order = imagesSize + i;
+					String pictureId = UUID.randomUUID().toString();
+					String pictureUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id),
+							addedImages.get(i),
+							pictureId);
+					postGroup.getPictures()
+							.add(new PicturePostGroupModel(pictureId, postGroup, pictureUrl, order));
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving images");
+			}
+		}
+
+		postGroupRepository.save(postGroup);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<String> deleteGroupPost(
     		@PathVariable String postId,
@@ -526,9 +600,10 @@ public class GroupServiceController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
         }
         PostGroupModel post = optionalPost.get();
-        if (!creator.equals(post.getCreator())) {
+        if (!creator.equals(post.getCreator().getId())) {
         	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
         }
+        post.getPictures().clear();
         post.setStatus(new StatusPostModel(4));
         postGroupRepository.save(post);
         return ResponseEntity.status(HttpStatus.OK).body("Post deleted successfully");
@@ -552,7 +627,6 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	// Get children comments of a comment
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getPostChildrenComments(
 			@PathVariable String commentId,
@@ -578,6 +652,7 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
@@ -596,6 +671,7 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String creator,
@@ -618,6 +694,7 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
 			@RequestHeader("userId") String creator,
