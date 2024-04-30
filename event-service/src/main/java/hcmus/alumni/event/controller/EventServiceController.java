@@ -289,7 +289,7 @@ public class EventServiceController {
 	}
 	
 	@GetMapping("/is-participated")
-	public ResponseEntity<Object[]> checkParticipated(
+	public ResponseEntity<List<Object>> checkParticipated(
 	        @RequestHeader("userId") String userId,
 	        @RequestParam List<String> eventIds) {
 		List<Object> resultList = new ArrayList<>();
@@ -302,7 +302,7 @@ public class EventServiceController {
 			resultObject.put("isParticipated", isParticipated);
 			resultList.add(resultObject);
 	    }
-	    return ResponseEntity.ok(resultList.toArray());
+	    return ResponseEntity.ok(resultList);
 	}
 	
 	@GetMapping("/{id}/participants")
