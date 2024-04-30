@@ -307,14 +307,14 @@ public class CounselServiceController {
 		comment.setId(UUID.randomUUID().toString());
 		comment.setPostAdvise(new PostAdviseModel(id));
 		comment.setCreator(new UserModel(creator));
-		System.out.println(comment.toString());
+		commentPostAdviseRepository.save(comment);
 
 		if (comment.getParentId() != null) {
 			commentPostAdviseRepository.commentCountIncrement(comment.getParentId(), 1);
+		} else {
+			postAdviseRepository.commentCountIncrement(id, 1);
 		}
 
-		commentPostAdviseRepository.save(comment);
-		postAdviseRepository.commentCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
@@ -347,49 +347,22 @@ public class CounselServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
-		Optional<CommentPostAdviseModel> originalComment = commentPostAdviseRepository.findById(commentId);
-		if (originalComment.isEmpty()) {
+		Optional<CommentPostAdviseModel> optionalComment = commentPostAdviseRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
+		CommentPostAdviseModel comment = optionalComment.get();
 		// Check if user is comment's creator
-		if (!originalComment.get().getCreator().getId().equals(creator)) {
+		if (!comment.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
 		}
 
-		String postId = originalComment.get().getPostAdvise().getId();
-		if (originalComment.get().getParentId() != null) {
-			commentPostAdviseRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
+		String postId = comment.getPostAdvise().getId();
+		if (comment.getParentId() != null) {
+			commentPostAdviseRepository.commentCountIncrement(comment.getParentId(), -1);
+		} else {
+			postAdviseRepository.commentCountIncrement(postId, -1);
 		}
-
-		// Initilize variables
-		List<CommentPostAdviseModel> childrenComments = new ArrayList<CommentPostAdviseModel>();
-		List<String> allParentId = new ArrayList<String>();
-		int totalDelete = 1;
-
-		// Get children comments
-		String curCommentId = commentId;
-		allParentId.add(curCommentId);
-		childrenComments.addAll(commentPostAdviseRepository.getChildrenComment(curCommentId));
-
-		// Start the loop
-		while (!childrenComments.isEmpty()) {
-			CommentPostAdviseModel curComment = childrenComments.get(0);
-			curCommentId = curComment.getId();
-			List<CommentPostAdviseModel> temp = commentPostAdviseRepository.getChildrenComment(curCommentId);
-			if (!temp.isEmpty()) {
-				allParentId.add(curCommentId);
-				childrenComments.addAll(temp);
-			}
-
-			childrenComments.remove(0);
-		}
-
-		// Delete all comments and update comment count
-		commentPostAdviseRepository.deleteComment(commentId, creator);
-		for (String parentId : allParentId) {
-			totalDelete += commentPostAdviseRepository.deleteChildrenComment(parentId);
-		}
-		postAdviseRepository.commentCountIncrement(postId, -totalDelete);
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}

@@ -351,9 +351,10 @@ public class NewsServiceController {
 
 		if (comment.getParentId() != null) {
 			commentNewsRepository.commentCountIncrement(comment.getParentId(), 1);
+		} else {
+			newsRepository.commentCountIncrement(id, 1);
 		}
 
-		newsRepository.commentCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
@@ -384,48 +385,21 @@ public class NewsServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
-		Optional<CommentNewsModel> originalComment = commentNewsRepository.findById(commentId);
-		if (originalComment.isEmpty()) {
+		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
+		CommentNewsModel comment = optionalComment.get();
 		// Check if user is comment's creator
-		if (!originalComment.get().getCreator().getId().equals(creator)) {
+		if (!comment.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
 		}
-		String newsId = originalComment.get().getNews().getId();
-		if (originalComment.get().getParentId() != null) {
-			commentNewsRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
+
+		if (comment.getParentId() != null) {
+			commentNewsRepository.commentCountIncrement(comment.getParentId(), -1);
+		} else {
+			newsRepository.commentCountIncrement(comment.getNews().getId(), 1);
 		}
-
-		// Initilize variables
-		List<CommentNewsModel> childrenComments = new ArrayList<CommentNewsModel>();
-		List<String> allParentId = new ArrayList<String>();
-		int totalDelete = 1;
-
-		// Get children comments
-		String curCommentId = commentId;
-		allParentId.add(curCommentId);
-		childrenComments.addAll(commentNewsRepository.getChildrenComment(curCommentId));
-
-		// Start the loop
-		while (!childrenComments.isEmpty()) {
-			CommentNewsModel curComment = childrenComments.get(0);
-			curCommentId = curComment.getId();
-			List<CommentNewsModel> temp = commentNewsRepository.getChildrenComment(curCommentId);
-			if (!temp.isEmpty()) {
-				allParentId.add(curCommentId);
-				childrenComments.addAll(temp);
-			}
-
-			childrenComments.remove(0);
-		}
-
-		// Delete all comments and update comment count
-		commentNewsRepository.deleteComment(commentId, creator);
-		for (String parentId : allParentId) {
-			totalDelete += commentNewsRepository.deleteChildrenComment(parentId);
-		}
-		newsRepository.commentCountIncrement(newsId, -totalDelete);
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
