@@ -340,8 +340,8 @@ public class EventServiceController {
 	    participant.setId(new ParticipantEventId(id, userId));
 	    participant.setCreatedAt(new Date());
 	    participantEventRepository.save(participant);
-	    //db còn cái trigger cho participant nên tui tạm phong ấn thằng này
-//	    eventRepository.participantCountIncrement(id, 1);
+	    
+	    eventRepository.participantCountIncrement(id, 1);
 
 	    return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
@@ -409,12 +409,12 @@ public class EventServiceController {
 		comment.setCreator(new UserModel(creator));
 		commentEventRepository.save(comment);
 		
-		//Hiện tại children_comment_number của comment chỉ dùng để đếm comment con trực tiếp thôi, chứ không đếm comment cháu chắt
-		//Còn nếu ông muốn đếm cả comment cháu chắt thì hú tui
 		if (comment.getParentId() != null) {
 	        commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
+	    } else {
+	    	eventRepository.commentCountIncrement(id, 1);
 	    }
-		eventRepository.commentCountIncrement(id, 1);
+		
 		return ResponseEntity.status(HttpStatus.CREATED).body(comment);
 	}
 
@@ -441,19 +441,18 @@ public class EventServiceController {
 		if (originalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
-		String newsId = originalComment.get().getEvent().getId();
+		String eventId = originalComment.get().getEvent().getId();
 		
-		//Hiện tại children_comment_number của comment chỉ dùng để đếm comment con trực tiếp thôi, chứ không đếm comment cháu chắt
-		//Còn nếu ông muốn đếm cả comment cháu chắt thì hú tui
 		String parentId = originalComment.get().getParentId();
 	    if (parentId != null) {
 	        commentEventRepository.commentCountIncrement(parentId, -1);
+	    } else {
+	    	eventRepository.commentCountIncrement(eventId, -1);
 	    }
 
 		// Initilize variables
 		List<CommentEventModel> childrenComments = new ArrayList<CommentEventModel>();
 		List<String> allParentId = new ArrayList<String>();
-		int totalDelete = 1;
 
 		// Get children comments
 		String curCommentId = commentId;
@@ -473,12 +472,11 @@ public class EventServiceController {
 			childrenComments.remove(0);
 		}
 
-		// Delete all comments and update comment count
+		// Delete all comments
 		commentEventRepository.deleteComment(commentId, creator);
 		for (String iParentId : allParentId) {
-			totalDelete += commentEventRepository.deleteChildrenComment(iParentId);
+			commentEventRepository.deleteChildrenComment(iParentId);
 		}
-		eventRepository.commentCountIncrement(newsId, -totalDelete);
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
