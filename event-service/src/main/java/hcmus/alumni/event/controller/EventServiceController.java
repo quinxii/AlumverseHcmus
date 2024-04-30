@@ -289,15 +289,20 @@ public class EventServiceController {
 	}
 	
 	@GetMapping("/is-participated")
-	public ResponseEntity<Map<String, Boolean>> checkParticipated(
+	public ResponseEntity<Object[]> checkParticipated(
 	        @RequestHeader("userId") String userId,
 	        @RequestParam List<String> eventIds) {
-	    Map<String, Boolean> participationMap = new HashMap<>();
+		List<Object> resultList = new ArrayList<>();
 	    for (String eventId : eventIds) {
-	        boolean isParticipated = participantEventRepository.existsById(new ParticipantEventId(eventId, userId));
-	        participationMap.put(eventId, isParticipated);
+			boolean isParticipated = !participantEventRepository.findById(new ParticipantEventId(eventId, userId))
+			.filter(participantEventModel -> !participantEventModel.isDelete())
+			.isEmpty();
+			Map<String, Object> resultObject = new HashMap<>();
+			resultObject.put("eventId", eventId);
+			resultObject.put("isParticipated", isParticipated);
+			resultList.add(resultObject);
 	    }
-	    return ResponseEntity.ok(participationMap);
+	    return ResponseEntity.ok(resultList.toArray());
 	}
 	
 	@GetMapping("/{id}/participants")
