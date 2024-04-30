@@ -330,11 +330,15 @@ public class EventServiceController {
 		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
 		if (optionalEvent.isEmpty()) 
 		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		Optional<ParticipantEventModel> existingParticipant = participantEventRepository.findById(new ParticipantEventId(id, userId));
+		if (existingParticipant.isPresent() && !existingParticipant.get().isDelete())
+		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You are already attending the event!");
 		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants()) 
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Số lượng người tham gia đã đạt tối đa!");
+		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The number of participants has reached the maximum limit!");
 		
 	    ParticipantEventModel participant = participantEvent;
 	    participant.setId(new ParticipantEventId(id, userId));
+	    participant.setCreatedAt(new Date());
 	    participantEventRepository.save(participant);
 	    //db còn cái trigger cho participant nên tui tạm phong ấn thằng này
 //	    eventRepository.participantCountIncrement(id, 1);
