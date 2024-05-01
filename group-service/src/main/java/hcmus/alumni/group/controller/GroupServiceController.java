@@ -700,31 +700,25 @@ public class GroupServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
-		Optional<CommentPostGroupModel> originalComment = commentPostGroupRepository.findById(commentId);
-		if (originalComment.isEmpty()) {
+		Optional<CommentPostGroupModel> optionalComment = commentPostGroupRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
+		CommentPostGroupModel originalComment = optionalComment.get();
 		// Check if user is comment's creator
-		if (!originalComment.get().getCreator().getId().equals(creator)) {
+		if (!originalComment.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
 		}
-
-		String postId = originalComment.get().getPostGroup().getId();
-		if (originalComment.get().getParentId() != null) {
-			commentPostGroupRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
-		} else {
-			postGroupRepository.commentCountIncrement(postId, -1);
-	    }
 
 		// Initilize variables
 		List<CommentPostGroupModel> childrenComments = new ArrayList<CommentPostGroupModel>();
 		List<String> allParentId = new ArrayList<String>();
-
+		
 		// Get children comments
 		String curCommentId = commentId;
 		allParentId.add(curCommentId);
 		childrenComments.addAll(commentPostGroupRepository.getChildrenComment(curCommentId));
-
+		
 		// Start the loop
 		while (!childrenComments.isEmpty()) {
 			CommentPostGroupModel curComment = childrenComments.get(0);
@@ -734,14 +728,21 @@ public class GroupServiceController {
 				allParentId.add(curCommentId);
 				childrenComments.addAll(temp);
 			}
-
+		
 			childrenComments.remove(0);
 		}
-
-		// Delete all comments
-		commentPostGroupRepository.deleteComment(commentId, creator);
+		
+		// Delete all comments and update comment count
+		int deleted = commentPostGroupRepository.deleteComment(commentId, creator);
 		for (String parentId : allParentId) {
 			commentPostGroupRepository.deleteChildrenComment(parentId);
+		}
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentPostGroupRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				postGroupRepository.commentCountIncrement(originalComment.getPostGroup().getId(), -1);
+			}
 		}
 		
 

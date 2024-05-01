@@ -415,7 +415,7 @@ public class EventServiceController {
 	    	eventRepository.commentCountIncrement(id, 1);
 	    }
 		
-		return ResponseEntity.status(HttpStatus.CREATED).body(comment);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
 	@PutMapping("/comments/{commentId}")
@@ -437,18 +437,16 @@ public class EventServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
-		Optional<CommentEventModel> originalComment = commentEventRepository.findById(commentId);
-		if (originalComment.isEmpty()) {
+		Optional<CommentEventModel> optionalComment = commentEventRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
-		String eventId = originalComment.get().getEvent().getId();
 		
-		String parentId = originalComment.get().getParentId();
-	    if (parentId != null) {
-	        commentEventRepository.commentCountIncrement(parentId, -1);
-	    } else {
-	    	eventRepository.commentCountIncrement(eventId, -1);
-	    }
+		CommentEventModel originalComment = optionalComment.get();
+		// Check if user is comment's creator
+		if (!originalComment.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
 
 		// Initilize variables
 		List<CommentEventModel> childrenComments = new ArrayList<CommentEventModel>();
@@ -472,10 +470,17 @@ public class EventServiceController {
 			childrenComments.remove(0);
 		}
 
-		// Delete all comments
-		commentEventRepository.deleteComment(commentId, creator);
-		for (String iParentId : allParentId) {
-			commentEventRepository.deleteChildrenComment(iParentId);
+		// Delete all comments and update comment count
+		int deleted = commentEventRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			commentEventRepository.deleteChildrenComment(parentId);
+		}
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentEventRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				eventRepository.commentCountIncrement(originalComment.getEvent().getId(), -1);
+			}
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
