@@ -351,9 +351,10 @@ public class NewsServiceController {
 
 		if (comment.getParentId() != null) {
 			commentNewsRepository.commentCountIncrement(comment.getParentId(), 1);
+		} else {
+			newsRepository.commentCountIncrement(id, 1);
 		}
 
-		newsRepository.commentCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
@@ -384,23 +385,19 @@ public class NewsServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
-		Optional<CommentNewsModel> originalComment = commentNewsRepository.findById(commentId);
-		if (originalComment.isEmpty()) {
+		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
+		CommentNewsModel originalComment = optionalComment.get();
 		// Check if user is comment's creator
-		if (!originalComment.get().getCreator().getId().equals(creator)) {
+		if (!originalComment.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
-		String newsId = originalComment.get().getNews().getId();
-		if (originalComment.get().getParentId() != null) {
-			commentNewsRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
 		}
 
 		// Initilize variables
 		List<CommentNewsModel> childrenComments = new ArrayList<CommentNewsModel>();
 		List<String> allParentId = new ArrayList<String>();
-		int totalDelete = 1;
 
 		// Get children comments
 		String curCommentId = commentId;
@@ -421,11 +418,17 @@ public class NewsServiceController {
 		}
 
 		// Delete all comments and update comment count
-		commentNewsRepository.deleteComment(commentId, creator);
+		int deleted = commentNewsRepository.deleteComment(commentId, creator);
 		for (String parentId : allParentId) {
-			totalDelete += commentNewsRepository.deleteChildrenComment(parentId);
+			commentNewsRepository.deleteChildrenComment(parentId);
 		}
-		newsRepository.commentCountIncrement(newsId, -totalDelete);
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentNewsRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				newsRepository.commentCountIncrement(originalComment.getNews().getId(), -1);
+			}
+		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
