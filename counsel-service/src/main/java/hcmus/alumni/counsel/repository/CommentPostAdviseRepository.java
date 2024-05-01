@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 
-
 public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAdviseModel, String> {
 
     @Query("SELECT c FROM CommentPostAdviseModel c WHERE c.postAdvise.id = :postAdviseId AND c.isDelete = false AND c.parentId IS NULL")
@@ -33,7 +32,7 @@ public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAd
 
     @Transactional
     @Modifying
-    @Query("UPDATE CommentPostAdviseModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator")
+    @Query("UPDATE CommentPostAdviseModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator AND c.isDelete = false")
     int deleteComment(@Param("commentId") String commentId, @Param("creator") String creator);
 
     @Transactional

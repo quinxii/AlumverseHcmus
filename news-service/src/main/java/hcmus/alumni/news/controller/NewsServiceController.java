@@ -389,16 +389,45 @@ public class NewsServiceController {
 		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
-		CommentNewsModel comment = optionalComment.get();
+		CommentNewsModel originalComment = optionalComment.get();
 		// Check if user is comment's creator
-		if (!comment.getCreator().getId().equals(creator)) {
+		if (!originalComment.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
 		}
 
-		if (comment.getParentId() != null) {
-			commentNewsRepository.commentCountIncrement(comment.getParentId(), -1);
-		} else {
-			newsRepository.commentCountIncrement(comment.getNews().getId(), 1);
+		// Initilize variables
+		List<CommentNewsModel> childrenComments = new ArrayList<CommentNewsModel>();
+		List<String> allParentId = new ArrayList<String>();
+
+		// Get children comments
+		String curCommentId = commentId;
+		allParentId.add(curCommentId);
+		childrenComments.addAll(commentNewsRepository.getChildrenComment(curCommentId));
+
+		// Start the loop
+		while (!childrenComments.isEmpty()) {
+			CommentNewsModel curComment = childrenComments.get(0);
+			curCommentId = curComment.getId();
+			List<CommentNewsModel> temp = commentNewsRepository.getChildrenComment(curCommentId);
+			if (!temp.isEmpty()) {
+				allParentId.add(curCommentId);
+				childrenComments.addAll(temp);
+			}
+
+			childrenComments.remove(0);
+		}
+
+		// Delete all comments and update comment count
+		int deleted = commentNewsRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			commentNewsRepository.deleteChildrenComment(parentId);
+		}
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentNewsRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				newsRepository.commentCountIncrement(originalComment.getNews().getId(), -1);
+			}
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);

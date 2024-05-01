@@ -32,7 +32,7 @@ public interface CommentNewsRepository extends JpaRepository<CommentNewsModel, S
 
     @Transactional
     @Modifying
-    @Query("UPDATE CommentNewsModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator")
+    @Query("UPDATE CommentNewsModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator AND c.isDelete = false")
     int deleteComment(@Param("commentId") String commentId, @Param("creator") String creator);
 
     @Transactional

@@ -351,17 +351,45 @@ public class CounselServiceController {
 		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
-		CommentPostAdviseModel comment = optionalComment.get();
+		CommentPostAdviseModel originalComment = optionalComment.get();
 		// Check if user is comment's creator
-		if (!comment.getCreator().getId().equals(creator)) {
+		if (!originalComment.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
 		}
 
-		String postId = comment.getPostAdvise().getId();
-		if (comment.getParentId() != null) {
-			commentPostAdviseRepository.commentCountIncrement(comment.getParentId(), -1);
-		} else {
-			postAdviseRepository.commentCountIncrement(postId, -1);
+		// Initilize variables
+		List<CommentPostAdviseModel> childrenComments = new ArrayList<CommentPostAdviseModel>();
+		List<String> allParentId = new ArrayList<String>();
+
+		// Get children comments
+		String curCommentId = commentId;
+		allParentId.add(curCommentId);
+		childrenComments.addAll(commentPostAdviseRepository.getChildrenComment(curCommentId));
+
+		// Start the loop
+		while (!childrenComments.isEmpty()) {
+			CommentPostAdviseModel curComment = childrenComments.get(0);
+			curCommentId = curComment.getId();
+			List<CommentPostAdviseModel> temp = commentPostAdviseRepository.getChildrenComment(curCommentId);
+			if (!temp.isEmpty()) {
+				allParentId.add(curCommentId);
+				childrenComments.addAll(temp);
+			}
+
+			childrenComments.remove(0);
+		}
+
+		// Delete all comments and update comment count
+		int deleted = commentPostAdviseRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			commentPostAdviseRepository.deleteChildrenComment(parentId);
+		}
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentPostAdviseRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				postAdviseRepository.commentCountIncrement(originalComment.getPostAdvise().getId(), -1);
+			}
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
