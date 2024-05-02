@@ -255,7 +255,11 @@ public class NewsServiceController {
 		if (optionalNews.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
-		Integer facultyId = optionalNews.get().getFaculty().getId();
+		FacultyModel faculty = optionalNews.get().getFaculty();
+		Integer facultyId = null;
+		if (faculty != null) {
+			facultyId = optionalNews.get().getFaculty().getId();
+		}
 		List<Integer> tagsId = optionalNews.get().getTags().stream().map(TagModel::getId).collect(Collectors.toList());
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));

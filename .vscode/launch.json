@@ -73,6 +73,16 @@
             "projectName": "event-service",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-HallOfFameServiceApplication<hall-of-fame-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.halloffame.HallOfFameServiceApplication",
+            "projectName": "hall-of-fame-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

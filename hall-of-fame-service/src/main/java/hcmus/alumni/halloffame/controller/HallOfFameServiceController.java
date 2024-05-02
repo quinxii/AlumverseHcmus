@@ -1,7 +1,6 @@
 package hcmus.alumni.halloffame.controller;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +32,7 @@ import hcmus.alumni.halloffame.model.HallOfFameModel;
 import hcmus.alumni.halloffame.model.StatusPostModel;
 import hcmus.alumni.halloffame.model.UserModel;
 import hcmus.alumni.halloffame.repository.HallOfFameRepository;
+import hcmus.alumni.halloffame.repository.UserRepository;
 import hcmus.alumni.halloffame.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -46,6 +46,8 @@ public class HallOfFameServiceController {
 
 	@Autowired
 	private HallOfFameRepository halloffameRepository;
+	@Autowired
+	private UserRepository userRepository;;
 	@Autowired
 	private ImageUtils imageUtils;
 
@@ -94,45 +96,38 @@ public class HallOfFameServiceController {
 	@PostMapping("")
 	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
-			@RequestParam(value = "facultyId") Integer facultyId,
-			@RequestParam(value = "emailOfUser") String emailOfUser,
-			@RequestParam(value = "beginningYear") Integer beginningYear,
+			@RequestParam(value = "summary", required = false) String summary,
+			@RequestParam(value = "facultyId", defaultValue = "0") Integer facultyId,
+			@RequestParam(value = "emailOfUser", required = false) String emailOfUser,
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Title and thumbnail must not be empty");
 		}
 		if (thumbnail.getSize() > 5 * 1024 * 1024) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 		}
+
+		UserModel linkedUser = null;
+		if (emailOfUser != null) {
+			linkedUser = userRepository.findByEmail(emailOfUser);
+			if (linkedUser == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
+			}
+		}
+
 		String id = UUID.randomUUID().toString();
-		String userId = "";
-		if (!emailOfUser.equals("")) {
-			userId = halloffameRepository.getUserIdByEmail(emailOfUser);
-		} else {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not existed");
-		}
-		UserModel userModel = null;
-		if (!userId.equals("")) {
-			userModel = new UserModel(userId);
-		} else {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
-		}
 		try {
 			// Save thumbnail image
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 			// Save hall of fame to database
-			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, thumbnailUrl,
-					new FacultyModel(facultyId), userModel, beginningYear);
-			// Lên lịch
-			if (scheduledTimeMili != null) {
-				halloffame.setPublishedAt(new Date(scheduledTimeMili));
-				halloffame.setStatus(new StatusPostModel(1));
-			} else {
-				halloffame.setPublishedAt(new Date());
-			}
+			FacultyModel faculty = null;
 			if (!facultyId.equals(0)) {
-				halloffame.setFaculty(new FacultyModel(facultyId));
+				faculty = new FacultyModel(facultyId);
 			}
+			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, thumbnailUrl, summary,
+					faculty, linkedUser, beginningYear, scheduledTimeMili);
+
 			halloffameRepository.save(halloffame);
 		} catch (IOException e) {
 			System.err.println(e);
@@ -146,54 +141,61 @@ public class HallOfFameServiceController {
 	public ResponseEntity<String> updateHallOfFame(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
 			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
-			@RequestParam(value = "faculty", defaultValue = "") Integer faculty,
-			@RequestParam(value = "emailOfUser") String emailOfUser,
+			@RequestParam(value = "summary", defaultValue = "") String summary,
+			@RequestParam(value = "facultyId", defaultValue = "0") Integer facultyId,
+			@RequestParam(value = "emailOfUser", required = false) String emailOfUser,
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
-			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId){
+			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 
 		try {
 			// Find hall of fame
 			Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
 			if (optionalHallOfFame.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
 			}
+
 			HallOfFameModel halloffame = optionalHallOfFame.get();
+			boolean isPut = false;
 
 			// Update fields if provided
 			if (!title.equals("")) {
 				halloffame.setTitle(title);
+				isPut = true;
 			}
 			if (thumbnail != null && !thumbnail.isEmpty()) {
-				// Check if thumbnail size exceeds the limit
-				if (thumbnail.getSize() > 5 * 1024 * 1024) {
-					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
-				}
-
 				// Save new thumbnail
-				String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
-				halloffame.setThumbnail(thumbnailUrl);
+				imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 			}
-			if (!faculty.equals("")) {
-				halloffame.setFaculty(new FacultyModel(faculty));
+			if (!summary.equals("")) {
+				halloffame.setSummary(summary);
+				isPut = true;
+			}
+			if (!facultyId.equals(0)) {
+				halloffame.setFaculty(new FacultyModel(facultyId));
+				isPut = true;
 			}
 			if (beginningYear != null) {
 				halloffame.setBeginningYear(beginningYear);
+				isPut = true;
 			}
 
-			if (!emailOfUser.equals("")) {
-				String userId = halloffameRepository.getUserIdByEmail(emailOfUser);
-				if (userId == null || userId.isEmpty()) {
+			if (emailOfUser != null) {
+				UserModel linkedUser = userRepository.findByEmail(emailOfUser);
+				if (linkedUser == null) {
 					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
-				} else {
-					halloffame.setUserId(new UserModel(userId)); 
 				}
+				halloffame.setLinkedUser(linkedUser);
+				isPut = true;
 			}
 			if (!statusId.equals(0)) {
 				halloffame.setStatus(new StatusPostModel(statusId));
+				isPut = true;
 			}
 
 			// Save hall of fame
-			halloffameRepository.save(halloffame);
+			if (isPut) {
+				halloffameRepository.save(halloffame);
+			}
 			return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
 
 		} catch (IOException e) {
@@ -246,7 +248,7 @@ public class HallOfFameServiceController {
 		Optional<IHallOfFameDto> optionalHof = halloffameRepository.findHallOfFameById(id);
 		if (optionalHof.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-		} 
+		}
 		halloffameRepository.viewsIncrement(id);
 		return ResponseEntity.status(HttpStatus.OK).body(optionalHof.get());
 	}
