@@ -340,8 +340,8 @@ public class EventServiceController {
 	    participant.setId(new ParticipantEventId(id, userId));
 	    participant.setCreatedAt(new Date());
 	    participantEventRepository.save(participant);
-	    //db còn cái trigger cho participant nên tui tạm phong ấn thằng này
-//	    eventRepository.participantCountIncrement(id, 1);
+	    
+	    eventRepository.participantCountIncrement(id, 1);
 
 	    return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
@@ -409,13 +409,13 @@ public class EventServiceController {
 		comment.setCreator(new UserModel(creator));
 		commentEventRepository.save(comment);
 		
-		//Hiện tại children_comment_number của comment chỉ dùng để đếm comment con trực tiếp thôi, chứ không đếm comment cháu chắt
-		//Còn nếu ông muốn đếm cả comment cháu chắt thì hú tui
 		if (comment.getParentId() != null) {
 	        commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
+	    } else {
+	    	eventRepository.commentCountIncrement(id, 1);
 	    }
-		eventRepository.commentCountIncrement(id, 1);
-		return ResponseEntity.status(HttpStatus.CREATED).body(comment);
+		
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
 	@PutMapping("/comments/{commentId}")
@@ -437,23 +437,20 @@ public class EventServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
-		Optional<CommentEventModel> originalComment = commentEventRepository.findById(commentId);
-		if (originalComment.isEmpty()) {
+		Optional<CommentEventModel> optionalComment = commentEventRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
-		String newsId = originalComment.get().getEvent().getId();
 		
-		//Hiện tại children_comment_number của comment chỉ dùng để đếm comment con trực tiếp thôi, chứ không đếm comment cháu chắt
-		//Còn nếu ông muốn đếm cả comment cháu chắt thì hú tui
-		String parentId = originalComment.get().getParentId();
-	    if (parentId != null) {
-	        commentEventRepository.commentCountIncrement(parentId, -1);
-	    }
+		CommentEventModel originalComment = optionalComment.get();
+		// Check if user is comment's creator
+		if (!originalComment.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
 
 		// Initilize variables
 		List<CommentEventModel> childrenComments = new ArrayList<CommentEventModel>();
 		List<String> allParentId = new ArrayList<String>();
-		int totalDelete = 1;
 
 		// Get children comments
 		String curCommentId = commentId;
@@ -474,11 +471,17 @@ public class EventServiceController {
 		}
 
 		// Delete all comments and update comment count
-		commentEventRepository.deleteComment(commentId, creator);
-		for (String iParentId : allParentId) {
-			totalDelete += commentEventRepository.deleteChildrenComment(iParentId);
+		int deleted = commentEventRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			commentEventRepository.deleteChildrenComment(parentId);
 		}
-		eventRepository.commentCountIncrement(newsId, -totalDelete);
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentEventRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				eventRepository.commentCountIncrement(originalComment.getEvent().getId(), -1);
+			}
+		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}

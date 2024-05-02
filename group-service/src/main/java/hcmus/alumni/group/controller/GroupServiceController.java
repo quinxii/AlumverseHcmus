@@ -660,14 +660,14 @@ public class GroupServiceController {
 		comment.setId(UUID.randomUUID().toString());
 		comment.setPostGroup(new PostGroupModel(id));
 		comment.setCreator(new UserModel(creator));
-		System.out.println(comment.toString());
+		commentPostGroupRepository.save(comment);
 
 		if (comment.getParentId() != null) {
 			commentPostGroupRepository.commentCountIncrement(comment.getParentId(), 1);
+		} else {
+			postGroupRepository.commentCountIncrement(id, 1);
 		}
 
-		commentPostGroupRepository.save(comment);
-		postGroupRepository.commentCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
@@ -700,30 +700,25 @@ public class GroupServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
-		Optional<CommentPostGroupModel> originalComment = commentPostGroupRepository.findById(commentId);
-		if (originalComment.isEmpty()) {
+		Optional<CommentPostGroupModel> optionalComment = commentPostGroupRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
+		CommentPostGroupModel originalComment = optionalComment.get();
 		// Check if user is comment's creator
-		if (!originalComment.get().getCreator().getId().equals(creator)) {
+		if (!originalComment.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
-
-		String postId = originalComment.get().getPostGroup().getId();
-		if (originalComment.get().getParentId() != null) {
-			commentPostGroupRepository.commentCountIncrement(originalComment.get().getParentId(), -1);
 		}
 
 		// Initilize variables
 		List<CommentPostGroupModel> childrenComments = new ArrayList<CommentPostGroupModel>();
 		List<String> allParentId = new ArrayList<String>();
-		int totalDelete = 1;
-
+		
 		// Get children comments
 		String curCommentId = commentId;
 		allParentId.add(curCommentId);
 		childrenComments.addAll(commentPostGroupRepository.getChildrenComment(curCommentId));
-
+		
 		// Start the loop
 		while (!childrenComments.isEmpty()) {
 			CommentPostGroupModel curComment = childrenComments.get(0);
@@ -733,16 +728,23 @@ public class GroupServiceController {
 				allParentId.add(curCommentId);
 				childrenComments.addAll(temp);
 			}
-
+		
 			childrenComments.remove(0);
 		}
-
+		
 		// Delete all comments and update comment count
-		commentPostGroupRepository.deleteComment(commentId, creator);
+		int deleted = commentPostGroupRepository.deleteComment(commentId, creator);
 		for (String parentId : allParentId) {
-			totalDelete += commentPostGroupRepository.deleteChildrenComment(parentId);
+			commentPostGroupRepository.deleteChildrenComment(parentId);
 		}
-		postGroupRepository.commentCountIncrement(postId, -totalDelete);
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentPostGroupRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				postGroupRepository.commentCountIncrement(originalComment.getPostGroup().getId(), -1);
+			}
+		}
+		
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
