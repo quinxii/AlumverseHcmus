@@ -24,13 +24,48 @@ public class SearchServiceController {
 	private EntityManager em;
 	@Autowired
 	private SearchRepository searchRepository;
+	@Autowired
+	private ImageUtils imageUtils;
+
+	@GetMapping("/count")
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "status") String status) {
+		if (status.equals("")) {
+			ResponseEntity.status(HttpStatus.OK).body(0L);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(searchRepository.getCountByStatus(status));
+	}
 
 	@GetMapping("")
-	public ResponseEntity<List<UserModel>> getSearchResult(@RequestParam(value = "find", defaultValue = "") String id) {
-		// Assuming full name is relevant for user search
-		List<UserModel> similarUsers = searchRepository.searchUsers(id);
-		// You can process similarUsers here if needed
-		return ResponseEntity.status(HttpStatus.OK).body(similarUsers);
+	public ResponseEntity<HashMap<String, Object>> getSearchResult(
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "fullName", required = false, defaultValue = "") String fullName,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "statusId", required = false) Integer statusId,
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<ISearchDto> searchResult = null;
+
+			searchResult = searchRepository.searchUsers(fullName, statusId, facultyId, beginningYear, pageable);
+
+			result.put("totalPages", searchResult.getTotalPages());
+			result.put("searchResult", searchResult.getContent());
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			result.put("error", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
+
 
 }

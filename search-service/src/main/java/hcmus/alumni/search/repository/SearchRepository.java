@@ -13,12 +13,23 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.search.dto.ISearchDto;
-import hcmus.alumni.search.model.HallOfFameModel;
 import hcmus.alumni.search.model.UserModel;
 
 public interface SearchRepository extends JpaRepository<UserModel, String> {
-	@Query("SELECT u FROM UserModel u WHERE " + "u.fullName LIKE %:input% OR " + "u.email LIKE %:input% OR "
-			+ "u.socialMediaLink LIKE %:input% OR " + "u.aboutMe LIKE %:input% OR " + "u.phone LIKE %:input%")
-	List<UserModel> searchUsers(@Param("input") String input);
+
+	@Query("SELECT DISTINCT u " + 
+		   "FROM UserModel u " + 
+		   "LEFT JOIN u.status s " + 
+		   "LEFT JOIN u.faculty f " + 
+		   "WHERE (:statusId IS NULL OR s.id = :statusId) " + 
+		   "AND (:facultyId IS NULL OR f.id = :facultyId) " + 
+		   "AND (:beginningYear IS NULL OR u.beginningYear = :beginningYear) " + 
+		   "AND s.id != 4 " +
+		   "AND u.fullName LIKE %:fullName%")
+	Page<ISearchDto> searchUsers(String fullName, Integer statusId,
+			Integer facultyId, Integer beginningYear, Pageable pageable);
+
+	@Query("SELECT COUNT(n) FROM UserModel n JOIN n.status s WHERE s.name = :statusName")
+	Long getCountByStatus(@Param("statusName") String statusName);
 
 }
