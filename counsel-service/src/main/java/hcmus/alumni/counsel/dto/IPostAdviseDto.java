@@ -1,0 +1,35 @@
+package hcmus.alumni.counsel.dto;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+public interface IPostAdviseDto {
+	interface User{
+		String getId();
+		String getFullName();
+		String getAvatarUrl();
+	}
+	interface StatusPost{
+		String getName();
+	}
+	interface Tag{
+		Integer getId();
+		String getName();
+	}
+	interface Pictures {
+		String getId();
+		String getPictureUrl();
+	}
+	
+	String getId();
+	String getTitle();
+	List<Pictures> getPictures();
+	String getContent();
+	Integer getChildrenCommentNumber();
+	Date getUpdateAt();
+	Date getPublishedAt();
+	User getCreator();
+	Set<Tag> getTags();
+	StatusPost getStatus();
+}

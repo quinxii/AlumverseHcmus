@@ -45,7 +45,7 @@ public class HallOfFameModel implements Serializable {
 
 	@OneToOne
 	@JoinColumn(name = "user_id")
-	private UserModel userId;
+	private UserModel linkedUser;
 
 	@CreationTimestamp
 	@Column(name = "create_at")
@@ -77,35 +77,24 @@ public class HallOfFameModel implements Serializable {
 		status = new StatusPostModel(2);
 	}
 
-	public HallOfFameModel(String id, UserModel creator, String title, String content, String thumbnail,
-			FacultyModel faculty, UserModel userId, int beginningYear) {
+	public HallOfFameModel(String id, UserModel creator, String title, String thumbnail, String summary, FacultyModel faculty,
+			UserModel linkedUser, Integer beginningYear, Long scheduledTimeMilis) {
 		this.id = id;
 		this.creator = creator;
 		this.title = title;
-		this.content = content;
+		this.summary = summary;
+		this.content = "";
 		this.thumbnail = thumbnail;
 		this.faculty = faculty;
-
-		if (userId != null) {
-			this.userId = userId;
-		}
+		this.linkedUser = linkedUser;
 		this.beginningYear = beginningYear;
-		this.status = new StatusPostModel(3);
-	}
-	
-	public HallOfFameModel(String id, UserModel creator, String title, String thumbnail,
-			FacultyModel faculty, UserModel userId, int beginningYear) {
-		this.id = id;
-		this.creator = creator;
-		this.title = title;
-		this.thumbnail = thumbnail;
-		this.faculty = faculty;
-
-		if (userId != null) {
-			this.userId = userId;
+		// Lên lịch
+		if (scheduledTimeMilis != null) {
+			this.publishedAt = new Date(scheduledTimeMilis);
+			this.status = new StatusPostModel(1);
+		} else {
+			this.publishedAt = new Date();
+			this.status = new StatusPostModel(2);
 		}
-		this.beginningYear = beginningYear;
-		this.status = new StatusPostModel(3);
 	}
-
 }

@@ -219,7 +219,7 @@ public class UserServiceController {
 		return ResponseEntity.ok(response);
 	}
 
-    @PreAuthorize("hasAnyAuthority('Khách, Cựu sinh viên')")
+    @PreAuthorize("hasAnyAuthority('Guest, Alumni')")
 	@PostMapping("/alumni-verification")
 	public ResponseEntity<String> createAlumniVerification(@RequestHeader("userId") String userId,
 			@RequestParam(value = "avatar", required = false) MultipartFile avatar,
@@ -249,7 +249,7 @@ public class UserServiceController {
 
 		try {
 			userRepository.setDataFirstVerifyAlumni(userId, fullName, socialMediaLink, faculty);
-			if (studentId != null || beginningYear != 0 || socialMediaLink != null || facultyId != 0) {
+			if (studentId != null || beginningYear != null || socialMediaLink != null || facultyId != 0) {
 				verifyAlumniRepository.save(verifyAlumni);
 			}
 

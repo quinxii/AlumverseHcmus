@@ -7,6 +7,11 @@ public interface IHallOfFameDto {
         String getId(); // Added
         String getFullName();
     }
+    interface LinkedUser {
+        String getId();
+        String getFullName();
+        String getEmail();
+    }
 
     interface StatusPost {
         Integer getId(); // Added
@@ -28,7 +33,7 @@ public interface IHallOfFameDto {
     Date getUpdateAt();
     Date getPublishedAt();
     User getCreator();
-    User getUserId();
+    LinkedUser getLinkedUser();
     Faculty getFaculty();
     StatusPost getStatus();
     Integer getBeginningYear();

@@ -50,6 +50,20 @@ spring:
           uri: lb://search-service
           predicates:
             - Path=/search/**
+            
+        ## group service
+        - id: group
+          uri: lb://group-service
+          predicates:
+            - Path=/groups/**
+          filters:
+            - name: Authentication
+
+        ## counsel service
+        - id: counsel
+          uri: lb://counsel-service
+          predicates:
+            - Path=/counsel/**
           filters:
             - name: Authentication
 

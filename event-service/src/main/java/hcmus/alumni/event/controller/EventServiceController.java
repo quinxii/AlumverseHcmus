@@ -1,6 +1,8 @@
 package hcmus.alumni.event.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,19 +24,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.event.dto.ICommentEventDto;
 import hcmus.alumni.event.dto.IEventDto;
 import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPostModel;
 import hcmus.alumni.event.model.FacultyModel;
+import hcmus.alumni.event.model.ParticipantEventId;
+import hcmus.alumni.event.model.ParticipantEventModel;
 import hcmus.alumni.event.model.UserModel;
+import hcmus.alumni.event.model.CommentEventModel;
+import hcmus.alumni.event.repository.CommentEventRepository;
 import hcmus.alumni.event.repository.EventRepository;
+import hcmus.alumni.event.repository.ParticipantEventRepository;
 import hcmus.alumni.event.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -48,6 +57,10 @@ public class EventServiceController {
 	@Autowired
 	private EventRepository eventRepository;
 	@Autowired
+	private ParticipantEventRepository participantEventRepository;
+	@Autowired
+	private CommentEventRepository commentEventRepository;
+	@Autowired
     private ImageUtils imageUtils;
 	
 	@GetMapping("")
@@ -58,7 +71,9 @@ public class EventServiceController {
 	        @RequestParam(value = "orderBy", required = false, defaultValue = "organizationTime") String orderBy,
 	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
-	        @RequestParam(value = "statusId", required = false) Integer statusId) {
+	        @RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
+	        @RequestParam(value = "statusId", required = false) Integer statusId,
+	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
@@ -68,7 +83,9 @@ public class EventServiceController {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 	        Page<IEventDto> events = null;
 	        
-	        events = eventRepository.searchEvents(title, statusId, facultyId, pageable);
+	        Calendar cal = Calendar.getInstance();
+	        Date startDate = cal.getTime();
+	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, mode, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -102,6 +119,8 @@ public class EventServiceController {
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
 	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
+	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
 	    if (creatorId.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
@@ -130,6 +149,8 @@ public class EventServiceController {
 	        if (!facultyId.equals(0)) {
 	            event.setFaculty(new FacultyModel(facultyId));
 	        }
+	        event.setMinimumParticipants(minimumParticipants);
+	        event.setMaximumParticipants(maximumParticipants);
 	        event.setStatus(new StatusPostModel(statusId));
 	        eventRepository.save(event);
 	    } catch (IOException e) {
@@ -149,6 +170,8 @@ public class EventServiceController {
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
 	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
+	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 	    if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
@@ -189,6 +212,14 @@ public class EventServiceController {
 	            event.setFaculty(new FacultyModel(facultyId));
 	            isPut = true;
 	        }
+	        if (minimumParticipants != null) {
+	        	event.setMinimumParticipants(minimumParticipants);
+	            isPut = true;
+	        }
+	        if (maximumParticipants != null) {
+	        	event.setMaximumParticipants(maximumParticipants);
+	            isPut = true;
+	        }
 	        if (!statusId.equals(0)) {
 	            event.setStatus(new StatusPostModel(statusId));
 	            isPut = true;
@@ -216,17 +247,242 @@ public class EventServiceController {
 	    eventRepository.save(event);
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	
-	@GetMapping("/{id}/participant")
-	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id) {
-	    Map<String, Object> result = new HashMap<>();
-	   
-	    List<IParticipantEventDto> participantList = eventRepository.getParticipantsByEventId(id);
-	    Integer participantCount = participantList.size();
-	    		
-	    result.put("participantCount", participantCount);
-	    result.put("participants", participantList);
-	    
+
+	@GetMapping("/hot")
+	public ResponseEntity<HashMap<String, Object>> getHotEvents(
+	        @RequestParam(value = "limit", defaultValue = "5") Integer limit) {
+	    if (limit <= 0 || limit > 5) {
+	        limit = 5;
+	    }
+	    Calendar cal = Calendar.getInstance();
+	    Date startDate = cal.getTime();
+
+	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
+	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, pageable);
+
+	    HashMap<String, Object> result = new HashMap<>();
+	    result.put("events", events.getContent());
+
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+	
+	@GetMapping("/participated")
+	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
+	        @RequestHeader("userId") String userId,
+	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
+	    if (pageSize == 0 || pageSize > 50) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    }
+	    HashMap<String, Object> result = new HashMap<>();
+
+	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
+	    Calendar cal = Calendar.getInstance();
+        Date startDate = cal.getTime();
+        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, mode, pageable);
+
+        result.put("totalPages", events.getTotalPages());
+        result.put("events", events.getContent());
+
+	    return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+	
+	@GetMapping("/is-participated")
+	public ResponseEntity<List<Object>> checkParticipated(
+	        @RequestHeader("userId") String userId,
+	        @RequestParam List<String> eventIds) {
+		List<Object> resultList = new ArrayList<>();
+	    for (String eventId : eventIds) {
+			boolean isParticipated = !participantEventRepository.findById(new ParticipantEventId(eventId, userId))
+			.filter(participantEventModel -> !participantEventModel.isDelete())
+			.isEmpty();
+			Map<String, Object> resultObject = new HashMap<>();
+			resultObject.put("eventId", eventId);
+			resultObject.put("isParticipated", isParticipated);
+			resultList.add(resultObject);
+	    }
+	    return ResponseEntity.ok(resultList);
+	}
+	
+	@GetMapping("/{id}/participants")
+	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id,
+	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+	    if (pageSize == 0 || pageSize > 50) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    }
+	    Map<String, Object> result = new HashMap<>();
+
+	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+	    Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, pageable);
+
+	    result.put("participants", participantsPage.getContent());
+
+	    return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+	
+	@PostMapping("/{id}/participants")
+	public ResponseEntity<String> addParticipant(
+	        @PathVariable String id,
+	        @RequestHeader("userId") String userId,
+	        @RequestBody ParticipantEventModel participantEvent) {
+		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
+		if (optionalEvent.isEmpty()) 
+		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		Optional<ParticipantEventModel> existingParticipant = participantEventRepository.findById(new ParticipantEventId(id, userId));
+		if (existingParticipant.isPresent() && !existingParticipant.get().isDelete())
+		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You are already attending the event!");
+		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants()) 
+		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The number of participants has reached the maximum limit!");
+		
+	    ParticipantEventModel participant = participantEvent;
+	    participant.setId(new ParticipantEventId(id, userId));
+	    participant.setCreatedAt(new Date());
+	    participantEventRepository.save(participant);
+	    
+	    eventRepository.participantCountIncrement(id, 1);
+
+	    return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@DeleteMapping("/{id}/participants")
+	public ResponseEntity<String> deleteParticipant(
+	        @PathVariable String id,
+	        @RequestHeader("userId") String userId) {
+	    // Delete the participant
+	    participantEventRepository.deleteByEventIdAndUserId(id, userId);
+
+	    // Update participant count for the event
+	    eventRepository.participantCountIncrement(id, -1);
+
+	    return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+	
+	@GetMapping("/{id}/comments")
+	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentEventDto> comments = commentEventRepository.getComments(id, pageable);
+
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/comments/{commentId}/children")
+	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			@PathVariable String commentId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		// Check if parent comment deleted
+		Optional<CommentEventModel> parentComment = commentEventRepository.findById(commentId);
+		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, pageable);
+
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PostMapping("/{id}/comments")
+	public ResponseEntity<CommentEventModel> createComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String id, @RequestBody CommentEventModel comment) {
+		comment.setId(UUID.randomUUID().toString());
+		comment.setEvent(new EventModel(id));
+		comment.setCreator(new UserModel(creator));
+		commentEventRepository.save(comment);
+		
+		if (comment.getParentId() != null) {
+	        commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
+	    } else {
+	    	eventRepository.commentCountIncrement(id, 1);
+	    }
+		
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@PutMapping("/comments/{commentId}")
+	public ResponseEntity<String> updateComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId, @RequestBody CommentEventModel updatedComment) {
+		if (updatedComment.getContent() == null) {
+			return ResponseEntity.status(HttpStatus.OK).body("");
+		}
+		int updates = commentEventRepository.updateComment(commentId, creator, updatedComment.getContent());
+		if (updates == 0) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@DeleteMapping("/comments/{commentId}")
+	public ResponseEntity<String> deleteComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId) {
+		// Check if comment exists
+		Optional<CommentEventModel> optionalComment = commentEventRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		
+		CommentEventModel originalComment = optionalComment.get();
+		// Check if user is comment's creator
+		if (!originalComment.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
+
+		// Initilize variables
+		List<CommentEventModel> childrenComments = new ArrayList<CommentEventModel>();
+		List<String> allParentId = new ArrayList<String>();
+
+		// Get children comments
+		String curCommentId = commentId;
+		allParentId.add(curCommentId);
+		childrenComments.addAll(commentEventRepository.getChildrenComment(curCommentId));
+
+		// Start the loop
+		while (!childrenComments.isEmpty()) {
+			CommentEventModel curComment = childrenComments.get(0);
+			curCommentId = curComment.getId();
+			List<CommentEventModel> temp = commentEventRepository.getChildrenComment(curCommentId);
+			if (!temp.isEmpty()) {
+				allParentId.add(curCommentId);
+				childrenComments.addAll(temp);
+			}
+
+			childrenComments.remove(0);
+		}
+
+		// Delete all comments and update comment count
+		int deleted = commentEventRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			commentEventRepository.deleteChildrenComment(parentId);
+		}
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentEventRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				eventRepository.commentCountIncrement(originalComment.getEvent().getId(), -1);
+			}
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 }

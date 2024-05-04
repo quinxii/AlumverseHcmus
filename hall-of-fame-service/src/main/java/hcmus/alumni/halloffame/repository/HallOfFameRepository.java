@@ -20,20 +20,23 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
 
 	Optional<HallOfFameModel> findById(String id);
 
-	@Query("SELECT h " + "FROM HallOfFameModel h " + "LEFT JOIN h.status s " + "LEFT JOIN h.faculty f "
-			+ "WHERE (:statusId IS NULL OR s.id = :statusId) " + "AND (:facultyId IS NULL OR f.id = :facultyId) "
-			+ "AND (:beginningYear IS NULL OR h.beginningYear = :beginningYear) " + "AND h.title LIKE %:title%")
-	Page<IHallOfFameDto> searchHof(@Param("title") String title, @Param("statusId") Integer statusId,
-			@Param("facultyId") Integer facultyId, @Param("beginningYear") Integer beginningYear, Pageable pageable);
+	@Query("SELECT DISTINCT h " + 
+		   "FROM HallOfFameModel h " + 
+		   "LEFT JOIN h.status s " + 
+		   "LEFT JOIN h.faculty f " + 
+		   "WHERE (:statusId IS NULL OR s.id = :statusId) " + 
+		   "AND (:facultyId IS NULL OR f.id = :facultyId) " + 
+		   "AND (:beginningYear IS NULL OR h.beginningYear = :beginningYear) " + 
+		   "AND s.id != 4 " +
+		   "AND h.title LIKE %:title%")
+	Page<IHallOfFameDto> searchHof(String title, Integer statusId,
+			Integer facultyId, Integer beginningYear, Pageable pageable);
 
 	@Query("SELECT COUNT(n) FROM HallOfFameModel n JOIN n.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
 
 	@Query("SELECT COUNT(n) FROM HallOfFameModel n JOIN n.status s WHERE s.id != 4")
 	Long getCountByNotDelete();
-
-	@Query("SELECT n.id FROM UserModel n WHERE n.email = :emailOfUser")
-	String getUserIdByEmail(@Param("emailOfUser") String emailOfUser);
 
 	@Transactional
 	@Modifying

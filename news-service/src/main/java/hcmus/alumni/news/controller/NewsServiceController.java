@@ -1,12 +1,14 @@
 package hcmus.alumni.news.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -29,11 +31,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
+import hcmus.alumni.news.model.CommentNewsModel;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
 import hcmus.alumni.news.model.StatusPostModel;
+import hcmus.alumni.news.model.TagModel;
 import hcmus.alumni.news.model.UserModel;
+import hcmus.alumni.news.repository.CommentNewsRepository;
 import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
@@ -49,18 +55,9 @@ public class NewsServiceController {
 	@Autowired
 	private NewsRepository newsRepository;
 	@Autowired
+	private CommentNewsRepository commentNewsRepository;
+	@Autowired
 	private ImageUtils imageUtils;
-
-	// @GetMapping("/test")
-	// public List<INewsDto> test(@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-	// 		@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
-	// 		@RequestParam(value = "title", required = false, defaultValue = "") String title,
-	// 		@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-	// 		@RequestParam(value = "order", required = false, defaultValue = "desc") String order) {
-	// 	Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.fromString(order), orderBy));
-	// 	Page<INewsDto> news = newsRepository.searchNews(title, pageable);
-	// 	return news.getContent();
-	// }
 
 	@GetMapping("/count")
 	public ResponseEntity<Long> getNewsCount(
@@ -68,7 +65,7 @@ public class NewsServiceController {
 		if (statusId.equals(0)) {
 			return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByNotDelete());
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatus(statusId));
+		return ResponseEntity.status(HttpStatus.OK).body(newsRepository.getCountByStatusId(statusId));
 	}
 
 	@GetMapping("")
@@ -78,7 +75,9 @@ public class NewsServiceController {
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
+			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
+			@RequestParam(value = "statusId", required = false) Integer statusId) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
@@ -87,17 +86,15 @@ public class NewsServiceController {
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 			Page<INewsDto> news = null;
-			if (statusId.equals(0)) {
-				news = newsRepository.searchNews(title, pageable);
-			} else {
-				news = newsRepository.searchNewsByStatus(title, statusId, pageable);
-			}
+
+			news = newsRepository.searchNews(title, facultyId, tagsId, statusId, pageable);
 
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
 
@@ -247,14 +244,26 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@GetMapping("/most-viewed")
+	@GetMapping("/{id}/related")
 	public ResponseEntity<HashMap<String, Object>> getMostViewed(
+			@PathVariable String id,
 			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
-		if (limit <= 0 || limit > 5) {
-			limit = 5;
+		if (limit <= 0 || limit > 10) {
+			limit = 10;
 		}
-		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
-		Page<INewsDto> news = newsRepository.getMostViewdNews(pageable);
+		Optional<NewsModel> optionalNews = newsRepository.findById(id);
+		if (optionalNews.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		}
+		FacultyModel faculty = optionalNews.get().getFaculty();
+		Integer facultyId = null;
+		if (faculty != null) {
+			facultyId = optionalNews.get().getFaculty().getId();
+		}
+		List<Integer> tagsId = optionalNews.get().getTags().stream().map(TagModel::getId).collect(Collectors.toList());
+
+		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
+		Page<INewsDto> news = newsRepository.getRelatedNews(id, facultyId, tagsId, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());
@@ -264,13 +273,20 @@ public class NewsServiceController {
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotNews(
-			@RequestParam(value = "limit", defaultValue = "4") Integer limit) {
-		if (limit <= 0 || limit > 5) {
-			limit = 5;
+			@RequestParam(value = "limit", defaultValue = "5") Integer limit,
+			@RequestParam(value = "weeks", defaultValue = "2") Integer weeks) {
+		if (limit <= 0 || limit > 10) {
+			limit = 10;
 		}
+		if (weeks < 0) {
+			weeks = -weeks;
+		} else if (weeks == 0) {
+			weeks = 2;
+		}
+
 		Calendar cal = Calendar.getInstance();
 		Date endDate = cal.getTime();
-		cal.add(Calendar.WEEK_OF_YEAR, -1);
+		cal.add(Calendar.WEEK_OF_YEAR, -weeks);
 		Date startDate = cal.getTime();
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
@@ -280,5 +296,144 @@ public class NewsServiceController {
 		result.put("news", news.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	// Get comments of a news
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@GetMapping("/{id}/comments")
+	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, pageable);
+
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	// Get children comments of a comment
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@GetMapping("/comments/{commentId}/children")
+	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			@PathVariable String commentId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		// Check if parent comment deleted
+		Optional<CommentNewsModel> parentComment = commentNewsRepository.findById(commentId);
+		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, pageable);
+
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@PostMapping("/{id}/comments")
+	public ResponseEntity<String> createComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String id, @RequestBody CommentNewsModel comment) {
+		comment.setId(UUID.randomUUID().toString());
+		comment.setNews(new NewsModel(id));
+		comment.setCreator(new UserModel(creator));
+		commentNewsRepository.save(comment);
+
+		if (comment.getParentId() != null) {
+			commentNewsRepository.commentCountIncrement(comment.getParentId(), 1);
+		} else {
+			newsRepository.commentCountIncrement(id, 1);
+		}
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@PutMapping("/comments/{commentId}")
+	public ResponseEntity<String> updateComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId, @RequestBody CommentNewsModel updatedComment) {
+		if (updatedComment.getContent() == null) {
+			return ResponseEntity.status(HttpStatus.OK).body("");
+		}
+		// Check if user is comment's creator
+		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Comment not found");
+		}
+		if (!optionalComment.get().getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
+
+		commentNewsRepository.updateComment(commentId, creator, updatedComment.getContent());
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@DeleteMapping("/comments/{commentId}")
+	public ResponseEntity<String> deleteComment(
+			@RequestHeader("userId") String creator,
+			@PathVariable String commentId) {
+		// Check if comment exists
+		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+		}
+		CommentNewsModel originalComment = optionalComment.get();
+		// Check if user is comment's creator
+		if (!originalComment.getCreator().getId().equals(creator)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
+		}
+
+		// Initilize variables
+		List<CommentNewsModel> childrenComments = new ArrayList<CommentNewsModel>();
+		List<String> allParentId = new ArrayList<String>();
+
+		// Get children comments
+		String curCommentId = commentId;
+		allParentId.add(curCommentId);
+		childrenComments.addAll(commentNewsRepository.getChildrenComment(curCommentId));
+
+		// Start the loop
+		while (!childrenComments.isEmpty()) {
+			CommentNewsModel curComment = childrenComments.get(0);
+			curCommentId = curComment.getId();
+			List<CommentNewsModel> temp = commentNewsRepository.getChildrenComment(curCommentId);
+			if (!temp.isEmpty()) {
+				allParentId.add(curCommentId);
+				childrenComments.addAll(temp);
+			}
+
+			childrenComments.remove(0);
+		}
+
+		// Delete all comments and update comment count
+		int deleted = commentNewsRepository.deleteComment(commentId, creator);
+		for (String parentId : allParentId) {
+			commentNewsRepository.deleteChildrenComment(parentId);
+		}
+		if (deleted != 0) {
+			if (originalComment.getParentId() != null) {
+				commentNewsRepository.commentCountIncrement(originalComment.getParentId(), -1);
+			} else {
+				newsRepository.commentCountIncrement(originalComment.getNews().getId(), -1);
+			}
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 }

@@ -1,5 +1,6 @@
 package hcmus.alumni.event.repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,25 +21,60 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
         "FROM EventModel e " +
         "LEFT JOIN e.status s " +
         "LEFT JOIN e.faculty f " +
+        "LEFT JOIN e.tags t " +
         "WHERE (:statusId IS NULL OR s.id = :statusId) " +
         "AND (:facultyId IS NULL OR f.id = :facultyId) " +
-        "AND e.title LIKE %:title%")
-	Page<IEventDto> searchEvents(@Param("title") String title, @Param("statusId") Integer statusId, @Param("facultyId") Integer facultyId, Pageable pageable);
+        "AND e.title LIKE %:title% " +
+        "AND (CASE " +
+        "       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
+        "       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
+        "       ELSE true " +
+        "   END) " +
+        "AND (:tagsId IS NULL OR t.id IN :tagsId)")
+	Page<IEventDto> searchEvents(
+			@Param("title") String title,
+			@Param("statusId") Integer statusId,
+			@Param("facultyId") Integer facultyId,
+			@Param("tagsId") List<Integer> tagsId,
+			@Param("startDate") Date startDate,
+			@Param("mode") Integer mode,
+			Pageable pageable);
 
 	@Query("SELECT e " +
-		"FROM EventModel e " +
-		"WHERE e.id = :id")
+			"FROM EventModel e " +
+			"WHERE e.id = :id")
 	Optional<IEventDto> findEventById(String id);
 
     @Transactional
     @Modifying
     @Query("UPDATE EventModel e SET e.views = e.views + 1 WHERE e.id = :id")
     int incrementEventViews(String id);
+
+    @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.organizationTime >= :startDate")
+    Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
     
-    @Query("SELECT pe.note as note, u.fullName AS fullName " +
-		"FROM ParticipantEventModel pe " +
-		"JOIN UserModel u ON pe.id.userId = u.id " +
-		"WHERE pe.id.eventId = :id " +
-		"AND pe.isDeleted = false")
-     List<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id);
+	@Query("SELECT e FROM EventModel e " + 
+		"LEFT JOIN ParticipantEventModel p " + 
+		"ON p.id.eventId = e.id " + 
+		"WHERE p.id.userId = :userId " + 
+		"AND (CASE " +
+		"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
+		"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
+		"       ELSE true " +
+		"   END)")
+	Page<IEventDto> getUserParticipatedEvents(
+			@Param("userId") String userId, 
+			@Param("startDate") Date startDate,
+			@Param("mode") Integer mode,
+			Pageable pageable);
+    
+    @Transactional
+	@Modifying
+	@Query("UPDATE EventModel n SET n.participants = n.participants + :count WHERE n.id = :id")
+	int participantCountIncrement(String id,@Param("count") Integer count);
+    
+    @Transactional
+	@Modifying
+	@Query("UPDATE EventModel n SET n.childrenCommentNumber = n.childrenCommentNumber + :count WHERE n.id = :id")
+	int commentCountIncrement(String id,@Param("count") Integer count);
 }
