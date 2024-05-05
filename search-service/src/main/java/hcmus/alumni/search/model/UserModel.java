@@ -79,8 +79,9 @@ public class UserModel implements Serializable {
     @Column(name = "cover_url", columnDefinition = "TINYTEXT")
     private String coverUrl;
 
-    @Column(name = "status_id")
-    private Integer statusId;
+    @OneToOne
+	@JoinColumn(name = "status_id")
+	private StatusUserGroupModel status;
 
 	@CreationTimestamp
     @Column(name = "create_at")
