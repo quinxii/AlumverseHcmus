@@ -10,11 +10,16 @@ public interface ISearchDto {
         Integer getId();
         String getName();
     }
+    
+    interface StatusUser {
+        Integer getId(); // Added
+        String getName();
+    }
 
     String getId();
     String getFullName();
     String getThumbnail();
     Faculty getFaculty();
-    Integer getBeginningYear();
+//    Integer getBeginningYear();
     
 }
