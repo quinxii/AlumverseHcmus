@@ -1,7 +1,6 @@
 package hcmus.alumni.search.controller;
 
 import java.util.HashMap;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import hcmus.alumni.search.dto.ISearchDto;
-import hcmus.alumni.search.model.UserModel;
 import hcmus.alumni.search.repository.SearchRepository;
 import hcmus.alumni.search.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
@@ -31,15 +29,13 @@ public class SearchServiceController {
 	private EntityManager em;
 	@Autowired
 	private SearchRepository searchRepository;
-	@Autowired
-	private ImageUtils imageUtils;
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "statusId") Integer statusId) {
-		if (statusId.equals("")) {
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "status") String status) {
+		if (status.equals("")) {
 			ResponseEntity.status(HttpStatus.OK).body(0L);
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(searchRepository.getCountByStatusId(statusId));
+		return ResponseEntity.status(HttpStatus.OK).body(searchRepository.getCountByStatus(status));
 	}
 
 	@GetMapping("")
