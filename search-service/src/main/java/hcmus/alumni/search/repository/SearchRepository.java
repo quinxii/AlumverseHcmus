@@ -13,7 +13,7 @@ public interface SearchRepository extends JpaRepository<UserModel, String> {
 
 //	@Query("SELECT DISTINCT u " + 
 //		   "FROM UserModel u " + 
-//		   "LEFT JOIN u.statusId s " + 
+//		   "LEFT JOIN u.status s " + 
 //		   "LEFT JOIN u.faculty f " + 
 //		   "WHERE (:statusId IS NULL OR s.id = :statusId) " + 
 //		   "AND (:facultyId IS NULL OR f.id = :facultyId) " + 
@@ -25,13 +25,15 @@ public interface SearchRepository extends JpaRepository<UserModel, String> {
 
 	@Query("SELECT DISTINCT u " + 
 		       "FROM UserModel u " + 
+		       "LEFT JOIN u.status s " + 
 		       "LEFT JOIN u.faculty f " + 
-		       "WHERE (:statusId IS NULL OR u.statusId = :statusId) " + 
+		       "WHERE (:statusId IS NULL OR s.id = :statusId) " + 
 		       "AND (:facultyId IS NULL OR f.id = :facultyId) " + 
-		       "AND u.statusId != 4 " +
+		       "AND s.id != 4 " +
 		       "AND u.fullName LIKE %:fullName%")
-		Page<ISearchDto> searchUsers(String fullName, Integer statusId, Integer facultyId, Pageable pageable);
+	Page<ISearchDto> searchUsers(String fullName, Integer statusId, Integer facultyId, Pageable pageable);
 
-	Long getCountByStatusId(@Param("statusId") Integer statusId);
+	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.status s WHERE s.name = :statusName")
+	Long getCountByStatus(@Param("statusName") String statusName);
 
 }
