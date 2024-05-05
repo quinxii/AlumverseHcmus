@@ -50,6 +50,8 @@ spring:
           uri: lb://search-service
           predicates:
             - Path=/search/**
+          filters:
+            - name: Authentication  
             
         ## group service
         - id: group
