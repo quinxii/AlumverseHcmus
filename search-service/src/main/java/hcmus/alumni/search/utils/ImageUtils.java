@@ -1,5 +1,6 @@
 package hcmus.alumni.search.utils;
 
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
