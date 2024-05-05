@@ -35,11 +35,11 @@ public class SearchServiceController {
 	private ImageUtils imageUtils;
 
 	@GetMapping("/count")
-	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "status") String status) {
-		if (status.equals("")) {
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "statusId") Integer statusId) {
+		if (statusId.equals("")) {
 			ResponseEntity.status(HttpStatus.OK).body(0L);
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(searchRepository.getCountByStatus(status));
+		return ResponseEntity.status(HttpStatus.OK).body(searchRepository.getCountByStatusId(statusId));
 	}
 
 	@GetMapping("")
@@ -50,8 +50,7 @@ public class SearchServiceController {
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "statusId", required = false) Integer statusId,
-			@RequestParam(value = "facultyId", required = false) Integer facultyId,
-			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+			@RequestParam(value = "facultyId", required = false) Integer facultyId) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
@@ -61,7 +60,7 @@ public class SearchServiceController {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 			Page<ISearchDto> searchResult = null;
 
-			searchResult = searchRepository.searchUsers(fullName, statusId, facultyId, beginningYear, pageable);
+			searchResult = searchRepository.searchUsers(fullName, statusId, facultyId, pageable);
 
 			result.put("totalPages", searchResult.getTotalPages());
 			result.put("searchResult", searchResult.getContent());
