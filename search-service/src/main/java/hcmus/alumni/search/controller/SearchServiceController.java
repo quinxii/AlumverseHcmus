@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import hcmus.alumni.search.dto.ISearchDto;
 import hcmus.alumni.search.repository.SearchRepository;
-import hcmus.alumni.search.utils.ImageUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -44,7 +42,8 @@ public class SearchServiceController {
 			@RequestParam(value = "pageSize", required = false, defaultValue = "20") int pageSize,
 			@RequestParam(value = "fullName", required = false, defaultValue = "") String fullName,
 			@RequestParam(value = "status", required = false) String status,
-			@RequestParam(value = "faculty", required = false) String faculty) {
+			@RequestParam(value = "faculty", required = false) String faculty,
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
@@ -54,7 +53,7 @@ public class SearchServiceController {
 			Pageable pageable = PageRequest.of(page, pageSize);
 			Page<ISearchDto> searchResult = null;
 
-			searchResult = searchRepository.searchUsers(fullName, status, faculty, pageable);
+			searchResult = searchRepository.searchUsers(fullName, status, faculty, beginningYear, pageable);
 
 			result.put("totalPages", searchResult.getTotalPages());
 			result.put("searchResult", searchResult.getContent());
