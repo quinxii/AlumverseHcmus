@@ -18,8 +18,9 @@ public interface ISearchDto {
 
     String getId();
     String getFullName();
-    String getThumbnail();
+    String getAvatarUrl();
     Faculty getFaculty();
+    String getSocialMediaLink();
 //    Integer getBeginningYear();
     
 }
