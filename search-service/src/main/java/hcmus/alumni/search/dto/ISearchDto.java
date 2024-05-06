@@ -4,6 +4,7 @@ public interface ISearchDto {
     interface User {
         String getId(); // Added
         String getFullName();
+        Alumni getAlumni();
     }
 
     interface Faculty {
@@ -15,12 +16,16 @@ public interface ISearchDto {
         Integer getId(); // Added
         String getName();
     }
+    
+    interface Alumni {
+        Integer getBeginningYear(); 
+    }
 
     String getId();
     String getFullName();
     String getAvatarUrl();
     Faculty getFaculty();
     String getSocialMediaLink();
-//    Integer getBeginningYear();
-    
+    Alumni getAlumni();
+
 }
