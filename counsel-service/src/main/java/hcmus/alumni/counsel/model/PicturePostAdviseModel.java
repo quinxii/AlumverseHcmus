@@ -1,7 +1,6 @@
 package hcmus.alumni.counsel.model;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

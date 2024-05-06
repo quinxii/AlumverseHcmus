@@ -35,13 +35,19 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
+import hcmus.alumni.counsel.dto.IInteractPostAdviseDto;
 import hcmus.alumni.counsel.dto.IPostAdviseDto;
+import hcmus.alumni.counsel.dto.ReactRequestDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
+import hcmus.alumni.counsel.model.InteractPostAdviseId;
+import hcmus.alumni.counsel.model.InteractPostAdviseModel;
 import hcmus.alumni.counsel.model.PicturePostAdviseModel;
 import hcmus.alumni.counsel.model.PostAdviseModel;
+import hcmus.alumni.counsel.model.ReactModel;
 import hcmus.alumni.counsel.model.StatusPostModel;
 import hcmus.alumni.counsel.model.UserModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
+import hcmus.alumni.counsel.repository.InteractPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
 import hcmus.alumni.counsel.utils.ImageUtils;
 
@@ -54,15 +60,18 @@ public class CounselServiceController {
 	@Autowired
 	private CommentPostAdviseRepository commentPostAdviseRepository;
 	@Autowired
+	private InteractPostAdviseRepository interactPostAdviseRepository;
+	@Autowired
 	private ImageUtils imageUtils;
 
 	private final int MAX_IMAGE_SIZE_PER_POST = 5;
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
+			@RequestHeader("userId") String creatorId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-			@RequestParam(value = "title", required = false, defaultValue = "") String title,
+			@RequestParam(value = "title", required = false) String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId) {
@@ -73,7 +82,7 @@ public class CounselServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, tagsId, pageable);
+			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, creatorId, tagsId, pageable);
 
 			result.put("totalPages", posts.getTotalPages());
 			result.put("posts", posts.getContent());
@@ -392,6 +401,87 @@ public class CounselServiceController {
 			}
 		}
 
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@GetMapping("/{id}/react")
+	public ResponseEntity<HashMap<String, Object>> getPostAdviseReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id,
+			@RequestParam Integer reactId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
+			Page<IInteractPostAdviseDto> users = interactPostAdviseRepository.getReactionUsers(id, reactId,
+					pageable);
+
+			result.put("totalPages", users.getTotalPages());
+			result.put("users", users.getContent());
+		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
+			System.err.println(e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			System.err.println(e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PostMapping("/{id}/react")
+	public ResponseEntity<String> postPostAdviseReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id,
+			@RequestBody ReactRequestDto req) {
+		Optional<InteractPostAdviseModel> optionalInteractPostAdvise = interactPostAdviseRepository
+				.findById(new InteractPostAdviseId(id, creatorId));
+
+		if (!optionalInteractPostAdvise.isEmpty() && optionalInteractPostAdvise.get().getIsDelete() == false) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You have already reacted to this post");
+		}
+
+		InteractPostAdviseModel interactPostAdvise = new InteractPostAdviseModel(id, creatorId,
+				req.getReactId());
+		interactPostAdviseRepository.save(interactPostAdvise);
+		postAdviseRepository.reactionCountIncrement(id, 1);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@PutMapping("/{id}/react")
+	public ResponseEntity<String> putPostAdviseReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id,
+			@RequestBody ReactRequestDto req) {
+		Optional<InteractPostAdviseModel> optionalInteractPostAdvise = interactPostAdviseRepository
+				.findById(new InteractPostAdviseId(id, creatorId));
+
+		if (optionalInteractPostAdvise.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+		}
+
+		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();
+		if (interactPostAdvise.getReact().getId() == req.getReactId()) {
+			return ResponseEntity.status(HttpStatus.OK).body(null);
+		}
+
+		interactPostAdvise.setReact(new ReactModel(req.getReactId()));
+		interactPostAdviseRepository.save(interactPostAdvise);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@DeleteMapping("/{id}/react")
+	public ResponseEntity<String> deletePostAdviseReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id) {
+		Optional<InteractPostAdviseModel> optionalInteractPostAdvise = interactPostAdviseRepository
+				.findById(new InteractPostAdviseId(id, creatorId));
+
+		if (optionalInteractPostAdvise.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+		}
+
+		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();
+		interactPostAdvise.setIsDelete(true);
+		postAdviseRepository.reactionCountIncrement(id, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 }
