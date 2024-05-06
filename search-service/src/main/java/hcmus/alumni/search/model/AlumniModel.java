@@ -38,9 +38,6 @@ public class AlumniModel implements Serializable {
 	@Column(name = "graduation_year")
 	private Integer graduationYear;
 
-	@Column(name = "specialized")
-	private String specialized;
-
 	@Column(name = "class", length = 10)
 	private String alumClass;
 
@@ -51,14 +48,10 @@ public class AlumniModel implements Serializable {
 	@Column(name = "start_year_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
 	private Privacy startYearPrivacy;
-
-	@Column(name = "end_year_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
+	
+	@Column(name = "graduation_year_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
-	private Privacy endYearPrivacy;
-
-	@Column(name = "specialized_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
-	@Enumerated(EnumType.STRING)
-	private Privacy specializedPrivacy;
+	private Privacy graduationYearPrivacy;
 
 	@Column(name = "class_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
 	@Enumerated(EnumType.STRING)
@@ -67,8 +60,7 @@ public class AlumniModel implements Serializable {
 	public AlumniModel() {
 		studentIdPrivacy = Privacy.PUBLIC;
 		startYearPrivacy = Privacy.PUBLIC;
-		endYearPrivacy = Privacy.PUBLIC;
-		specializedPrivacy = Privacy.PUBLIC;
+		graduationYearPrivacy = Privacy.PUBLIC;
 		classPrivacy = Privacy.PUBLIC;
 	}
 }
