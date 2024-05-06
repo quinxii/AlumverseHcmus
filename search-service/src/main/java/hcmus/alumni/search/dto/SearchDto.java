@@ -11,9 +11,9 @@ public class SearchDto {
 
 	private String id;
 	private String fullName;
-	private String thumbnail;
+	private String avatarUrl;
 	private String faculty;
 	private Integer beginningYear;
-
+	private String socialMediaLink;
 	
 }
