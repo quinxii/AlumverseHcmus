@@ -41,22 +41,20 @@ public class SearchServiceController {
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getSearchResult(
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "20") int pageSize,
 			@RequestParam(value = "fullName", required = false, defaultValue = "") String fullName,
-			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
-			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-			@RequestParam(value = "statusId", required = false) Integer statusId,
-			@RequestParam(value = "facultyId", required = false) Integer facultyId) {
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "faculty", required = false) String faculty) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		try {
-			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Pageable pageable = PageRequest.of(page, pageSize);
 			Page<ISearchDto> searchResult = null;
 
-			searchResult = searchRepository.searchUsers(fullName, statusId, facultyId, pageable);
+			searchResult = searchRepository.searchUsers(fullName, status, faculty, pageable);
 
 			result.put("totalPages", searchResult.getTotalPages());
 			result.put("searchResult", searchResult.getContent());
