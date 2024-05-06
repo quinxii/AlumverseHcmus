@@ -116,6 +116,9 @@ public class UserModel implements Serializable {
     @Enumerated(EnumType.STRING)
     private Privacy facultyPrivacy = Privacy.PUBLIC;
     
+    @OneToOne(mappedBy = "user")
+    private AlumniModel alumni;
+    
     public UserModel() {}
     
     public UserModel(String email, String pass) {
