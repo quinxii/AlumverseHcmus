@@ -12,13 +12,17 @@ import hcmus.alumni.search.model.UserModel;
 public interface SearchRepository extends JpaRepository<UserModel, String> {
 
 	@Query("SELECT DISTINCT u " + 
-		       "FROM UserModel u " + 
-		       "LEFT JOIN u.status s " + 
-		       "LEFT JOIN u.faculty f " + 
-		       "WHERE u.fullName LIKE %:fullName% " +
-		       "AND ((:facultyName IS NULL OR :facultyName = '') OR LOWER(f.name) LIKE %:facultyName%) " + 
-		       "AND ((:statusName IS NULL OR :statusName = '') OR LOWER(s.name) LIKE %:statusName%)")
-		Page<ISearchDto> searchUsers(String fullName, String statusName, String facultyName, Pageable pageable);
+	       "FROM UserModel u " + 
+	       "LEFT JOIN u.status s " + 
+	       "LEFT JOIN u.faculty f " + 
+	       "LEFT JOIN u.alumni a " + 
+	       "WHERE u.fullName LIKE %:fullName% " +
+	       "AND ((:facultyName IS NULL OR :facultyName = '') OR LOWER(f.name) LIKE %:facultyName%) " + 
+	       "AND ((:statusName IS NULL OR :statusName = '') OR LOWER(s.name) LIKE %:statusName%) " +
+	       "AND ((:beginningYear IS NULL OR :beginningYear = 0) OR a.beginningYear = :beginningYear)")
+	Page<ISearchDto> searchUsers(String fullName, String statusName, String facultyName, Integer beginningYear, Pageable pageable);
+
+
 
 	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.status s WHERE s.name = :statusName")
 	Long getCountByStatus(@Param("statusName") String statusName);
