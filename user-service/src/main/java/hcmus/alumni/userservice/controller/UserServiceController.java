@@ -22,6 +22,9 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.userservice.dto.ISearchDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.RoleModel;
@@ -353,4 +357,43 @@ public class UserServiceController {
 		
 		return ResponseEntity.ok("Alumni verification approved successfully");
 	}
+    
+    @GetMapping("/count")
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "status") String status) {
+		if (status.equals("")) {
+			ResponseEntity.status(HttpStatus.OK).body(0L);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(userRepository.getCountByStatus(status));
+	}
+
+	@GetMapping("")
+	public ResponseEntity<HashMap<String, Object>> getSearchResult(
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "20") int pageSize,
+			@RequestParam(value = "fullName", required = false, defaultValue = "") String fullName,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "faculty", required = false) String faculty,
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize);
+			Page<ISearchDto> searchResult = null;
+
+			searchResult = userRepository.searchUsers(fullName, status, faculty, beginningYear, pageable);
+
+			result.put("totalPages", searchResult.getTotalPages());
+			result.put("searchResult", searchResult.getContent());
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			result.put("error", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
 }
