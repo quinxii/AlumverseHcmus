@@ -80,8 +80,9 @@ public class UserModel implements Serializable {
     @Column(name = "cover_url", columnDefinition = "TINYTEXT")
     private String coverUrl;
 
-    @Column(name = "status_id")
-    private Integer statusId;
+    @OneToOne
+	@JoinColumn(name = "status_id")
+	private StatusUserGroupModel status;
 
 	@CreationTimestamp
     @Column(name = "create_at")
@@ -115,6 +116,9 @@ public class UserModel implements Serializable {
     @Column(name = "faculty_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
     private Privacy facultyPrivacy = Privacy.PUBLIC;
+    
+    @OneToOne(mappedBy = "user")
+    private AlumniModel alumni;
     
     public UserModel() {}
     
