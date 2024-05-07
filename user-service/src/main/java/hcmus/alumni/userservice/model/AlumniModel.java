@@ -22,54 +22,46 @@ import lombok.Data;
 public class AlumniModel implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @Column(name = "user_id", length = 36, nullable = false)
-    private String userId; 
-    
-    @OneToOne
-    @PrimaryKeyJoinColumn(name = "user_id")
-    private UserModel user;
+	@Id
+	@Column(name = "user_id", length = 36, nullable = false)
+	private String userId;
 
-    @Column(name = "student_id", length = 8)
-    private String studentId;
+	@OneToOne
+	@PrimaryKeyJoinColumn(name = "user_id")
+	private UserModel user;
 
-    @Column(name = "beginning_year")
-    private Integer beginningYear;
+	@Column(name = "student_id", length = 8)
+	private String studentId;
 
-    @Column(name = "graduation_year")
-    private Integer graduationYear;
+	@Column(name = "beginning_year")
+	private Integer beginningYear;
 
-    @Column(name = "specialized")
-    private String specialized;
+	@Column(name = "graduation_year")
+	private Integer graduationYear;
 
-    @Column(name = "class", length = 10)
-    private String alumClass;
+	@Column(name = "class", length = 10)
+	private String alumClass;
 
-    @Column(name = "student_id_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
-    @Enumerated(EnumType.STRING)
-    private Privacy studentIdPrivacy;
+	@Column(name = "student_id_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
+	@Enumerated(EnumType.STRING)
+	private Privacy studentIdPrivacy;
 
-    @Column(name = "start_year_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
-    @Enumerated(EnumType.STRING)
-    private Privacy startYearPrivacy;
+	@Column(name = "start_year_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
+	@Enumerated(EnumType.STRING)
+	private Privacy startYearPrivacy;
+	
+	@Column(name = "graduation_year_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
+	@Enumerated(EnumType.STRING)
+	private Privacy graduationYearPrivacy;
 
-    @Column(name = "end_year_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
-    @Enumerated(EnumType.STRING)
-    private Privacy endYearPrivacy;
+	@Column(name = "class_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
+	@Enumerated(EnumType.STRING)
+	private Privacy classPrivacy;
 
-    @Column(name = "specialized_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
-    @Enumerated(EnumType.STRING)
-    private Privacy specializedPrivacy;
-
-    @Column(name = "class_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
-    @Enumerated(EnumType.STRING)
-    private Privacy classPrivacy;
-
-    public AlumniModel() {
-    	studentIdPrivacy = Privacy.PUBLIC;
-    	startYearPrivacy = Privacy.PUBLIC;
-    	endYearPrivacy = Privacy.PUBLIC;
-    	specializedPrivacy = Privacy.PUBLIC;
-    	classPrivacy = Privacy.PUBLIC;
+	public AlumniModel() {
+		studentIdPrivacy = Privacy.PUBLIC;
+		startYearPrivacy = Privacy.PUBLIC;
+		graduationYearPrivacy = Privacy.PUBLIC;
+		classPrivacy = Privacy.PUBLIC;
 	}
 }
