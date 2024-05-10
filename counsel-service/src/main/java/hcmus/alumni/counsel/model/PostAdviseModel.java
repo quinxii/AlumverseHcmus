@@ -91,7 +91,8 @@ public class PostAdviseModel implements Serializable {
 
     // For request body
     @JsonCreator
-    public PostAdviseModel(@JsonProperty("title") String title, @JsonProperty("content") String content, @JsonProperty("tags") Set<TagModel> tags) {
+    public PostAdviseModel(@JsonProperty("title") String title, @JsonProperty("content") String content,
+            @JsonProperty("tags") Set<TagModel> tags) {
         this.title = title;
         this.content = content;
         this.tags = tags;
@@ -105,7 +106,7 @@ public class PostAdviseModel implements Serializable {
         this.tags = tags;
     }
 
-    public PostAdviseModel(PostAdviseModel copy, Boolean isReacted) {
+    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete) {
         this.id = copy.id;
         this.creator = copy.creator;
         this.title = copy.title;
@@ -118,7 +119,11 @@ public class PostAdviseModel implements Serializable {
         this.status = copy.status;
         this.childrenCommentNumber = copy.childrenCommentNumber;
         this.reactionCount = copy.reactionCount;
-        this.isReacted = isReacted;
+        if (isReactionDelete != null) {
+            this.isReacted = !isReactionDelete;
+        } else {
+            this.isReacted = false;
+        }
     }
 
     public void addPicture(PicturePostAdviseModel picture) {

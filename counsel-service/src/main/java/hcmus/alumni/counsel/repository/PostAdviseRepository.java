@@ -24,7 +24,7 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
 	Optional<IPostAdviseDto> findPostAdviseById(String id);
 
-	@Query("SELECT DISTINCT new PostAdviseModel(pa, CASE WHEN ipa.id IS NULL THEN FALSE ELSE TRUE END) " +
+	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete) " +
 			"FROM PostAdviseModel pa " +
 			"JOIN pa.status s " +
 			"LEFT JOIN pa.tags t " +
