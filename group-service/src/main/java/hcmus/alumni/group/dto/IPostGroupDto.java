@@ -6,7 +6,9 @@ import java.util.Set;
 
 public interface IPostGroupDto {
 	interface User{
+		String getId();
 		String getFullName();
+		String getAvatarUrl();
 	}
 	interface StatusPost{
 		String getName();

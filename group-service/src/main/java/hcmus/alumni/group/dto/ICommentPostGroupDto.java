@@ -4,9 +4,9 @@ import java.util.Date;
 
 public interface ICommentPostGroupDto {
 	interface User {
-        String getId();
-        String getFullName();
-        String getAvatarUrl();
+		String getId();
+		String getFullName();
+		String getAvatarUrl();
     }
 
     String getId();

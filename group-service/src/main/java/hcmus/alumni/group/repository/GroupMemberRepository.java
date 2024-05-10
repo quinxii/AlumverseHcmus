@@ -16,8 +16,10 @@ import hcmus.alumni.group.dto.IGroupMemberDto;
 import hcmus.alumni.group.model.GroupUserId;
 
 public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, GroupUserId> {
-	@Query("SELECT gm FROM GroupMemberModel gm WHERE gm.id.group.id = :groupId")
-    Page<IGroupMemberDto> searchMembers(@Param("groupId") String groupId, Pageable pageable);
+	@Query("SELECT gm FROM GroupMemberModel gm " + 
+			"WHERE gm.id.group.id = :groupId " + 
+			"AND (:role IS NULL OR gm.role = :role)")
+    Page<IGroupMemberDto> searchMembers(@Param("groupId") String groupId, @Param("role") GroupMemberRole role, Pageable pageable);
 	
 	@Query("SELECT gm FROM GroupMemberModel gm " + 
 			"WHERE gm.id.group.id = :groupId AND gm.id.user.id = :userId")
@@ -34,4 +36,10 @@ public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, G
 	@Query("UPDATE GroupMemberModel gm SET gm.isDelete = true " + 
 			"WHERE gm.id.group.id = :groupId AND gm.id.user.id = :userId")
 	int deleteGroupMember(@Param("groupId") String groupId, @Param("userId") String userId);
+	
+	@Transactional
+	@Modifying
+	@Query("UPDATE GroupMemberModel gm SET gm.isDelete = true " + 
+			"WHERE gm.id.group.id = :groupId")
+	int deleteAllGroupMember(@Param("groupId") String groupId);
 }
