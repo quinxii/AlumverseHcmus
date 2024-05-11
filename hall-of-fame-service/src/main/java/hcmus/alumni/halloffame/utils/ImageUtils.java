@@ -32,7 +32,7 @@ public class ImageUtils {
 
 	private final int resizeMaxWidth = 1000;
 	private final int resizeMaxHeight = 1000;
-	private final String hofPath = "images/hof/";	
+	private final String hofPath = "images/hof/";
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
@@ -113,28 +113,6 @@ public class ImageUtils {
 		return;
 	}
 
-	public String saveImgFromHtmlToStorage(String html, String id) {
-		// Parse the HTML content
-		Document doc = Jsoup.parse(html);
-		// Select all img elements with the src attribute
-		Elements imgTags = doc.select("img[src]");
-		// Loop through each img tag and save each to storage
-		try {
-			Integer contentImgIdx = 0;
-			for (Element img : imgTags) {
-				String src = img.attr("src");
-				String newSrc = this.saveBase64ImageToStorage(this.getHofPath(id), src, contentImgIdx.toString());
-				img.attr("src", newSrc);
-				contentImgIdx++;
-			}
-		} catch (IOException e) {
-			// TODO: handle exception
-			System.err.println(e);
-		}
-		doc.outputSettings().indentAmount(0).prettyPrint(false);
-		return doc.body().html();
-	}
-
 	public String updateImgFromHtmlToStorage(String oldHtml, String newHtml, String id) {
 		// Parse the HTML content
 		Document oldDoc = Jsoup.parse(oldHtml);
@@ -164,6 +142,9 @@ public class ImageUtils {
 
 			try {
 				for (String addedImg : addedImgs) {
+					if (!isBase64Image(addedImg)) {
+						continue;
+					}
 					int smalletMissingIdx = this.findSmallestMissingContentIdx(contentIdxs);
 					String newIdx = String.valueOf(smalletMissingIdx);
 					String newSrc = this.saveBase64ImageToStorage(this.getHofPath(id), addedImg, newIdx);
@@ -181,18 +162,30 @@ public class ImageUtils {
 		return newDoc.body().html();
 	}
 
+	public boolean isBase64Image(String base64) {
+		String[] strings = base64.split(",");
+		switch (strings[0]) {// check image's extension
+			case "data:image/jpeg;base64":
+				return true;
+			case "data:image/png;base64":
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	public String[] extractContentTypeAndDataFromImageBase64(String base64) {
 		String[] strings = base64.split(",");
 		switch (strings[0]) {// check image's extension
-		case "data:image/jpeg;base64":
-			strings[0] = "image/jpeg";
-			break;
-		case "data:image/png;base64":
-			strings[0] = "image/png";
-			break;
-		default:
-			strings[0] = null;
-			break;
+			case "data:image/jpeg;base64":
+				strings[0] = "image/jpeg";
+				break;
+			case "data:image/png;base64":
+				strings[0] = "image/png";
+				break;
+			default:
+				strings[0] = null;
+				break;
 		}
 		return strings;
 	}
@@ -242,7 +235,7 @@ public class ImageUtils {
 		}
 		return flags.length;
 	}
-	
+
 	public String getHofPath(String id) {
 		return this.hofPath + id + "/";
 	}
