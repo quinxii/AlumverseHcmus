@@ -42,4 +42,9 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	@Modifying
 	@Query("UPDATE PostGroupModel p SET p.childrenCommentNumber = p.childrenCommentNumber + :count WHERE p.id = :id")
 	int commentCountIncrement(String id, @Param("count") Integer count);
+    
+    @Transactional
+	@Modifying
+	@Query("UPDATE PostGroupModel p SET p.reactionCount = p.reactionCount + :count WHERE p.id = :id")
+	int reactionCountIncrement(String id, @Param("count") Integer count);
 }

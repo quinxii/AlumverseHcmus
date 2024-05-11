@@ -9,6 +9,8 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.hibernate.query.sqm.UnknownPathException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,17 +45,23 @@ import hcmus.alumni.group.model.PostGroupModel;
 import hcmus.alumni.group.model.StatusPostModel;
 import hcmus.alumni.group.model.CommentPostGroupModel;
 import hcmus.alumni.group.model.PicturePostGroupModel;
+import hcmus.alumni.group.model.InteractPostGroupId;
+import hcmus.alumni.group.model.InteractPostGroupModel;
+import hcmus.alumni.group.model.ReactModel;
 import hcmus.alumni.group.utils.ImageUtils;
 import hcmus.alumni.group.dto.IGroupDto;
 import hcmus.alumni.group.dto.IGroupMemberDto;
 import hcmus.alumni.group.dto.IRequestJoinGroupDto;
 import hcmus.alumni.group.dto.IPostGroupDto;
 import hcmus.alumni.group.dto.ICommentPostGroupDto;
+import hcmus.alumni.group.dto.IInteractPostGroupDto;
+import hcmus.alumni.group.dto.ReactRequestDto;
 import hcmus.alumni.group.repository.GroupRepository;
 import hcmus.alumni.group.repository.GroupMemberRepository;
 import hcmus.alumni.group.repository.RequestJoinGroupRepository;
 import hcmus.alumni.group.repository.PostGroupRepository;
 import hcmus.alumni.group.repository.CommentPostGroupRepository;
+import hcmus.alumni.group.repository.InteractPostGroupRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -73,6 +81,8 @@ public class GroupServiceController {
 	private PostGroupRepository postGroupRepository;
 	@Autowired
 	private CommentPostGroupRepository commentPostGroupRepository;
+	@Autowired
+	private InteractPostGroupRepository interactPostGroupRepository;
 	@Autowired
 	private ImageUtils imageUtils;
 	
@@ -835,6 +845,87 @@ public class GroupServiceController {
 		}
 		
 
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+	
+	@GetMapping("/{id}/react")
+	public ResponseEntity<HashMap<String, Object>> getPostGroupReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id,
+			@RequestParam Integer reactId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
+			Page<IInteractPostGroupDto> users = interactPostGroupRepository.getReactionUsers(id, reactId,
+					pageable);
+
+			result.put("totalPages", users.getTotalPages());
+			result.put("users", users.getContent());
+		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
+			System.err.println(e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			System.err.println(e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PostMapping("/{id}/react")
+	public ResponseEntity<String> postPostGroupReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id,
+			@RequestBody ReactRequestDto req) {
+		Optional<InteractPostGroupModel> optionalInteractPostGroup = interactPostGroupRepository
+				.findById(new InteractPostGroupId(id, creatorId));
+
+		if (!optionalInteractPostGroup.isEmpty() && optionalInteractPostGroup.get().getIsDelete() == false) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You have already reacted to this post");
+		}
+
+		InteractPostGroupModel interactPostGroup = new InteractPostGroupModel(id, creatorId,
+				req.getReactId());
+		interactPostGroupRepository.save(interactPostGroup);
+		postGroupRepository.reactionCountIncrement(id, 1);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@PutMapping("/{id}/react")
+	public ResponseEntity<String> putPostGroupReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id,
+			@RequestBody ReactRequestDto req) {
+		Optional<InteractPostGroupModel> optionalInteractPostGroup = interactPostGroupRepository
+				.findById(new InteractPostGroupId(id, creatorId));
+
+		if (optionalInteractPostGroup.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+		}
+
+		InteractPostGroupModel interactPostGroup = optionalInteractPostGroup.get();
+		if (interactPostGroup.getReact().getId() == req.getReactId()) {
+			return ResponseEntity.status(HttpStatus.OK).body(null);
+		}
+
+		interactPostGroup.setReact(new ReactModel(req.getReactId()));
+		interactPostGroupRepository.save(interactPostGroup);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@DeleteMapping("/{id}/react")
+	public ResponseEntity<String> deletePostGroupReaction(@RequestHeader("userId") String creatorId,
+			@PathVariable String id) {
+		Optional<InteractPostGroupModel> optionalInteractPostGroup = interactPostGroupRepository
+				.findById(new InteractPostGroupId(id, creatorId));
+
+		if (optionalInteractPostGroup.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+		}
+
+		InteractPostGroupModel interactPostGroup = optionalInteractPostGroup.get();
+		interactPostGroup.setIsDelete(true);
+		postGroupRepository.reactionCountIncrement(id, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 }

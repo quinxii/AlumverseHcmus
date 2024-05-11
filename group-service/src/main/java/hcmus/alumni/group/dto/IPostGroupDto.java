@@ -33,4 +33,6 @@ public interface IPostGroupDto {
 	Date getPublishedAt();
 	StatusPost getStatus();
 	Integer getChildrenCommentNumber();
+	Integer getReactionCount();
+	Boolean getIsReacted();
 }
