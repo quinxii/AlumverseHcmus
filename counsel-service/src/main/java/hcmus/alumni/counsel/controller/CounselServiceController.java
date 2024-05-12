@@ -68,7 +68,7 @@ public class CounselServiceController {
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
-			@RequestHeader("userId") String creatorId,
+			@RequestHeader("userId") String userId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false) String title,
@@ -82,7 +82,7 @@ public class CounselServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, creatorId, tagsId, pageable);
+			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, userId, tagsId, pageable);
 
 			result.put("totalPages", posts.getTotalPages());
 			result.put("posts", posts.getContent());
@@ -265,7 +265,9 @@ public class CounselServiceController {
 
 	// Get comments of a news
 	@GetMapping("/{id}/comments")
-	public ResponseEntity<HashMap<String, Object>> getPostComments(@PathVariable String id,
+	public ResponseEntity<HashMap<String, Object>> getPostComments(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 		if (pageSize == 0 || pageSize > 50) {
@@ -275,7 +277,7 @@ public class CounselServiceController {
 
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getComments(id, pageable);
+		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getComments(id, userId, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -285,6 +287,7 @@ public class CounselServiceController {
 	// Get children comments of a comment
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getPostChildrenComments(
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -301,7 +304,8 @@ public class CounselServiceController {
 
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getChildrenComment(commentId, pageable);
+		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getChildrenComment(commentId, userId,
+				pageable);
 
 		result.put("comments", comments.getContent());
 

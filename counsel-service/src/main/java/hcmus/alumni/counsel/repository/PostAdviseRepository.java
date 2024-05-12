@@ -24,15 +24,15 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
 	Optional<IPostAdviseDto> findPostAdviseById(String id);
 
-	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete) " +
+	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId) " +
 			"FROM PostAdviseModel pa " +
 			"JOIN pa.status s " +
 			"LEFT JOIN pa.tags t " +
-			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :creatorId " +
+			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :userId " +
 			"WHERE (:tagsId IS NULL OR t.id IN :tagsId) " +
 			"AND s.id = 2 " +
 			"AND (:title IS NULL OR pa.title like %:title%)")
-	Page<IPostAdviseDto> searchPostAdvise(String title, String creatorId, List<Integer> tagsId, Pageable pageable);
+	Page<IPostAdviseDto> searchPostAdvise(String title, String userId, List<Integer> tagsId, Pageable pageable);
 
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.publishedAt >= :startDate AND pa.publishedAt <= :endDate")
 	Page<IPostAdviseDto> getHotNews(Date startDate, Date endDate, Pageable pageable);

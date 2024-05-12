@@ -12,6 +12,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hcmus.alumni.counsel.common.PostAdvisePermissions;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -82,6 +83,9 @@ public class PostAdviseModel implements Serializable {
     @Transient
     private boolean isReacted;
 
+    @Transient
+    private PostAdvisePermissions permissions;
+
     public PostAdviseModel() {
     }
 
@@ -106,7 +110,7 @@ public class PostAdviseModel implements Serializable {
         this.tags = tags;
     }
 
-    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete) {
+    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete, String userId) {
         this.id = copy.id;
         this.creator = copy.creator;
         this.title = copy.title;
@@ -123,6 +127,11 @@ public class PostAdviseModel implements Serializable {
             this.isReacted = !isReactionDelete;
         } else {
             this.isReacted = false;
+        }
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions = new PostAdvisePermissions(true, true);
+        } else {
+            this.permissions = new PostAdvisePermissions(false, false);
         }
     }
 
