@@ -524,7 +524,7 @@ public class GroupServiceController {
         }
         HashMap<String, Object> result = new HashMap<>();
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(id, title, tagsId, statusId, pageable);
+        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(id, title, requestingUserId, tagsId, statusId, pageable);
 
         result.put("totalPages", posts.getTotalPages());
         result.put("posts", posts.getContent());
@@ -709,7 +709,9 @@ public class GroupServiceController {
     }
     
     @GetMapping("/{id}/comments")
-	public ResponseEntity<HashMap<String, Object>> getPostComments(@PathVariable String id,
+	public ResponseEntity<HashMap<String, Object>> getPostComments(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 		if (pageSize == 0 || pageSize > 50) {
@@ -719,7 +721,7 @@ public class GroupServiceController {
 
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getComments(id, pageable);
+		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getComments(id, userId, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -728,6 +730,7 @@ public class GroupServiceController {
 
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getPostChildrenComments(
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -744,7 +747,7 @@ public class GroupServiceController {
 
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getChildrenComment(commentId, pageable);
+		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getChildrenComment(commentId, userId, pageable);
 
 		result.put("comments", comments.getContent());
 

@@ -360,7 +360,9 @@ public class EventServiceController {
 	}
 	
 	@GetMapping("/{id}/comments")
-	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+	public ResponseEntity<HashMap<String, Object>> getEventComments(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 		if (pageSize == 0 || pageSize > 50) {
@@ -369,7 +371,7 @@ public class EventServiceController {
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentEventDto> comments = commentEventRepository.getComments(id, pageable);
+		Page<ICommentEventDto> comments = commentEventRepository.getComments(id, userId, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -377,7 +379,8 @@ public class EventServiceController {
 	}
 
 	@GetMapping("/comments/{commentId}/children")
-	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+	public ResponseEntity<HashMap<String, Object>> getEventChildrenComments(
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -393,7 +396,7 @@ public class EventServiceController {
 		}
 
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, pageable);
+		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, userId, pageable);
 
 		result.put("comments", comments.getContent());
 

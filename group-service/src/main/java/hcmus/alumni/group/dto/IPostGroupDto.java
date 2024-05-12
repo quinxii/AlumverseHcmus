@@ -21,6 +21,10 @@ public interface IPostGroupDto {
 		String getId();
 		String getPictureUrl();
 	}
+	interface Permissions {
+        Boolean getEdit();
+        Boolean getDelete();
+    }
 	
 	String getId();
 	User getCreator();
@@ -35,4 +39,5 @@ public interface IPostGroupDto {
 	Integer getChildrenCommentNumber();
 	Integer getReactionCount();
 	Boolean getIsReacted();
+	Permissions getPermissions();
 }

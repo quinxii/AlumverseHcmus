@@ -1,5 +1,6 @@
 package hcmus.alumni.group.model;
 
+import hcmus.alumni.group.common.PostGroupPermissions;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -86,6 +87,9 @@ public class PostGroupModel implements Serializable {
 	
 	@Transient
 	private boolean isReacted;
+	
+	@Transient
+	private PostGroupPermissions permissions;
     
     public PostGroupModel(String id) {
 		this.id = id;
@@ -101,8 +105,9 @@ public class PostGroupModel implements Serializable {
         this.status = status;
     }
     
-    public PostGroupModel(PostGroupModel copy, Boolean isReactionDelete) {
+    public PostGroupModel(PostGroupModel copy, Boolean isReactionDelete, String userId) {
         this.id = copy.id;
+        this.groupId = copy.groupId;
         this.creator = copy.creator;
         this.title = copy.title;
         this.pictures = copy.pictures;
@@ -118,6 +123,11 @@ public class PostGroupModel implements Serializable {
             this.isReacted = !isReactionDelete;
         } else {
             this.isReacted = false;
+        }
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions = new PostGroupPermissions(true, true);
+        } else {
+            this.permissions = new PostGroupPermissions(false, false);
         }
     }
     
