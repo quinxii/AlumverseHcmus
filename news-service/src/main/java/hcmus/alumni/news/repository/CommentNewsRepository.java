@@ -15,11 +15,13 @@ import hcmus.alumni.news.model.CommentNewsModel;
 
 public interface CommentNewsRepository extends JpaRepository<CommentNewsModel, String> {
 
-    @Query("SELECT c FROM CommentNewsModel c WHERE c.news.id = :newsId AND c.isDelete = false AND c.parentId IS NULL")
-    Page<ICommentNewsDto> getComments(String newsId, Pageable pageable);
+    @Query("SELECT new CommentNewsModel(c, :userId) FROM CommentNewsModel c " +
+            "WHERE c.news.id = :newsId AND c.isDelete = false AND c.parentId IS NULL")
+    Page<ICommentNewsDto> getComments(String newsId, String userId, Pageable pageable);
 
-    @Query("SELECT c FROM CommentNewsModel c WHERE c.isDelete = false AND c.parentId = :commentId")
-    Page<ICommentNewsDto> getChildrenComment(String commentId, Pageable pageable);
+    @Query("SELECT new CommentNewsModel(c, :userId) FROM CommentNewsModel c " +
+            "WHERE c.isDelete = false AND c.parentId = :commentId")
+    Page<ICommentNewsDto> getChildrenComment(String commentId, String userId, Pageable pageable);
 
     @Query("SELECT c FROM CommentNewsModel c WHERE c.isDelete = false AND c.parentId = :commentId")
     List<CommentNewsModel> getChildrenComment(String commentId);

@@ -21,6 +21,10 @@ public interface IPostAdviseDto {
 		String getId();
 		String getPictureUrl();
 	}
+	interface Permissions {
+		Boolean getEdit();
+		Boolean getDelete();
+	}
 	
 	String getId();
 	String getTitle();
@@ -34,4 +38,5 @@ public interface IPostAdviseDto {
 	Set<Tag> getTags();
 	StatusPost getStatus();
 	Boolean getIsReacted();
+	Permissions getPermissions();
 }

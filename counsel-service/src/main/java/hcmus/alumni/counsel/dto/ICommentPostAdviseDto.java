@@ -8,6 +8,10 @@ public interface ICommentPostAdviseDto {
         String getFullName();
         String getAvatarUrl();
     }
+    interface Permissions {
+        Boolean getEdit();
+        Boolean getDelete();
+    }
 
     String getId();
     User getCreator();
@@ -15,4 +19,5 @@ public interface ICommentPostAdviseDto {
     Integer getChildrenCommentNumber();
     Date getCreateAt();
     Date getUpdateAt();
+    Permissions getPermissions();
 }
