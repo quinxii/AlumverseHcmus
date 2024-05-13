@@ -100,7 +100,8 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "facultyId", defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "emailOfUser", required = false) String emailOfUser,
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
-			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
+			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili,
+			@RequestParam(value = "position", required = false) String position) {
 		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Title and thumbnail must not be empty");
 		}
@@ -126,7 +127,7 @@ public class HallOfFameServiceController {
 				faculty = new FacultyModel(facultyId);
 			}
 			HallOfFameModel halloffame = new HallOfFameModel(id, new UserModel(creator), title, thumbnailUrl, summary,
-					faculty, linkedUser, beginningYear, scheduledTimeMili);
+					faculty, linkedUser, beginningYear, scheduledTimeMili, position);
 
 			halloffameRepository.save(halloffame);
 		} catch (IOException e) {
@@ -145,7 +146,8 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "facultyId", defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "emailOfUser", required = false) String emailOfUser,
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
-			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
+			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId,
+			@RequestParam(value = "position", required = false) String position) {
 
 		try {
 			// Find hall of fame
@@ -189,6 +191,11 @@ public class HallOfFameServiceController {
 			}
 			if (!statusId.equals(0)) {
 				halloffame.setStatus(new StatusPostModel(statusId));
+				isPut = true;
+			}
+
+			if (!position.equals("")) {
+				halloffame.setPosition(position);
 				isPut = true;
 			}
 
