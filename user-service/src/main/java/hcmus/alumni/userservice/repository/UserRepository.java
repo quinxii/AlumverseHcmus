@@ -45,17 +45,21 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	String findAvatarUrlByUserId(@Param("userId") String userId);
 	
 	@Query("SELECT DISTINCT u " + 
-	       "FROM UserModel u " + 
-	       "LEFT JOIN u.status s " + 
-	       "LEFT JOIN u.faculty f " + 
-	       "LEFT JOIN u.alumni a " + 
-	       "WHERE u.fullName LIKE %:fullName% " +
-	       "AND ((:facultyName IS NULL OR :facultyName = '') OR LOWER(f.name) LIKE %:facultyName%) " + 
-	       "AND ((:statusName IS NULL OR :statusName = '') OR LOWER(s.name) LIKE %:statusName%) " +
-	       "AND ((:beginningYear IS NULL OR :beginningYear = 0) OR a.beginningYear = :beginningYear)")
-	Page<ISearchDto> searchUsers(String fullName, String statusName, String facultyName, Integer beginningYear, Pageable pageable);
+		   "FROM UserModel u " + 
+		   "LEFT JOIN u.status s " + 
+		   "LEFT JOIN u.faculty f " + 
+		   "LEFT JOIN u.alumni a " + 
+		   "WHERE u.fullName LIKE %:fullName% " +
+		   "AND (:facultyId IS NULL OR f.id = :facultyId) " + 
+		   "AND (:statusId IS NULL OR s.id = :statusId) " +
+		   "AND (:beginningYear IS NULL OR a.beginningYear = :beginningYear OR :beginningYear = 0) " +
+		   "AND s.id != 3")
+	Page<ISearchDto> searchUsers(String fullName, Integer statusId, Integer facultyId, Integer beginningYear, Pageable pageable);
 
-	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.status s WHERE s.name = :statusName")
-	Long getCountByStatus(@Param("statusName") String statusName);
 
+	@Query("SELECT COUNT(n) FROM UserModel n JOIN n.status s WHERE s.id != 4")
+	Long getCountByNotDelete();
+
+	@Query("SELECT COUNT(n) FROM UserModel n JOIN n.status s WHERE s.id = :statusId")
+	Long getCountByStatusId(@Param("statusId") Integer statusId);
 }
