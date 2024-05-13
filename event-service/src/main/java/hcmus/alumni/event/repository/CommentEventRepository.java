@@ -14,11 +14,13 @@ import hcmus.alumni.event.dto.ICommentEventDto;
 import hcmus.alumni.event.model.CommentEventModel;
 
 public interface CommentEventRepository extends JpaRepository<CommentEventModel, String> {
-	@Query("SELECT c FROM CommentEventModel c WHERE c.event.id = :eventId AND c.isDelete = false AND c.parentId IS NULL")
-	Page<ICommentEventDto> getComments(String eventId, Pageable pageable);
+	@Query("SELECT new CommentEventModel(c, :userId) FROM CommentEventModel c " +
+	        "WHERE c.event.id = :eventId AND c.isDelete = false AND c.parentId IS NULL")
+	Page<ICommentEventDto> getComments(String eventId, String userId, Pageable pageable);
 	
-	@Query("SELECT c FROM CommentEventModel c WHERE c.isDelete = false AND c.parentId = :commentId")
-	Page<ICommentEventDto> getChildrenComment(String commentId, Pageable pageable);
+	@Query("SELECT new CommentEventModel(c, :userId) FROM CommentEventModel c " +
+	        "WHERE c.isDelete = false AND c.parentId = :commentId")
+	Page<ICommentEventDto> getChildrenComment(String commentId, String userId, Pageable pageable);
 	
 	@Query("SELECT c FROM CommentEventModel c WHERE c.isDelete = false AND c.parentId = :commentId")
 	List<CommentEventModel> getChildrenComment(String commentId);

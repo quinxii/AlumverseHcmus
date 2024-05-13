@@ -1,5 +1,6 @@
 package hcmus.alumni.group.model;
 
+import hcmus.alumni.group.common.CommentPostGroupPermissions;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -57,6 +59,9 @@ public class CommentPostGroupModel implements Serializable {
 
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
+	
+	@Transient
+	private CommentPostGroupPermissions permissions;
 
 	public CommentPostGroupModel(String userId, String postGroupId, String parentId, String content) {
 		this.id = UUID.randomUUID().toString();
@@ -64,5 +69,23 @@ public class CommentPostGroupModel implements Serializable {
 		this.postGroup = new PostGroupModel(postGroupId);
 		this.parentId = parentId;
 		this.content = content;
+	}
+	
+	public CommentPostGroupModel(CommentPostGroupModel copy, String userId) {
+		this.id = copy.id;
+		this.creator = copy.creator;
+		this.postGroup = copy.postGroup;
+		this.parentId = copy.parentId;
+		this.content = copy.content;
+		this.childrenCommentNumber = copy.childrenCommentNumber;
+		this.createAt = copy.createAt;
+		this.updateAt = copy.updateAt;
+		this.isDelete = copy.isDelete;
+
+		if (copy.creator.getId().equals(userId)) {
+			this.permissions = new CommentPostGroupPermissions(true, true);
+		} else {
+			this.permissions = new CommentPostGroupPermissions(false, false);
+		}
 	}
 }

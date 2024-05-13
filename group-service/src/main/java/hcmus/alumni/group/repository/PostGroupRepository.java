@@ -15,10 +15,11 @@ import hcmus.alumni.group.model.PostGroupModel;
 import hcmus.alumni.group.dto.IPostGroupDto;
 
 public interface PostGroupRepository extends JpaRepository<PostGroupModel, String> {        
-	@Query("SELECT p FROM PostGroupModel p " +
+	@Query("SELECT DISTINCT new PostGroupModel(p, CASE WHEN ip.id IS NULL THEN FALSE ELSE TRUE END, :userId) FROM PostGroupModel p " +
 	        "LEFT JOIN p.creator c " +
 	        "LEFT JOIN  p.status s " +
 	        "LEFT JOIN FETCH p.tags t " + 
+	        "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
 	        "WHERE (:title IS NULL OR p.title LIKE %:title%) " +
 	        "AND (:tagsId IS NULL OR t.id IN :tagsId) " + 
 	        "AND (:statusId IS NULL OR s.id = :statusId) " +
@@ -26,6 +27,7 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	Page<IPostGroupDto> searchGroupPosts(
 			@Param("groupId") String groupId,
 	        @Param("title") String title,
+	        @Param("userId") String userId,
 	        @Param("tagsId") List<Integer> tagsId,
 	        @Param("statusId") Integer statusId,
 	        Pageable pageable);
@@ -42,4 +44,9 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	@Modifying
 	@Query("UPDATE PostGroupModel p SET p.childrenCommentNumber = p.childrenCommentNumber + :count WHERE p.id = :id")
 	int commentCountIncrement(String id, @Param("count") Integer count);
+    
+    @Transactional
+	@Modifying
+	@Query("UPDATE PostGroupModel p SET p.reactionCount = p.reactionCount + :count WHERE p.id = :id")
+	int reactionCountIncrement(String id, @Param("count") Integer count);
 }

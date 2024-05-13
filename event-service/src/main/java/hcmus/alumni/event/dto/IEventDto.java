@@ -5,7 +5,9 @@ import java.util.Set;
 
 public interface IEventDto {
 	interface User{
+		String getId();
 		String getFullName();
+		String getAvatarUrl();
 	}
 	interface StatusPost{
 		String getName();

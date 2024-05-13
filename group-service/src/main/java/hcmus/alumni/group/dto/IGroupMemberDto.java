@@ -5,8 +5,8 @@ import java.util.Date;
 public interface IGroupMemberDto {
 	interface User {
 		String getId();
-        String getFullName();
-        String getAvatarUrl();
+		String getFullName();
+		String getAvatarUrl();
     }
     
     interface Group {
