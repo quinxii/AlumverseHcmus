@@ -359,20 +359,20 @@ public class UserServiceController {
 	}
     
     @GetMapping("/count")
-	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "status") String status) {
-		if (status.equals("")) {
-			ResponseEntity.status(HttpStatus.OK).body(0L);
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "statusId", defaultValue = "0") Integer statusId) {
+		if (statusId.equals(0)) {
+			return ResponseEntity.status(HttpStatus.OK).body(userRepository.getCountByNotDelete());
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(userRepository.getCountByStatus(status));
+		return ResponseEntity.status(HttpStatus.OK).body(userRepository.getCountByStatusId(statusId));
 	}
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getSearchResult(
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-			@RequestParam(value = "pageSize", required = false, defaultValue = "20") int pageSize,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "fullName", required = false, defaultValue = "") String fullName,
-			@RequestParam(value = "status", required = false) String status,
-			@RequestParam(value = "faculty", required = false) String faculty,
+			@RequestParam(value = "statusId", required = false) Integer statusId,
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
 		if (pageSize == 0 || pageSize > 50) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -383,7 +383,7 @@ public class UserServiceController {
 			Pageable pageable = PageRequest.of(page, pageSize);
 			Page<ISearchDto> searchResult = null;
 
-			searchResult = userRepository.searchUsers(fullName, status, faculty, beginningYear, pageable);
+			searchResult = userRepository.searchUsers(fullName, statusId, facultyId, beginningYear, pageable);
 
 			result.put("totalPages", searchResult.getTotalPages());
 			result.put("searchResult", searchResult.getContent());
