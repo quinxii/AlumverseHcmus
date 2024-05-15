@@ -20,6 +20,7 @@ public interface IGroupDto {
     String getAvatarUrl();
     String getCoverUrl();
     String getWebsite();
+    Privacy getPrivacy();
     Status getStatus();
 }
 
