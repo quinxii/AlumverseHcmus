@@ -72,13 +72,16 @@ public class HallOfFameModel implements Serializable {
 	@Column(name = "beginning_year")
 	private Integer beginningYear;
 
+	@Column(name = "position", columnDefinition = "TEXT")
+	private String position;
+
 	public HallOfFameModel() {
 		id = UUID.randomUUID().toString();
 		status = new StatusPostModel(2);
 	}
 
 	public HallOfFameModel(String id, UserModel creator, String title, String thumbnail, String summary, FacultyModel faculty,
-			UserModel linkedUser, Integer beginningYear, Long scheduledTimeMilis) {
+			UserModel linkedUser, Integer beginningYear, Long scheduledTimeMilis, String position) {
 		this.id = id;
 		this.creator = creator;
 		this.title = title;
@@ -96,5 +99,6 @@ public class HallOfFameModel implements Serializable {
 			this.publishedAt = new Date();
 			this.status = new StatusPostModel(2);
 		}
+		this.position = position;
 	}
 }
