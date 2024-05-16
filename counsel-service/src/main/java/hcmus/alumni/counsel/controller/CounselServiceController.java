@@ -98,8 +98,10 @@ public class CounselServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IPostAdviseDto> getPostById(@PathVariable String id) {
-		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id);
+	public ResponseEntity<IPostAdviseDto> getPostById(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id) {
+		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id, userId);
 		if (optionalPost.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}

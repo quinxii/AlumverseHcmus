@@ -21,8 +21,11 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id != 4 AND pa.id = :id AND pa.creator.id = :creatorId")
 	Optional<PostAdviseModel> findByIdAndCreator(@Param("id") String id, @Param("creatorId") String creatorId);
 
-	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
-	Optional<IPostAdviseDto> findPostAdviseById(String id);
+	@Query("SELECT new PostAdviseModel(pa, ipa.isDelete, :userId) " +
+			"FROM PostAdviseModel pa " +
+			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :userId " +
+			"JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
+	Optional<IPostAdviseDto> findPostAdviseById(String id, String userId);
 
 	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId) " +
 			"FROM PostAdviseModel pa " +
