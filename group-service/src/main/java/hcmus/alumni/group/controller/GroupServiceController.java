@@ -90,6 +90,7 @@ public class GroupServiceController {
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getGroups(
+		@RequestHeader("userId") String requestingUserId,
 		@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 		@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 		@RequestParam(value = "name", required = false, defaultValue = "") String name,
@@ -105,7 +106,7 @@ public class GroupServiceController {
 		
 		try {
 		    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-		    Page<IGroupDto> groups = groupRepository.searchGroups(name, statusId, pageable);
+		    Page<IGroupDto> groups = groupRepository.searchGroups(name, statusId, requestingUserId, pageable);
 		
 		    result.put("totalPages", groups.getTotalPages());
 		    result.put("groups", groups.getContent());
@@ -119,8 +120,8 @@ public class GroupServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IGroupDto> getGroupById(@PathVariable String id) {
-		Optional<IGroupDto> optionalGroup = groupRepository.findGroupById(id);
+	public ResponseEntity<IGroupDto> getGroupById(@PathVariable String id, @RequestHeader("userId") String requestingUserId) {
+		Optional<IGroupDto> optionalGroup = groupRepository.findGroupById(id, requestingUserId);
 		if (optionalGroup.isEmpty()) {
 		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
@@ -164,25 +165,18 @@ public class GroupServiceController {
             @RequestParam(value = "type", required = false, defaultValue = "") String type,
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "PUBLIC") Privacy privacy,
-            @RequestParam(value = "avatar") MultipartFile avatar,
             @RequestParam(value = "cover") MultipartFile cover,
             @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId
 	) {
-		if (name.isEmpty() || avatar.isEmpty() || cover.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name, avatar and cover must not be empty");
+		if (name.isEmpty() || cover.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name and cover must not be empty");
         }
-		if (avatar.getSize() > 5 * 1024 * 1024 || cover.getSize() > 5 * 1024 * 1024) {
+		if (cover.getSize() > 5 * 1024 * 1024) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 	    }
         String id = UUID.randomUUID().toString();
         try {
-            String avatarUrl = null;
             String coverUrl = null;
-
-            // Save avatar image
-            if (avatar != null) {
-                avatarUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), avatar, "avatar");
-            }
 
             // Save cover image
             if (cover != null) {
@@ -197,10 +191,10 @@ public class GroupServiceController {
             groupModel.setWebsite(website);
             groupModel.setPrivacy(privacy);
             groupModel.setCreator(new UserModel(creatorId));
-            groupModel.setAvatarUrl(avatarUrl);
             groupModel.setCoverUrl(coverUrl);
             groupModel.setStatus(new StatusUserGroupModel(statusId));
-
+            groupModel.setParticipantCount(1);
+            
             groupRepository.save(groupModel);
             
 			// Add creator as ADMIN
@@ -227,7 +221,6 @@ public class GroupServiceController {
             @RequestParam(value = "type", required = false, defaultValue = "") String type,
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "") Privacy privacy,
-            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
             @RequestParam(value = "cover", required = false) MultipartFile cover,
             @RequestParam(value = "statusId", required = false) Integer statusId
 	) {
@@ -237,9 +230,10 @@ public class GroupServiceController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Group not found");
             }
             GroupModel groupModel = optionalGroup.get();
-            if (!groupModel.getCreator().getId().equals(requestingUserId)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You are not the creator of this group");
-            }
+            //admin can also edit
+//            if (!groupModel.getCreator().getId().equals(requestingUserId)) {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You are not the creator of this group");
+//            }
             boolean isPut = false;
             
             if (!name.isEmpty()) {
@@ -259,12 +253,6 @@ public class GroupServiceController {
 
             if (privacy != null) {
                 groupModel.setPrivacy(privacy);
-                isPut = true;
-            }
-
-            if (avatar != null) {
-                String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), avatar, "avatar");
-                groupModel.setAvatarUrl(avatarUrl);
                 isPut = true;
             }
 
@@ -343,9 +331,10 @@ public class GroupServiceController {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Member not found");
 	    }
     	GroupMemberModel member = optionalMember.get();
-		if (!requestingUserId.equals(userId) && member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to edit role in this group");
-        }
+    	//remove mod case
+//		if (!requestingUserId.equals(userId) && member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
+//        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to edit role in this group");
+//        }
 		if (requestingUserId.equals(userId)) {
         	return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not change your role");
         }
@@ -370,9 +359,10 @@ public class GroupServiceController {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Member not found");
 	    }
     	GroupMemberModel member = optionalMember.get();
-        if (!requestingUserId.equals(userId) && member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to kick member in this group");
-        }
+    	//remove mode case
+//        if (!requestingUserId.equals(userId) && member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
+//        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to kick member in this group");
+//        }
         
     	int delete = groupMemberRepository.deleteGroupMember(id, userId);
     	
@@ -395,9 +385,10 @@ public class GroupServiceController {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	    }
     	GroupMemberModel member = optionalMember.get();
-		if (member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
-	        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
-        }
+    	//remove mod case
+//		if (member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
+//	        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+//        }
         if (pageSize == 0 || pageSize > 50) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }

@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -43,9 +44,6 @@ public class GroupModel implements Serializable {
     @Column(name = "type", length = 50)
     private String type;
 
-    @Column(name = "avatar_url", columnDefinition = "TINYTEXT")
-    private String avatarUrl;
-
     @Column(name = "cover_url", columnDefinition = "TINYTEXT")
     private String coverUrl;
 
@@ -67,6 +65,18 @@ public class GroupModel implements Serializable {
     @ManyToOne
     @JoinColumn(name = "status_id")
     private StatusUserGroupModel status;
+    
+    @Column(name = "participant_count")
+	private Integer participantCount;
+    
+    @Transient
+	private Set<UserModel> joinedFriends;
+    
+    @Transient
+	private boolean isJoined;
+    
+    @Transient
+	private boolean isRequestPending;
     
     public GroupModel(String id) {
     	this.id = id;
