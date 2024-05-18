@@ -301,7 +301,9 @@ public class NewsServiceController {
 	// Get comments of a news
 	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
 	@GetMapping("/{id}/comments")
-	public ResponseEntity<HashMap<String, Object>> getNewsComments(@PathVariable String id,
+	public ResponseEntity<HashMap<String, Object>> getNewsComments(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 		if (pageSize == 0 || pageSize > 50) {
@@ -310,7 +312,7 @@ public class NewsServiceController {
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, pageable);
+		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, userId, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -321,6 +323,7 @@ public class NewsServiceController {
 	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -336,7 +339,7 @@ public class NewsServiceController {
 		}
 
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, pageable);
+		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, userId, pageable);
 
 		result.put("comments", comments.getContent());
 

@@ -37,4 +37,5 @@ public interface IHallOfFameDto {
     Faculty getFaculty();
     StatusPost getStatus();
     Integer getBeginningYear();
+    String getPosition();
 }

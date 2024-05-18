@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import hcmus.alumni.news.common.CommentNewsPermissions;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -14,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,29 +27,29 @@ import lombok.NoArgsConstructor;
 @Data
 public class CommentNewsModel implements Serializable {
 	private static final long serialVersionUID = 1L;
-    
-    @Id
+
+	@Id
 	@Column(name = "id", length = 36, nullable = false)
 	private String id;
 
-    @OneToOne
+	@OneToOne
 	@JoinColumn(name = "creator")
 	private UserModel creator;
 
-    @ManyToOne
-    @JoinColumn(name = "news_id", nullable = false)
-    private NewsModel news;
+	@ManyToOne
+	@JoinColumn(name = "news_id", nullable = false)
+	private NewsModel news;
 
-    @Column(name = "parent_id", length = 36)
-    private String parentId;
+	@Column(name = "parent_id", length = 36)
+	private String parentId;
 
-    @Column(name = "content", columnDefinition = "TEXT")
+	@Column(name = "content", columnDefinition = "TEXT")
 	private String content;
 
 	@Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
 	private Integer childrenCommentNumber = 0;
 
-    @CreationTimestamp
+	@CreationTimestamp
 	@Column(name = "create_at")
 	private Date createAt;
 
@@ -55,8 +57,11 @@ public class CommentNewsModel implements Serializable {
 	@Column(name = "update_at")
 	private Date updateAt;
 
-    @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
+	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
+
+	@Transient
+	private CommentNewsPermissions permissions;
 
 	public CommentNewsModel(String userId, String newsId, String parentId, String content) {
 		this.id = UUID.randomUUID().toString();
@@ -64,5 +69,23 @@ public class CommentNewsModel implements Serializable {
 		this.news = new NewsModel(newsId);
 		this.parentId = parentId;
 		this.content = content;
+	}
+
+	public CommentNewsModel(CommentNewsModel copy, String userId) {
+		this.id = copy.id;
+		this.creator = copy.creator;
+		this.news = copy.news;
+		this.parentId = copy.parentId;
+		this.content = copy.content;
+		this.childrenCommentNumber = copy.childrenCommentNumber;
+		this.createAt = copy.createAt;
+		this.updateAt = copy.updateAt;
+		this.isDelete = copy.isDelete;
+
+		if (copy.creator.getId().equals(userId)) {
+			this.permissions = new CommentNewsPermissions(true, true);
+		} else {
+			this.permissions = new CommentNewsPermissions(false, false);
+		}
 	}
 }

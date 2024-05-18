@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import hcmus.alumni.event.common.CommentEventPermissions;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -14,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -57,6 +59,9 @@ public class CommentEventModel implements Serializable {
 	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
+	
+	@Transient
+	private CommentEventPermissions permissions;
 
 	public CommentEventModel(String userId, String eventId, String parentId, String content) {
 		this.id = UUID.randomUUID().toString();
@@ -64,5 +69,23 @@ public class CommentEventModel implements Serializable {
 		this.event = new EventModel(eventId);
 		this.parentId = parentId;
 		this.content = content;
+	}
+	
+	public CommentEventModel(CommentEventModel copy, String userId) {
+		this.id = copy.id;
+		this.creator = copy.creator;
+		this.event = copy.event;
+		this.parentId = copy.parentId;
+		this.content = copy.content;
+		this.childrenCommentNumber = copy.childrenCommentNumber;
+		this.createAt = copy.createAt;
+		this.updateAt = copy.updateAt;
+		this.isDelete = copy.isDelete;
+
+		if (copy.creator.getId().equals(userId)) {
+			this.permissions = new CommentEventPermissions(true, true);
+		} else {
+			this.permissions = new CommentEventPermissions(false, false);
+		}
 	}
 }

@@ -40,6 +40,14 @@ public class GroupMemberModel implements Serializable {
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isDelete = false;
+    
+    public UserModel getUser() {
+        return this.id.getUser();
+    }
+    
+    public GroupModel getGroup() {
+        return this.id.getGroup();
+    }
 
     public void setIsDelete(boolean isDelete) {
         this.isDelete = isDelete;

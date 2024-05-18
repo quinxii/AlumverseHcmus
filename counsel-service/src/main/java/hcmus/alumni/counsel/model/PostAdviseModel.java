@@ -12,6 +12,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hcmus.alumni.counsel.common.PostAdvisePermissions;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +26,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -75,6 +77,15 @@ public class PostAdviseModel implements Serializable {
     @Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
     private Integer childrenCommentNumber = 0;
 
+    @Column(name = "reaction_count", columnDefinition = "INT DEFAULT(0)")
+    private Integer reactionCount = 0;
+
+    @Transient
+    private boolean isReacted;
+
+    @Transient
+    private PostAdvisePermissions permissions;
+
     public PostAdviseModel() {
     }
 
@@ -84,7 +95,8 @@ public class PostAdviseModel implements Serializable {
 
     // For request body
     @JsonCreator
-    public PostAdviseModel(@JsonProperty("title") String title, @JsonProperty("content") String content, @JsonProperty("tags") Set<TagModel> tags) {
+    public PostAdviseModel(@JsonProperty("title") String title, @JsonProperty("content") String content,
+            @JsonProperty("tags") Set<TagModel> tags) {
         this.title = title;
         this.content = content;
         this.tags = tags;
@@ -96,6 +108,31 @@ public class PostAdviseModel implements Serializable {
         this.title = title;
         this.content = content;
         this.tags = tags;
+    }
+
+    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete, String userId) {
+        this.id = copy.id;
+        this.creator = copy.creator;
+        this.title = copy.title;
+        this.pictures = copy.pictures;
+        this.content = copy.content;
+        this.tags = copy.tags;
+        this.createAt = copy.createAt;
+        this.updateAt = copy.updateAt;
+        this.publishedAt = copy.publishedAt;
+        this.status = copy.status;
+        this.childrenCommentNumber = copy.childrenCommentNumber;
+        this.reactionCount = copy.reactionCount;
+        if (isReactionDelete != null) {
+            this.isReacted = !isReactionDelete;
+        } else {
+            this.isReacted = false;
+        }
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions = new PostAdvisePermissions(true, true);
+        } else {
+            this.permissions = new PostAdvisePermissions(false, false);
+        }
     }
 
     public void addPicture(PicturePostAdviseModel picture) {

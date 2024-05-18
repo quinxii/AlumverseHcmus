@@ -21,15 +21,22 @@ public interface IPostAdviseDto {
 		String getId();
 		String getPictureUrl();
 	}
+	interface Permissions {
+		Boolean getEdit();
+		Boolean getDelete();
+	}
 	
 	String getId();
 	String getTitle();
 	List<Pictures> getPictures();
 	String getContent();
 	Integer getChildrenCommentNumber();
+	Integer getReactionCount();
 	Date getUpdateAt();
 	Date getPublishedAt();
 	User getCreator();
 	Set<Tag> getTags();
 	StatusPost getStatus();
+	Boolean getIsReacted();
+	Permissions getPermissions();
 }

@@ -102,7 +102,6 @@ public class ImageUtils {
 		try {
 			Blob blob = gcp.getStorage().get(gcp.getBucketName(), extractedImageName);
 			if (blob == null) {
-				System.out.println("null");
 				return;
 			}
 			gcp.getStorage().delete(gcp.getBucketName(), extractedImageName);
@@ -111,27 +110,6 @@ public class ImageUtils {
 		}
 
 		return;
-	}
-
-	public String saveImgFromHtmlToStorage(String html, String id) {
-		// Parse the HTML content
-		Document doc = Jsoup.parse(html);
-		// Select all img elements with the src attribute
-		Elements imgTags = doc.select("img[src]");
-		// Loop through each img tag and save each to storage
-		try {
-			Integer contentImgIdx = 0;
-			for (Element img : imgTags) {
-				String src = img.attr("src");
-				String newSrc = this.saveBase64ImageToStorage(this.getNewsPath(id), src, contentImgIdx.toString());
-				img.attr("src", newSrc);
-				contentImgIdx++;
-			}
-		} catch (IOException e) {
-			System.err.println(e);
-		}
-		doc.outputSettings().indentAmount(0).prettyPrint(false);
-		return doc.body().html();
 	}
 
 	public String updateImgFromHtmlToStorage(String oldHtml, String newHtml, String id) {
@@ -163,6 +141,9 @@ public class ImageUtils {
 
 			try {
 				for (String addedImg : addedImgs) {
+					if (!isBase64Image(addedImg)) {
+						continue;
+					}
 					int smalletMissingIdx = this.findSmallestMissingContentIdx(contentIdxs);
 					String newIdx = String.valueOf(smalletMissingIdx);
 					String newSrc = this.saveBase64ImageToStorage(this.getNewsPath(id), addedImg, newIdx);
@@ -177,6 +158,18 @@ public class ImageUtils {
 
 		newDoc.outputSettings().indentAmount(0).prettyPrint(false);
 		return newDoc.body().html();
+	}
+
+	public boolean isBase64Image(String base64) {
+		String[] strings = base64.split(",");
+		switch (strings[0]) {// check image's extension
+			case "data:image/jpeg;base64":
+				return true;
+			case "data:image/png;base64":
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	public String[] extractContentTypeAndDataFromImageBase64(String base64) {

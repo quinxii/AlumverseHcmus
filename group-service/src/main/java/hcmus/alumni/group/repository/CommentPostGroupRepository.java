@@ -14,11 +14,13 @@ import hcmus.alumni.group.model.CommentPostGroupModel;
 import hcmus.alumni.group.dto.ICommentPostGroupDto;
 
 public interface CommentPostGroupRepository extends JpaRepository<CommentPostGroupModel, String> {        
-	@Query("SELECT c FROM CommentPostGroupModel c WHERE c.postGroup.id = :postGroupId AND c.isDelete = false AND c.parentId IS NULL")
-    Page<ICommentPostGroupDto> getComments(String postGroupId, Pageable pageable);
+	@Query("SELECT new CommentPostGroupModel(c, :userId) FROM CommentPostGroupModel c " +
+            "WHERE c.postGroup.id = :postGroupId AND c.isDelete = false AND c.parentId IS NULL")
+    Page<ICommentPostGroupDto> getComments(String postGroupId, String userId, Pageable pageable);
 
-    @Query("SELECT c FROM CommentPostGroupModel c WHERE c.isDelete = false AND c.parentId = :commentId")
-    Page<ICommentPostGroupDto> getChildrenComment(String commentId, Pageable pageable);
+    @Query("SELECT new CommentPostGroupModel(c, :userId) FROM CommentPostGroupModel c " +
+            "WHERE c.isDelete = false AND c.parentId = :commentId")
+    Page<ICommentPostGroupDto> getChildrenComment(String commentId, String userId, Pageable pageable);
 
     @Query("SELECT c FROM CommentPostGroupModel c WHERE c.isDelete = false AND c.parentId = :commentId")
     List<CommentPostGroupModel> getChildrenComment(String commentId);

@@ -3,8 +3,8 @@ package hcmus.alumni.group.dto;
 public interface IRequestJoinGroupDto {
 	interface User {
 		String getId();
-        String getFullName();
-        String getAvatarUrl();
+		String getFullName();
+		String getAvatarUrl();
     }
     
     interface Group {

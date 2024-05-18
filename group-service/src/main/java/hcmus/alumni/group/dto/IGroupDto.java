@@ -4,8 +4,9 @@ import hcmus.alumni.group.common.Privacy;
 
 public interface IGroupDto {
     interface User {
-        String getFullName();
-        String getAvatarUrl();
+		String getId();
+		String getFullName();
+		String getAvatarUrl();
     }
     
     interface Status {
@@ -19,6 +20,7 @@ public interface IGroupDto {
     String getAvatarUrl();
     String getCoverUrl();
     String getWebsite();
+    Privacy getPrivacy();
     Status getStatus();
 }
 
