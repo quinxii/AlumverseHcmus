@@ -4,9 +4,14 @@ import java.util.Date;
 
 public interface ICommentPostGroupDto {
 	interface User {
-        String getId();
-        String getFullName();
-        String getAvatarUrl();
+		String getId();
+		String getFullName();
+		String getAvatarUrl();
+    }
+	
+    interface Permissions {
+        Boolean getEdit();
+        Boolean getDelete();
     }
 
     String getId();
@@ -15,4 +20,5 @@ public interface ICommentPostGroupDto {
     Integer getChildrenCommentNumber();
     Date getCreateAt();
     Date getUpdateAt();
+    Permissions getPermissions();
 }

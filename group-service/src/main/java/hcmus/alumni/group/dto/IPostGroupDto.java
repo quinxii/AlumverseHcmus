@@ -6,7 +6,9 @@ import java.util.Set;
 
 public interface IPostGroupDto {
 	interface User{
+		String getId();
 		String getFullName();
+		String getAvatarUrl();
 	}
 	interface StatusPost{
 		String getName();
@@ -19,6 +21,10 @@ public interface IPostGroupDto {
 		String getId();
 		String getPictureUrl();
 	}
+	interface Permissions {
+        Boolean getEdit();
+        Boolean getDelete();
+    }
 	
 	String getId();
 	User getCreator();
@@ -31,4 +37,7 @@ public interface IPostGroupDto {
 	Date getPublishedAt();
 	StatusPost getStatus();
 	Integer getChildrenCommentNumber();
+	Integer getReactionCount();
+	Boolean getIsReacted();
+	Permissions getPermissions();
 }
