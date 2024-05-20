@@ -30,7 +30,7 @@ public class GroupMemberModel implements Serializable {
 	@EmbeddedId
 	private GroupUserId id;
 
-    @Column(name = "role", columnDefinition = "ENUM('ADMIN', 'MOD', 'MEMBER') NOT NULL")
+    @Column(name = "role", columnDefinition = "ENUM('CREATOR', 'ADMIN', 'MEMBER') NOT NULL")
     @Enumerated(EnumType.STRING)
     private GroupMemberRole role;
 

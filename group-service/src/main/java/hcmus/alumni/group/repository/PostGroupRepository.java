@@ -15,10 +15,10 @@ import hcmus.alumni.group.model.PostGroupModel;
 import hcmus.alumni.group.dto.IPostGroupDto;
 
 public interface PostGroupRepository extends JpaRepository<PostGroupModel, String> {        
-	@Query("SELECT DISTINCT new PostGroupModel(p, CASE WHEN ip.id IS NULL THEN FALSE ELSE TRUE END, :userId) FROM PostGroupModel p " +
+	@Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId) FROM PostGroupModel p " +
 	        "LEFT JOIN p.creator c " +
 	        "LEFT JOIN  p.status s " +
-	        "LEFT JOIN FETCH p.tags t " + 
+	        "LEFT JOIN p.tags t " + 
 	        "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
 	        "WHERE (:title IS NULL OR p.title LIKE %:title%) " +
 	        "AND (:tagsId IS NULL OR t.id IN :tagsId) " + 
@@ -33,12 +33,13 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	        Pageable pageable);
 
 
-    @Query("SELECT p FROM PostGroupModel p " +
+    @Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId) FROM PostGroupModel p " +
             "JOIN FETCH p.creator " +
             "JOIN FETCH p.status " +
-            "LEFT JOIN FETCH p.tags " +
+            "LEFT JOIN p.tags " +
+            "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
             "WHERE p.id = :postId")
-    Optional<IPostGroupDto> findPostById(@Param("postId") String postId);
+    Optional<IPostGroupDto> findPostById(@Param("postId") String postId, @Param("userId") String userId);
     
     @Transactional
 	@Modifying

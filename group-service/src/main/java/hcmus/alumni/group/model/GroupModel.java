@@ -17,10 +17,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "`group`")
@@ -70,9 +74,6 @@ public class GroupModel implements Serializable {
 	private Integer participantCount;
     
     @Transient
-	private Set<UserModel> joinedFriends;
-    
-    @Transient
 	private boolean isJoined;
     
     @Transient
@@ -80,5 +81,21 @@ public class GroupModel implements Serializable {
     
     public GroupModel(String id) {
     	this.id = id;
+    }
+    
+    public GroupModel(GroupModel copy, boolean isJoined, boolean isRequestPending) {
+        this.id = copy.getId();
+        this.name = copy.getName();
+        this.creator = copy.getCreator();
+        this.type = copy.getType();
+        this.coverUrl = copy.getCoverUrl();
+        this.website = copy.getWebsite();
+        this.privacy = copy.getPrivacy();
+        this.createAt = copy.getCreateAt();
+        this.updateAt = copy.getUpdateAt();
+        this.status = copy.getStatus();
+        this.participantCount = copy.getParticipantCount();
+        this.isJoined = isJoined;
+        this.isRequestPending = isRequestPending;
     }
 }

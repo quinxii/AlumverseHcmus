@@ -1,6 +1,7 @@
 package hcmus.alumni.group.repository;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,32 +13,37 @@ import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.group.dto.IGroupDto;
 import hcmus.alumni.group.model.GroupModel;
+import hcmus.alumni.group.model.UserModel;
+import hcmus.alumni.group.common.Privacy;
 
 public interface GroupRepository extends JpaRepository<GroupModel, String> {        
-	@Query("SELECT g, " +
-	       "CASE WHEN gm IS NOT NULL THEN true ELSE false END AS isJoined, " +
-	       "CASE WHEN rjg IS NOT NULL THEN true ELSE false END AS isRequestPending, " +
-	       "(SELECT COUNT(f) FROM FriendModel f WHERE f.id.user.id = :requestingUserId AND f.id.friend.id IN " +
-	       "(SELECT gm.id.user.id FROM GroupMemberModel gm WHERE gm.id.group.id = g.id AND gm.isDelete = false)) AS joinedFriendsCount " +
-	       "FROM GroupModel g " +
-	       "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
-	       "LEFT JOIN RequestJoinGroupModel rjg ON rjg.id.group.id = g.id AND rjg.id.user.id = :requestingUserId AND rjg.isDelete = false " +
-	       "LEFT JOIN g.status s " +
-	       "WHERE (:statusId IS NULL OR s.id = :statusId) " +
-	       "AND g.name LIKE %:name%")
-	Page<IGroupDto> searchGroups(@Param("name") String name, @Param("statusId") Integer statusId, @Param("requestingUserId") String requestingUserId, Pageable pageable);
+	@Query("SELECT DISTINCT new GroupModel(g, " +
+	        "CASE WHEN gm IS NOT NULL THEN true ELSE false END, " +
+	        "CASE WHEN rjg IS NOT NULL THEN true ELSE false END) " +
+	        "FROM GroupModel g " +
+	        "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
+	        "LEFT JOIN RequestJoinGroupModel rjg ON rjg.id.group.id = g.id AND rjg.id.user.id = :requestingUserId AND rjg.isDelete = false " +
+	        "LEFT JOIN g.status s " +
+	        "WHERE (:statusId IS NULL OR s.id = :statusId) " +
+	        "AND (:privacy IS NULL OR g.privacy = :privacy) " +
+	        "AND (:isJoined IS NULL OR (gm IS NOT NULL AND :isJoined = true) OR (gm IS NULL AND :isJoined = false)) " +
+	        "AND g.name LIKE %:name%")
+	Page<IGroupDto> searchGroups(
+	    @Param("name") String name,
+	    @Param("statusId") Integer statusId,
+	    @Param("privacy") Privacy privacy,
+	    @Param("isJoined") Boolean isJoined,
+	    @Param("requestingUserId") String requestingUserId,
+	    Pageable pageable);
 
-	@Query("SELECT g, " +
-	       "CASE WHEN gm IS NOT NULL THEN true ELSE false END AS isJoined, " +
-	       "CASE WHEN rjg IS NOT NULL THEN true ELSE false END AS isRequestPending, " +
-	       "(SELECT COUNT(f) FROM FriendModel f WHERE f.id.user.id = :requestingUserId AND f.id.friend.id IN " +
-	       "(SELECT gm.id.user.id FROM GroupMemberModel gm WHERE gm.id.group.id = g.id AND gm.isDelete = false)) AS joinedFriendsCount " +
-	       "FROM GroupModel g " +
-	       "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
-	       "LEFT JOIN RequestJoinGroupModel rjg ON rjg.id.group.id = g.id AND rjg.id.user.id = :requestingUserId AND rjg.isDelete = false " +
-	       "WHERE g.id = :id")
+	@Query("SELECT DISTINCT new GroupModel(g, " +
+	        "CASE WHEN gm IS NOT NULL THEN true ELSE false END, " +
+	        "CASE WHEN rjg IS NOT NULL THEN true ELSE false END) " +
+	        "FROM GroupModel g " +
+	        "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
+	        "LEFT JOIN RequestJoinGroupModel rjg ON rjg.id.group.id = g.id AND rjg.id.user.id = :requestingUserId AND rjg.isDelete = false " +
+	        "WHERE g.id = :id")
 	Optional<IGroupDto> findGroupById(@Param("id") String id, @Param("requestingUserId") String requestingUserId);
-
 	
 	@Query("SELECT gm.id.group FROM GroupMemberModel gm WHERE gm.id.user.id = :userId AND gm.isDelete = false")
     Page<IGroupDto> findGroupsByUserId(

@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.Set;
 
 import hcmus.alumni.group.common.Privacy;
-import hcmus.alumni.group.model.UserModel;
 
 public interface IGroupDto {
     interface User {
@@ -28,7 +27,6 @@ public interface IGroupDto {
     Date getUpdateAt();
     Date getCreateAt();
     Integer getParticipantCount();
-    Set<UserModel> getJoinedFriends();
     boolean getIsJoined();
     boolean getIsRequestPending();
 }

@@ -77,7 +77,7 @@ public class PostGroupModel implements Serializable {
 
     @ManyToOne
 	@JoinColumn(name = "status_id")
-	private StatusPostModel status;
+	private StatusPostModel status = new StatusPostModel(2);
 
     @Column(name = "children_comment_number", columnDefinition = "INT DEFAULT 0")
     private Integer childrenCommentNumber = 0;
@@ -95,14 +95,13 @@ public class PostGroupModel implements Serializable {
 		this.id = id;
 	}
     
-    public PostGroupModel(String groupid, String creator, String title, String content, Set<TagModel> tags, StatusPostModel status) {
+    public PostGroupModel(String groupid, String creator, String title, String content, Set<TagModel> tags) {
         this.id = java.util.UUID.randomUUID().toString();
         this.groupId = groupid;
         this.creator = new UserModel(creator);
         this.title = title;
         this.content = content;
         this.tags = tags;
-        this.status = status;
     }
     
     public PostGroupModel(PostGroupModel copy, Boolean isReactionDelete, String userId) {
