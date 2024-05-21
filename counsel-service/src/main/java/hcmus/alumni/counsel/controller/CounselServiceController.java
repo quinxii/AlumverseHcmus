@@ -174,6 +174,7 @@ public class CounselServiceController {
 
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
 		// Check if user is creator
+		
 		if (!postAdvise.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
 		}

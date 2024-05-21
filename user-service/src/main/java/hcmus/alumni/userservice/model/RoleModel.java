@@ -53,7 +53,7 @@ public class RoleModel implements Serializable {
 	private Date updateAt;
 
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
-	private Boolean isDelete;
+	private Boolean isDelete = false;
 
 	@OrderBy("id ASC")
 	@ManyToMany(fetch = FetchType.LAZY)

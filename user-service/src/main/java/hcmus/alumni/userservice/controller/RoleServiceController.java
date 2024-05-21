@@ -3,6 +3,7 @@ package hcmus.alumni.userservice.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import hcmus.alumni.userservice.dto.IRoleDto;
 import hcmus.alumni.userservice.dto.RoleRequestDto;
+import hcmus.alumni.userservice.model.PermissionModel;
 import hcmus.alumni.userservice.model.RoleModel;
 import hcmus.alumni.userservice.repository.RoleRepository;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,14 +59,66 @@ public class RoleServiceController {
 
     @PutMapping("/{id}")
     public ResponseEntity<String> putRole(@PathVariable Integer id, @RequestBody RoleRequestDto requestingRole) {
-        RoleModel role = new RoleModel(requestingRole, id);
-        roleRepository.save(role);
+        Optional<RoleModel> roleOptional = roleRepository.findById(id);
+        if (roleOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        RoleModel role = roleOptional.get();
+        boolean isPut = false;
+
+        if (requestingRole.getName() != null) {
+            role.setName(requestingRole.getName());
+            isPut = true;
+        }
+        if (requestingRole.getDescription() != null) {
+            role.setDescription(requestingRole.getDescription());
+            isPut = true;
+        }
+        if (requestingRole.getPermissions() != null) {
+            role.getPermissions().clear();
+            requestingRole.getPermissions().forEach(permission -> {
+                role.getPermissions().add(new PermissionModel(permission.getId()));
+            });
+            isPut = true;
+        }
+
+        if (isPut) {
+            roleRepository.save(role);
+        }
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
     @PutMapping("")
     public ResponseEntity<String> putRoles(@RequestBody List<RoleModel> requestingRoles) {
-        roleRepository.saveAll(requestingRoles);
+        List<Integer> ids = requestingRoles.stream()
+                .map(RoleModel::getId)
+                .collect(Collectors.toList());
+        List<RoleModel> roles = roleRepository.findByIds(ids);
+
+        for (RoleModel role : roles) {
+            for (RoleModel requestingRole : requestingRoles) {
+                if (role.getId() == requestingRole.getId()) {
+                    if (requestingRole.getName() != null) {
+                        role.setName(requestingRole.getName());
+                    }
+                    if (requestingRole.getDescription() != null) {
+                        role.setDescription(requestingRole.getDescription());
+                    }
+                    if (requestingRole.getPermissions() != null) {
+                        role.getPermissions().clear();
+                        requestingRole.getPermissions().forEach(permission -> {
+                            role.getPermissions().add(new PermissionModel(permission.getId()));
+                        });
+                    }
+
+                    requestingRoles.remove(requestingRole);
+                    break;
+                }
+            }
+        }
+
+        roleRepository.saveAll(roles);
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 

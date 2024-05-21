@@ -18,6 +18,9 @@ public interface RoleRepository extends JpaRepository<RoleModel, Integer> {
     @Query("SELECT r FROM RoleModel r WHERE r.id = :id AND r.isDelete = false")
     Optional<IRoleDto> findRoleById(Integer id);
 
+    @Query("SELECT r FROM RoleModel r WHERE r.id in :ids AND r.isDelete = false")
+    List<RoleModel> findByIds(List<Integer> ids);
+
     @Transactional
     @Modifying
     @Query("UPDATE RoleModel r SET r.isDelete = true WHERE r.id = :id AND r.isDelete = false")

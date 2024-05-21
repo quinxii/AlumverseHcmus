@@ -147,7 +147,7 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "emailOfUser", required = false) String emailOfUser,
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId,
-			@RequestParam(value = "position", required = false) String position) {
+			@RequestParam(value = "position", defaultValue = "") String position) {
 
 		try {
 			// Find hall of fame
