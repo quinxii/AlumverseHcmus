@@ -21,8 +21,11 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id != 4 AND pa.id = :id AND pa.creator.id = :creatorId")
 	Optional<PostAdviseModel> findByIdAndCreator(@Param("id") String id, @Param("creatorId") String creatorId);
 
-	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
-	Optional<IPostAdviseDto> findPostAdviseById(String id);
+	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId) " +
+			"FROM PostAdviseModel pa " +
+			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :userId " +
+			"JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
+	Optional<IPostAdviseDto> findPostAdviseById(String id, String userId);
 
 	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId) " +
 			"FROM PostAdviseModel pa " +
@@ -55,4 +58,10 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Modifying
 	@Query("UPDATE PostAdviseModel pa SET pa.reactionCount = pa.reactionCount + :count WHERE pa.id = :id")
 	int reactionCountIncrement(String id, @Param("count") Integer count);
+
+	@Query(value = "select distinct p.name from role_permission rp " +
+			"join role r on r.id = rp.role_id and r.is_delete = false " +
+			"join permission p on p.id = rp.permission_id and p.is_delete = false " +
+			"where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
+	List<String> getPermissions(List<String> role, String domain);
 }

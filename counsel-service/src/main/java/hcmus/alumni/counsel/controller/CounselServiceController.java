@@ -98,15 +98,16 @@ public class CounselServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IPostAdviseDto> getPostById(@PathVariable String id) {
-		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id);
+	public ResponseEntity<IPostAdviseDto> getPostById(@RequestHeader("userId") String userId, @PathVariable String id) {
+
+		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id, userId);
 		if (optionalPost.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Create')")
 	@PostMapping("")
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseModel reqPostAdvise) {
@@ -157,7 +158,6 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
 	@PutMapping("/{id}/images")
 	public ResponseEntity<String> createPostAdviseImages(@RequestHeader("userId") String creator,
 			@PathVariable String id,
@@ -174,7 +174,7 @@ public class CounselServiceController {
 
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
 		// Check if user is creator
-		
+
 		if (!postAdvise.getCreator().getId().equals(creator)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
 		}
@@ -241,7 +241,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Delete')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deletePost(
 			@RequestHeader("userId") String creator,
@@ -313,7 +313,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Comment.Create')")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
@@ -332,7 +332,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @commentPostAdviseRepository.isCommentOwner(#commentId, #userId)")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String creator,
@@ -341,21 +341,11 @@ public class CounselServiceController {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
 
-		// Check if user is comment's creator
-		Optional<CommentPostAdviseModel> optionalComment = commentPostAdviseRepository.findById(commentId);
-		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Comment not found");
-		}
-		CommentPostAdviseModel comment = optionalComment.get();
-		if (!comment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
-
 		commentPostAdviseRepository.updateComment(commentId, creator, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Comment.Delete') or 1 == @commentPostAdviseRepository.isCommentOwner(#commentId, #userId)")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
 			@RequestHeader("userId") String creator,
@@ -366,10 +356,6 @@ public class CounselServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
 		CommentPostAdviseModel originalComment = optionalComment.get();
-		// Check if user is comment's creator
-		if (!originalComment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
 
 		// Initilize variables
 		List<CommentPostAdviseModel> childrenComments = new ArrayList<CommentPostAdviseModel>();
@@ -435,6 +421,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Counsel.Reaction.Create')")
 	@PostMapping("/{id}/react")
 	public ResponseEntity<String> postPostAdviseReaction(@RequestHeader("userId") String creatorId,
 			@PathVariable String id,

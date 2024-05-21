@@ -14,6 +14,8 @@ import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 
 public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAdviseModel, String> {
+    @Query(value = "select count(*) > 0 from comment_post_advise where id = :commentId and creator = :userId and is_delete = false", nativeQuery = true)
+    Long isCommentOwner(String commentId, String userId);
 
     @Query("SELECT new CommentPostAdviseModel(c, :userId) FROM CommentPostAdviseModel c " +
             "WHERE c.postAdvise.id = :postAdviseId AND c.isDelete = false AND c.parentId IS NULL")
