@@ -32,7 +32,6 @@ public class RoleServiceController {
     @Autowired
     private RoleRepository roleRepository;
 
-    @PreAuthorize("hasAuthority('User.Role.Create')")
     @GetMapping("")
     public ResponseEntity<HashMap<String, Object>> getRoles() {
         List<IRoleDto> roles = roleRepository.findAllRoles();
@@ -50,6 +49,7 @@ public class RoleServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(role.get());
     }
 
+    @PreAuthorize("hasAuthority('User.Role.Create')")
     @PostMapping("")
     public ResponseEntity<String> postRole(@RequestBody RoleRequestDto requestingRole) {
         RoleModel role = new RoleModel(requestingRole);
@@ -57,6 +57,7 @@ public class RoleServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
+    @PreAuthorize("hasAuthority('User.Role.Edit')")
     @PutMapping("/{id}")
     public ResponseEntity<String> putRole(@PathVariable Integer id, @RequestBody RoleRequestDto requestingRole) {
         Optional<RoleModel> roleOptional = roleRepository.findById(id);
@@ -89,6 +90,7 @@ public class RoleServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
+    @PreAuthorize("hasAuthority('User.Role.Edit')")
     @PutMapping("")
     public ResponseEntity<String> putRoles(@RequestBody List<RoleModel> requestingRoles) {
         List<Integer> ids = requestingRoles.stream()
@@ -122,6 +124,7 @@ public class RoleServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
+    @PreAuthorize("hasAuthority('User.Role.Delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteRole(@PathVariable Integer id) {
         roleRepository.deleteById(id);
