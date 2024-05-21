@@ -14,6 +14,8 @@ import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.model.CommentNewsModel;
 
 public interface CommentNewsRepository extends JpaRepository<CommentNewsModel, String> {
+    @Query(value = "select count(*) > 0 from comment_news where id = :commentId and creator = :userId and is_delete = false", nativeQuery = true)
+    Long isCommentOwner(String commentId, String userId);
 
     @Query("SELECT new CommentNewsModel(c, :userId) FROM CommentNewsModel c " +
             "WHERE c.news.id = :newsId AND c.isDelete = false AND c.parentId IS NULL")
