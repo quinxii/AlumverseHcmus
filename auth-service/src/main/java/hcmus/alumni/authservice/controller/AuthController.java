@@ -3,11 +3,12 @@ package hcmus.alumni.authservice.controller;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,9 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import hcmus.alumni.authservice.config.AuthConfig;
 import hcmus.alumni.authservice.config.CustomUserDetails;
+import hcmus.alumni.authservice.model.RoleModel;
 import hcmus.alumni.authservice.model.UserModel;
 import hcmus.alumni.authservice.repository.EmailActivationCodeRepository;
+import hcmus.alumni.authservice.repository.PasswordResetRepository;
+import hcmus.alumni.authservice.repository.RoleRepository;
 import hcmus.alumni.authservice.repository.UserRepository;
 import hcmus.alumni.authservice.utils.EmailSenderUtils;
 import hcmus.alumni.authservice.utils.JwtUtils;
@@ -29,17 +34,21 @@ import hcmus.alumni.authservice.utils.UserUtils;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-
+	
 	@Autowired
 	private JwtUtils jwtUtils;
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private RoleRepository roleRepository;
 	@Autowired
 	private EmailActivationCodeRepository emailActivationCodeRepository;
 	@Autowired
 	private AuthenticationManager authenticationManager;
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+	@Autowired
+    private PasswordResetRepository passwordResetRepository;
 
 	private UserUtils userUtils = UserUtils.getInstance();
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
@@ -126,4 +135,62 @@ public class AuthController {
 					.body("Send Authorize code failed: " + e.getMessage());
 		}
 	}
+	
+	@PostMapping("/create-user")
+    public ResponseEntity<String> adminCreateUser(
+            @RequestParam String email,
+            @RequestParam String role,
+            @RequestParam String fullName) {
+
+        UserModel newUser = new UserModel();
+        newUser.setId(UUID.randomUUID().toString());
+        newUser.setEmail(email);
+        newUser.setPass(passwordEncoder.encode(AuthConfig.generateRandomPassword(10)));
+        newUser.setFullName(fullName);
+        newUser.setCreateAt(new Date());
+
+        RoleModel roleModel = roleRepository.findByName(role);
+        if (roleModel == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid role");
+        }
+
+        newUser.getRoles().add(roleModel);
+
+        try {
+            userRepository.save(newUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input data");
+        } catch (Exception e) {
+            System.err.println(e);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+    }
+	
+
+	@PostMapping("/reset-password")
+	public ResponseEntity<String> resetPassword(@RequestParam String email, @RequestParam String oldPassword, @RequestParam String newPassword) {
+	    UserModel user = userRepository.findByEmail(email);
+	    if (user == null) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found");
+	    }
+
+	    if (!passwordEncoder.matches(oldPassword, user.getPass())) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Old password is incorrect");
+	    }
+
+	    user.setPass(passwordEncoder.encode(newPassword));
+	    userRepository.save(user);
+	    
+//	    PasswordResetModel passwordReset = new PasswordResetModel();
+//	    passwordReset.setId(UUID.randomUUID().toString());
+//	    passwordReset.setEmail(email);
+//	    passwordReset.setPasswordStatus(true);
+//	    passwordReset.setResetDate(new Date());
+//	    passwordResetRepository.save(passwordReset);
+
+	    return ResponseEntity.status(HttpStatus.OK).body("Password has been reset successfully");
+	}
+
 }
