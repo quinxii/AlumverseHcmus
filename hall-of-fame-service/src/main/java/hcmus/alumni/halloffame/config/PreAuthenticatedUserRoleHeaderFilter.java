@@ -42,7 +42,7 @@ public class PreAuthenticatedUserRoleHeaderFilter extends OncePerRequestFilter {
 	}
 
 	public Collection<? extends GrantedAuthority> getAuthorities(List<String> roles) {
-		List<String> permissions = hofRepository.getPermissions(roles, "User");
+		List<String> permissions = hofRepository.getPermissions(roles, "Hof");
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
 
