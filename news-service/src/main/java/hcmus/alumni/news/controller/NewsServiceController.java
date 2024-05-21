@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -301,6 +302,7 @@ public class NewsServiceController {
 	// Get comments of a news
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getNewsComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -310,8 +312,14 @@ public class NewsServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, userId, pageable);
+		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -321,6 +329,7 @@ public class NewsServiceController {
 	// Get children comments of a comment
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -336,8 +345,15 @@ public class NewsServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, userId, pageable);
+		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, userId, canDelete,
+				pageable);
 
 		result.put("comments", comments.getContent());
 

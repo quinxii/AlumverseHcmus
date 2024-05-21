@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,6 +69,7 @@ public class CounselServiceController {
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
@@ -80,9 +82,16 @@ public class CounselServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, userId, tagsId, pageable);
+			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, userId, canDelete, tagsId,
+					pageable);
 
 			result.put("totalPages", posts.getTotalPages());
 			result.put("posts", posts.getContent());
@@ -98,13 +107,20 @@ public class CounselServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IPostAdviseDto> getPostById(@RequestHeader("userId") String userId, @PathVariable String id) {
+	public ResponseEntity<IPostAdviseDto> getPostById(Authentication authentication,
+			@RequestHeader("userId") String userId, @PathVariable String id) {
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Comment.Delete"))) {
+			canDelete = true;
+		}
 
-		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id, userId);
-		if (optionalPost.isEmpty()) {
+		IPostAdviseDto post = postAdviseRepository.findPostAdviseById(id, userId, canDelete).orElse(null);
+		if (post == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
+
+		return ResponseEntity.status(HttpStatus.OK).body(post);
 	}
 
 	@PreAuthorize("hasAnyAuthority('Counsel.Create')")
@@ -267,6 +283,7 @@ public class CounselServiceController {
 	// Get comments of a news
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getPostComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -276,9 +293,15 @@ public class CounselServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getComments(id, userId, pageable);
+		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getComments(id, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -288,6 +311,7 @@ public class CounselServiceController {
 	// Get children comments of a comment
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getPostChildrenComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -303,9 +327,16 @@ public class CounselServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
 		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getChildrenComment(commentId, userId,
+				canDelete,
 				pageable);
 
 		result.put("comments", comments.getContent());

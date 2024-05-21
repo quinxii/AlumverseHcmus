@@ -17,13 +17,13 @@ public interface CommentNewsRepository extends JpaRepository<CommentNewsModel, S
     @Query(value = "select count(*) > 0 from comment_news where id = :commentId and creator = :userId and is_delete = false", nativeQuery = true)
     Long isCommentOwner(String commentId, String userId);
 
-    @Query("SELECT new CommentNewsModel(c, :userId) FROM CommentNewsModel c " +
+    @Query("SELECT new CommentNewsModel(c, :userId, :canDelete) FROM CommentNewsModel c " +
             "WHERE c.news.id = :newsId AND c.isDelete = false AND c.parentId IS NULL")
-    Page<ICommentNewsDto> getComments(String newsId, String userId, Pageable pageable);
+    Page<ICommentNewsDto> getComments(String newsId, String userId, boolean canDelete, Pageable pageable);
 
-    @Query("SELECT new CommentNewsModel(c, :userId) FROM CommentNewsModel c " +
+    @Query("SELECT new CommentNewsModel(c, :userId, :canDelete) FROM CommentNewsModel c " +
             "WHERE c.isDelete = false AND c.parentId = :commentId")
-    Page<ICommentNewsDto> getChildrenComment(String commentId, String userId, Pageable pageable);
+    Page<ICommentNewsDto> getChildrenComment(String commentId, String userId, boolean canDelete, Pageable pageable);
 
     @Query("SELECT c FROM CommentNewsModel c WHERE c.isDelete = false AND c.parentId = :commentId")
     List<CommentNewsModel> getChildrenComment(String commentId);

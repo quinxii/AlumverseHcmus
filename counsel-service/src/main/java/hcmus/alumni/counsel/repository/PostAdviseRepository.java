@@ -21,13 +21,13 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id != 4 AND pa.id = :id AND pa.creator.id = :creatorId")
 	Optional<PostAdviseModel> findByIdAndCreator(@Param("id") String id, @Param("creatorId") String creatorId);
 
-	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId) " +
+	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId, :canDelete) " +
 			"FROM PostAdviseModel pa " +
 			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :userId " +
 			"JOIN pa.status s WHERE s.id = 2 AND pa.id = :id")
-	Optional<IPostAdviseDto> findPostAdviseById(String id, String userId);
+	Optional<IPostAdviseDto> findPostAdviseById(String id, String userId, boolean canDelete);
 
-	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId) " +
+	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :userId, :canDelete) " +
 			"FROM PostAdviseModel pa " +
 			"JOIN pa.status s " +
 			"LEFT JOIN pa.tags t " +
@@ -35,7 +35,8 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 			"WHERE (:tagsId IS NULL OR t.id IN :tagsId) " +
 			"AND s.id = 2 " +
 			"AND (:title IS NULL OR pa.title like %:title%)")
-	Page<IPostAdviseDto> searchPostAdvise(String title, String userId, List<Integer> tagsId, Pageable pageable);
+	Page<IPostAdviseDto> searchPostAdvise(String title, String userId, boolean canDelete, List<Integer> tagsId,
+			Pageable pageable);
 
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = 2 AND pa.publishedAt >= :startDate AND pa.publishedAt <= :endDate")
 	Page<IPostAdviseDto> getHotNews(Date startDate, Date endDate, Pageable pageable);
