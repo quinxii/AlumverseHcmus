@@ -111,6 +111,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
 	}
 
+	@PreAuthorize("hasAnyAuthority('News.Create')")
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
@@ -151,6 +152,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
+	@PreAuthorize("hasAnyAuthority('News.Edit')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateNews(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
@@ -204,6 +206,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
+	@PreAuthorize("hasAnyAuthority('News.Delete')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteNews(@PathVariable String id) {
 		// Find news
@@ -217,6 +220,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
+	@PreAuthorize("hasAnyAuthority('News.Edit')")
 	@PutMapping("/{id}/content")
 	public ResponseEntity<String> updateNewsContent(@PathVariable String id,
 			@RequestBody(required = false) NewsModel updatedNews) {
@@ -340,6 +344,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@PreAuthorize("hasAnyAuthority('News.Comment.Create')")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
@@ -358,7 +363,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	// @PreAuthorize("1 == @commentNewsRepository.isCommentOwner(#commentId, #userId)")
+	@PreAuthorize("1 == @commentNewsRepository.isCommentOwner(#commentId, #userId)")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String userId,
@@ -371,7 +376,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	// @PreAuthorize("hasAuthority('News.Comment.Delete') or 1 == @commentNewsRepository.isCommentOwner(#commentId, #userId)")
+	@PreAuthorize("hasAuthority('News.Comment.Delete') or 1 == @commentNewsRepository.isCommentOwner(#commentId, #userId)")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
 			@RequestHeader("userId") String userId,
