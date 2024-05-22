@@ -26,6 +26,8 @@ import java.util.Date;
 import java.util.Set;
 import java.util.HashSet;
 
+import hcmus.alumni.group.common.GroupMemberRole;
+
 @Entity
 @Table(name = "`group`")
 @AllArgsConstructor
@@ -44,6 +46,9 @@ public class GroupModel implements Serializable {
     @ManyToOne
     @JoinColumn(name = "creator", nullable = false)
     private UserModel creator;
+    
+    @Column(name = "description", columnDefinition = "TINYTEXT")
+    private String description;
 
     @Column(name = "type", length = 50)
     private String type;
@@ -74,7 +79,7 @@ public class GroupModel implements Serializable {
 	private Integer participantCount;
     
     @Transient
-	private boolean isJoined;
+	private GroupMemberRole userRole;
     
     @Transient
 	private boolean isRequestPending;
@@ -83,7 +88,7 @@ public class GroupModel implements Serializable {
     	this.id = id;
     }
     
-    public GroupModel(GroupModel copy, boolean isJoined, boolean isRequestPending) {
+    public GroupModel(GroupModel copy, GroupMemberRole userRole, boolean isRequestPending) {
         this.id = copy.getId();
         this.name = copy.getName();
         this.creator = copy.getCreator();
@@ -95,7 +100,7 @@ public class GroupModel implements Serializable {
         this.updateAt = copy.getUpdateAt();
         this.status = copy.getStatus();
         this.participantCount = copy.getParticipantCount();
-        this.isJoined = isJoined;
+        this.userRole = userRole;
         this.isRequestPending = isRequestPending;
     }
 }

@@ -18,7 +18,7 @@ import hcmus.alumni.group.common.Privacy;
 
 public interface GroupRepository extends JpaRepository<GroupModel, String> {        
 	@Query("SELECT DISTINCT new GroupModel(g, " +
-	        "CASE WHEN gm IS NOT NULL THEN true ELSE false END, " +
+	        "CASE WHEN gm IS NOT NULL THEN gm.role ELSE null END, " +
 	        "CASE WHEN rjg IS NOT NULL THEN true ELSE false END) " +
 	        "FROM GroupModel g " +
 	        "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
@@ -37,7 +37,7 @@ public interface GroupRepository extends JpaRepository<GroupModel, String> {
 	    Pageable pageable);
 
 	@Query("SELECT DISTINCT new GroupModel(g, " +
-	        "CASE WHEN gm IS NOT NULL THEN true ELSE false END, " +
+	        "CASE WHEN gm IS NOT NULL THEN gm.role ELSE null END, " +
 	        "CASE WHEN rjg IS NOT NULL THEN true ELSE false END) " +
 	        "FROM GroupModel g " +
 	        "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +

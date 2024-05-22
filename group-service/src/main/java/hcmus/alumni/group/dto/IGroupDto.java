@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Set;
 
 import hcmus.alumni.group.common.Privacy;
+import hcmus.alumni.group.common.GroupMemberRole;
 
 public interface IGroupDto {
     interface User {
@@ -19,6 +20,7 @@ public interface IGroupDto {
     String getId();
     String getName();
     User getCreator();
+    String getDescription();
     String getType();
     String getCoverUrl();
     String getWebsite();
@@ -27,7 +29,7 @@ public interface IGroupDto {
     Date getUpdateAt();
     Date getCreateAt();
     Integer getParticipantCount();
-    boolean getIsJoined();
+    GroupMemberRole getUserRole();
     boolean getIsRequestPending();
 }
 

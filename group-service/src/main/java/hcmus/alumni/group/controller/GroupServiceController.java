@@ -445,10 +445,10 @@ public class GroupServiceController {
     	if (optionalRequestingMember.isEmpty()) {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You're not in the group");
 	    }
-    	GroupMemberModel requestingMember = optionalRequestingMember.get();
-        if (requestingMember.getRole() != GroupMemberRole.ADMIN && requestingMember.getRole() != GroupMemberRole.MOD) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to verifify request join in this group");
-        }
+//    	GroupMemberModel requestingMember = optionalRequestingMember.get();
+//        if (requestingMember.getRole() != GroupMemberRole.ADMIN && requestingMember.getRole() != GroupMemberRole.MOD) {
+//        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to verifify request join in this group");
+//        }
         
 		Optional<RequestJoinGroupModel> optionalRequest = requestJoinGroupRepository.findByGroupIdAndUserId(id, userId);
 		if (!optionalRequest.isPresent()) {
