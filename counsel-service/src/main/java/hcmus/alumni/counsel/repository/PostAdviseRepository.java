@@ -16,6 +16,9 @@ import hcmus.alumni.counsel.dto.IPostAdviseDto;
 import hcmus.alumni.counsel.model.PostAdviseModel;
 
 public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, String> {
+	@Query(value = "select count(*) > 0 from post_advise where id = :postId and creator = :userId", nativeQuery = true)
+	Long isPostOwner(String postId, String userId);
+
 	Optional<PostAdviseModel> findById(String id);
 
 	@Query("SELECT pa FROM PostAdviseModel pa JOIN pa.status s WHERE s.id != 4 AND pa.id = :id AND pa.creator.id = :creatorId")
