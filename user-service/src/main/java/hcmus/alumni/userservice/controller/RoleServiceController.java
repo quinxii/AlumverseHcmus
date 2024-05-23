@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import hcmus.alumni.userservice.dto.IPermissionDto;
 import hcmus.alumni.userservice.dto.IRoleDto;
 import hcmus.alumni.userservice.dto.RoleRequestDto;
 import hcmus.alumni.userservice.model.PermissionModel;
 import hcmus.alumni.userservice.model.RoleModel;
+import hcmus.alumni.userservice.repository.PermissionRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,10 +33,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class RoleServiceController {
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private PermissionRepository permissionRepository;
+
+    @GetMapping("/permissions")
+    public ResponseEntity<HashMap<String, Object>> getAllPermissions() {
+        List<IPermissionDto> permissions = permissionRepository.findAllPermissions();
+        HashMap<String, Object> result = new HashMap<String, Object>();
+        result.put("permissions", permissions);
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
 
     @GetMapping("")
     public ResponseEntity<HashMap<String, Object>> getRoles() {
-        List<IRoleDto> roles = roleRepository.findAllRoles();
+        List<RoleModel> roles = roleRepository.findAll();
         HashMap<String, Object> result = new HashMap<String, Object>();
         result.put("roles", roles);
         return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -57,72 +69,72 @@ public class RoleServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
-    @PreAuthorize("hasAuthority('User.Role.Edit')")
-    @PutMapping("/{id}")
-    public ResponseEntity<String> putRole(@PathVariable Integer id, @RequestBody RoleRequestDto requestingRole) {
-        Optional<RoleModel> roleOptional = roleRepository.findById(id);
-        if (roleOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+    // @PreAuthorize("hasAuthority('User.Role.Edit')")
+    // @PutMapping("/{id}")
+    // public ResponseEntity<String> putRole(@PathVariable Integer id, @RequestBody RoleRequestDto requestingRole) {
+    //     Optional<RoleModel> roleOptional = roleRepository.findById(id);
+    //     if (roleOptional.isEmpty()) {
+    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    //     }
 
-        RoleModel role = roleOptional.get();
-        boolean isPut = false;
+    //     RoleModel role = roleOptional.get();
+    //     boolean isPut = false;
 
-        if (requestingRole.getName() != null) {
-            role.setName(requestingRole.getName());
-            isPut = true;
-        }
-        if (requestingRole.getDescription() != null) {
-            role.setDescription(requestingRole.getDescription());
-            isPut = true;
-        }
-        if (requestingRole.getPermissions() != null) {
-            role.getPermissions().clear();
-            requestingRole.getPermissions().forEach(permission -> {
-                role.getPermissions().add(new PermissionModel(permission.getId()));
-            });
-            isPut = true;
-        }
+    //     if (requestingRole.getName() != null) {
+    //         role.setName(requestingRole.getName());
+    //         isPut = true;
+    //     }
+    //     if (requestingRole.getDescription() != null) {
+    //         role.setDescription(requestingRole.getDescription());
+    //         isPut = true;
+    //     }
+    //     if (requestingRole.getPermissions() != null) {
+    //         role.getPermissions().clear();
+    //         requestingRole.getPermissions().forEach(permission -> {
+    //             role.getPermissions().add(new PermissionModel(permission.getId()));
+    //         });
+    //         isPut = true;
+    //     }
 
-        if (isPut) {
-            roleRepository.save(role);
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(null);
-    }
+    //     if (isPut) {
+    //         roleRepository.save(role);
+    //     }
+    //     return ResponseEntity.status(HttpStatus.OK).body(null);
+    // }
 
-    @PreAuthorize("hasAuthority('User.Role.Edit')")
-    @PutMapping("")
-    public ResponseEntity<String> putRoles(@RequestBody List<RoleModel> requestingRoles) {
-        List<Integer> ids = requestingRoles.stream()
-                .map(RoleModel::getId)
-                .collect(Collectors.toList());
-        List<RoleModel> roles = roleRepository.findByIds(ids);
+    // @PreAuthorize("hasAuthority('User.Role.Edit')")
+    // @PutMapping("")
+    // public ResponseEntity<String> putRoles(@RequestBody List<RoleModel> requestingRoles) {
+    //     List<Integer> ids = requestingRoles.stream()
+    //             .map(RoleModel::getId)
+    //             .collect(Collectors.toList());
+    //     List<RoleModel> roles = roleRepository.findByIds(ids);
 
-        for (RoleModel role : roles) {
-            for (RoleModel requestingRole : requestingRoles) {
-                if (role.getId() == requestingRole.getId()) {
-                    if (requestingRole.getName() != null) {
-                        role.setName(requestingRole.getName());
-                    }
-                    if (requestingRole.getDescription() != null) {
-                        role.setDescription(requestingRole.getDescription());
-                    }
-                    if (requestingRole.getPermissions() != null) {
-                        role.getPermissions().clear();
-                        requestingRole.getPermissions().forEach(permission -> {
-                            role.getPermissions().add(new PermissionModel(permission.getId()));
-                        });
-                    }
+    //     for (RoleModel role : roles) {
+    //         for (RoleModel requestingRole : requestingRoles) {
+    //             if (role.getId() == requestingRole.getId()) {
+    //                 if (requestingRole.getName() != null) {
+    //                     role.setName(requestingRole.getName());
+    //                 }
+    //                 if (requestingRole.getDescription() != null) {
+    //                     role.setDescription(requestingRole.getDescription());
+    //                 }
+    //                 if (requestingRole.getPermissions() != null) {
+    //                     role.getPermissions().clear();
+    //                     requestingRole.getPermissions().forEach(permission -> {
+    //                         role.getPermissions().add(new PermissionModel(permission.getId()));
+    //                     });
+    //                 }
 
-                    requestingRoles.remove(requestingRole);
-                    break;
-                }
-            }
-        }
+    //                 requestingRoles.remove(requestingRole);
+    //                 break;
+    //             }
+    //         }
+    //     }
 
-        roleRepository.saveAll(roles);
-        return ResponseEntity.status(HttpStatus.OK).body(null);
-    }
+    //     roleRepository.saveAll(roles);
+    //     return ResponseEntity.status(HttpStatus.OK).body(null);
+    // }
 
     @PreAuthorize("hasAuthority('User.Role.Delete')")
     @DeleteMapping("/{id}")
