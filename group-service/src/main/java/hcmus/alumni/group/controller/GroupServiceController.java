@@ -492,15 +492,14 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
-	@PreAuthorize("0 == @groupRepository.isPrivate(#groupId) or 1 == @groupMemberRepository.isMember(#groupId, #requestingUserId)")
+	@PreAuthorize("0 == @postGroupRepository.isPrivateByPostId(#postId) or 1 == @postGroupRepository.isMemberByPostId(#postId, #requestingUserId)")
     @GetMapping("/posts/{postId}")
     public ResponseEntity<IPostGroupDto> getGroupPostById(
-    		@RequestParam(value = "groupId", required = true) String groupId,
     		@PathVariable String postId, 
     		@RequestHeader("userId") String requestingUserId) {
 		boolean canDelete = false;
-		if (1 == groupMemberRepository.hasGroupMemberRole(groupId, requestingUserId, "CREATOR") || 
-				1 == groupMemberRepository.hasGroupMemberRole(groupId, requestingUserId, "ADMIN")) {
+		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "CREATOR") || 
+				1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "ADMIN")) {
 			canDelete = true;
 		}
 		
@@ -645,12 +644,11 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#groupId, #creator, \"CREATOR\") or "
-			+ "1 == @groupMemberRepository.hasGroupMemberRole(#groupId, #creator, \"ADMIN\") or "
+	@PreAuthorize("1 == @postGroupRepository.hasGroupMemberRoleByPostId(#postId, #creator, \"CREATOR\") or "
+			+ "1 == @postGroupRepository.hasGroupMemberRoleByPostId(#postId, #creator, \"ADMIN\") or "
 			+ "1 == @postGroupRepository.isGroupPostOwner(#postId, #creator)")
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<String> deleteGroupPost(
-    		@RequestParam(value = "groupId", required = true) String groupId,
     		@PathVariable String postId,
     		@RequestHeader("userId") String creator) {
         Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
@@ -663,7 +661,6 @@ public class GroupServiceController {
     
     @GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getPostComments(
-			@RequestParam(value = "groupId", required = true) String groupId,
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -674,8 +671,8 @@ public class GroupServiceController {
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
 		boolean canDelete = false;
-		if (1 == groupMemberRepository.hasGroupMemberRole(groupId, userId, "CREATOR") || 
-				1 == groupMemberRepository.hasGroupMemberRole(groupId, userId, "ADMIN")) {
+		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "CREATOR") || 
+				1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "ADMIN")) {
 			canDelete = true;
 		}
 
@@ -690,7 +687,6 @@ public class GroupServiceController {
 
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getPostChildrenComments(
-			@RequestParam(value = "groupId", required = true) String groupId,
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -707,8 +703,8 @@ public class GroupServiceController {
 		}
 		
 		boolean canDelete = false;
-		if (1 == groupMemberRepository.hasGroupMemberRole(groupId, userId, "CREATOR") || 
-				1 == groupMemberRepository.hasGroupMemberRole(groupId, userId, "ADMIN")) {
+		if (1 == commentPostGroupRepository.hasGroupMemberRoleByCommentId(commentId, userId, "CREATOR") || 
+				1 == commentPostGroupRepository.hasGroupMemberRoleByCommentId(commentId, userId, "ADMIN")) {
 			canDelete = true;
 		}
 
@@ -721,10 +717,9 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	@PreAuthorize("1 == @groupMemberRepository.isMember(#groupId, #creator)")
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#id, #creator)")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
-    		@RequestParam(value = "groupId", required = true) String groupId,
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentPostGroupModel comment) {
 		comment.setId(UUID.randomUUID().toString());
@@ -753,12 +748,11 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#groupId, #creator, \"CREATOR\") or "
-			+ "1 == @groupMemberRepository.hasGroupMemberRole(#groupId, #creator, \"ADMIN\") or "
+	@PreAuthorize("1 == @commentPostGroupRepository.hasGroupMemberRoleByCommentId(#commentId, #creator, \"CREATOR\") or "
+			+ "1 == @commentPostGroupRepository.hasGroupMemberRoleByCommentId(#commentId, #creator, \"ADMIN\") or "
 			+ "1 == @commentPostGroupRepository.isCommentOwner(#commentId, #creator)")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
-			@RequestParam(value = "groupId", required = true) String groupId,
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists

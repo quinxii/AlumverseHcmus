@@ -18,6 +18,21 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	@Query(value = "select count(*) > 0 from post_group where id = :postId and creator = :userId", nativeQuery = true)
 	Long isGroupPostOwner(String postId, String userId);
 	
+	@Query(value = "select count(*) > 0 from post_group pg "
+			+ "join `group` g on g.id = pg.group_id and g.privacy = \"PRIVATE\" "
+			+ "where pg.id = :postId", nativeQuery = true)
+	Long isPrivateByPostId(String postId);
+	
+	@Query(value = "select count(*) > 0 from group_member gm "
+			+ "join post_group pg on pg.id = :postId "
+			+ "where pg.group_id = gm.group_id and gm.user_id = :userId and gm.role = :role and gm.is_delete = 0", nativeQuery = true)
+	Long hasGroupMemberRoleByPostId(String postId, String userId, String role);
+	
+	@Query(value = "select count(*) > 0 from group_member gm "
+			+ "join post_group pg on pg.id = :postId "
+			+ "where pg.group_id = gm.group_id and gm.user_id = :userId and gm.is_delete = 0", nativeQuery = true)
+	Long isMemberByPostId(String postId, String userId);
+	
 	@Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
 	        "LEFT JOIN p.creator c " +
 	        "LEFT JOIN  p.status s " +

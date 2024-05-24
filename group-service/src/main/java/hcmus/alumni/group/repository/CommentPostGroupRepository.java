@@ -17,6 +17,12 @@ public interface CommentPostGroupRepository extends JpaRepository<CommentPostGro
 	@Query(value = "select count(*) > 0 from comment_post_group where id = :commentId and creator = :userId", nativeQuery = true)
 	Long isCommentOwner(String commentId, String userId);
 	
+	@Query(value = "select count(*) > 0 from group_member gm "
+			+ "join comment_post_group cpg on cpg.id = :commentId "
+			+ "join post_group pg on pg.id = cpg.post_group_id "
+			+ "where pg.group_id = gm.group_id and gm.user_id = :userId and gm.role = :role and gm.is_delete = 0", nativeQuery = true)
+	Long hasGroupMemberRoleByCommentId(String commentId, String userId, String role);
+	
 	@Query("SELECT new CommentPostGroupModel(c, :userId, :canDelete) FROM CommentPostGroupModel c " +
             "WHERE c.postGroup.id = :postGroupId AND c.isDelete = false AND c.parentId IS NULL")
     Page<ICommentPostGroupDto> getComments(String postGroupId, String userId, boolean canDelete, Pageable pageable);
