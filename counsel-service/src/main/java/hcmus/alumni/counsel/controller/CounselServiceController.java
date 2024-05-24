@@ -400,7 +400,7 @@ public class CounselServiceController {
 		}
 
 		// Delete all comments and update comment count
-		int deleted = commentPostAdviseRepository.deleteComment(commentId, userId);
+		int deleted = commentPostAdviseRepository.deleteComment(commentId);
 		for (String parentId : allParentId) {
 			commentPostAdviseRepository.deleteChildrenComment(parentId);
 		}

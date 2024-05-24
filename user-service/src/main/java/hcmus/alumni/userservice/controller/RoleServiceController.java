@@ -3,19 +3,26 @@ package hcmus.alumni.userservice.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import hcmus.alumni.userservice.dto.IPermissionDto;
 import hcmus.alumni.userservice.dto.IRoleDto;
+import hcmus.alumni.userservice.dto.IRoleWithoutPermissionsDto;
 import hcmus.alumni.userservice.dto.RoleRequestDto;
 import hcmus.alumni.userservice.model.PermissionModel;
 import hcmus.alumni.userservice.model.RoleModel;
@@ -36,6 +43,13 @@ public class RoleServiceController {
     @Autowired
     private PermissionRepository permissionRepository;
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public void handleMissingParams(MissingServletRequestParameterException ex) {
+        String name = ex.getParameterName();
+        System.out.println(name + " parameter is missing");
+        // Actual exception handling
+    }
+
     @GetMapping("/permissions")
     public ResponseEntity<HashMap<String, Object>> getAllPermissions() {
         List<IPermissionDto> permissions = permissionRepository.findAllPermissions();
@@ -45,10 +59,19 @@ public class RoleServiceController {
     }
 
     @GetMapping("")
-    public ResponseEntity<HashMap<String, Object>> getRoles() {
-        List<RoleModel> roles = roleRepository.findAll();
+    public ResponseEntity<HashMap<String, Object>> getRoles(
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "orderBy", required = false, defaultValue = "id") String orderBy,
+            @RequestParam(value = "order", required = false, defaultValue = "asc") String order) {
         HashMap<String, Object> result = new HashMap<String, Object>();
-        result.put("roles", roles);
+
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+        Page<IRoleWithoutPermissionsDto> roles = roleRepository.searchRoles(name, pageable);
+
+        result.put("totalPages", roles.getTotalPages());
+        result.put("roles", roles.getContent());
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
@@ -69,72 +92,38 @@ public class RoleServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
-    // @PreAuthorize("hasAuthority('User.Role.Edit')")
-    // @PutMapping("/{id}")
-    // public ResponseEntity<String> putRole(@PathVariable Integer id, @RequestBody RoleRequestDto requestingRole) {
-    //     Optional<RoleModel> roleOptional = roleRepository.findById(id);
-    //     if (roleOptional.isEmpty()) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    //     }
+    @PreAuthorize("hasAuthority('User.Role.Edit')")
+    @PutMapping("/{id}")
+    public ResponseEntity<String> putRole(@PathVariable Integer id, @RequestBody RoleRequestDto requestingRole) {
+        Optional<RoleModel> roleOptional = roleRepository.findById(id);
+        if (roleOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
 
-    //     RoleModel role = roleOptional.get();
-    //     boolean isPut = false;
+        RoleModel role = roleOptional.get();
+        boolean isPut = false;
 
-    //     if (requestingRole.getName() != null) {
-    //         role.setName(requestingRole.getName());
-    //         isPut = true;
-    //     }
-    //     if (requestingRole.getDescription() != null) {
-    //         role.setDescription(requestingRole.getDescription());
-    //         isPut = true;
-    //     }
-    //     if (requestingRole.getPermissions() != null) {
-    //         role.getPermissions().clear();
-    //         requestingRole.getPermissions().forEach(permission -> {
-    //             role.getPermissions().add(new PermissionModel(permission.getId()));
-    //         });
-    //         isPut = true;
-    //     }
+        if (requestingRole.getName() != null) {
+            role.setName(requestingRole.getName());
+            isPut = true;
+        }
+        if (requestingRole.getDescription() != null) {
+            role.setDescription(requestingRole.getDescription());
+            isPut = true;
+        }
+        if (requestingRole.getPermissions() != null) {
+            role.clearPermissions();
+            requestingRole.getPermissions().forEach(permission -> {
+                role.addPermission(new PermissionModel(permission.getId()));
+            });
+            isPut = true;
+        }
 
-    //     if (isPut) {
-    //         roleRepository.save(role);
-    //     }
-    //     return ResponseEntity.status(HttpStatus.OK).body(null);
-    // }
-
-    // @PreAuthorize("hasAuthority('User.Role.Edit')")
-    // @PutMapping("")
-    // public ResponseEntity<String> putRoles(@RequestBody List<RoleModel> requestingRoles) {
-    //     List<Integer> ids = requestingRoles.stream()
-    //             .map(RoleModel::getId)
-    //             .collect(Collectors.toList());
-    //     List<RoleModel> roles = roleRepository.findByIds(ids);
-
-    //     for (RoleModel role : roles) {
-    //         for (RoleModel requestingRole : requestingRoles) {
-    //             if (role.getId() == requestingRole.getId()) {
-    //                 if (requestingRole.getName() != null) {
-    //                     role.setName(requestingRole.getName());
-    //                 }
-    //                 if (requestingRole.getDescription() != null) {
-    //                     role.setDescription(requestingRole.getDescription());
-    //                 }
-    //                 if (requestingRole.getPermissions() != null) {
-    //                     role.getPermissions().clear();
-    //                     requestingRole.getPermissions().forEach(permission -> {
-    //                         role.getPermissions().add(new PermissionModel(permission.getId()));
-    //                     });
-    //                 }
-
-    //                 requestingRoles.remove(requestingRole);
-    //                 break;
-    //             }
-    //         }
-    //     }
-
-    //     roleRepository.saveAll(roles);
-    //     return ResponseEntity.status(HttpStatus.OK).body(null);
-    // }
+        if (isPut) {
+            roleRepository.save(role);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(null);
+    }
 
     @PreAuthorize("hasAuthority('User.Role.Delete')")
     @DeleteMapping("/{id}")

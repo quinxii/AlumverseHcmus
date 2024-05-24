@@ -37,8 +37,8 @@ public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAd
 
     @Transactional
     @Modifying
-    @Query("UPDATE CommentPostAdviseModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator AND c.isDelete = false")
-    int deleteComment(@Param("commentId") String commentId, @Param("creator") String creator);
+    @Query("UPDATE CommentPostAdviseModel c SET c.isDelete = true WHERE c.id = :commentId AND c.isDelete = false")
+    int deleteComment(@Param("commentId") String commentId);
 
     @Transactional
     @Modifying
