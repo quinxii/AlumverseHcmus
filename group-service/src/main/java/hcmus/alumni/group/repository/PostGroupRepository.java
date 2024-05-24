@@ -14,8 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import hcmus.alumni.group.model.PostGroupModel;
 import hcmus.alumni.group.dto.IPostGroupDto;
 
-public interface PostGroupRepository extends JpaRepository<PostGroupModel, String> {        
-	@Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId) FROM PostGroupModel p " +
+public interface PostGroupRepository extends JpaRepository<PostGroupModel, String> {
+	@Query(value = "select count(*) > 0 from post_group where id = :postId and creator = :userId", nativeQuery = true)
+	Long isGroupPostOwner(String postId, String userId);
+	
+	@Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
 	        "LEFT JOIN p.creator c " +
 	        "LEFT JOIN  p.status s " +
 	        "LEFT JOIN p.tags t " + 
@@ -30,16 +33,17 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	        @Param("userId") String userId,
 	        @Param("tagsId") List<Integer> tagsId,
 	        @Param("statusId") Integer statusId,
+	        boolean canDelete,
 	        Pageable pageable);
 
 
-    @Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId) FROM PostGroupModel p " +
+    @Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
             "JOIN FETCH p.creator " +
             "JOIN FETCH p.status " +
             "LEFT JOIN p.tags " +
             "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
             "WHERE p.id = :postId")
-    Optional<IPostGroupDto> findPostById(@Param("postId") String postId, @Param("userId") String userId);
+    Optional<IPostGroupDto> findPostById(@Param("postId") String postId, @Param("userId") String userId, boolean canDelete);
     
     @Transactional
 	@Modifying

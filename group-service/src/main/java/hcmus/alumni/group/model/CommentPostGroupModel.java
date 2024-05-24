@@ -71,7 +71,7 @@ public class CommentPostGroupModel implements Serializable {
 		this.content = content;
 	}
 	
-	public CommentPostGroupModel(CommentPostGroupModel copy, String userId) {
+	public CommentPostGroupModel(CommentPostGroupModel copy, String userId, boolean canDelete) {
 		this.id = copy.id;
 		this.creator = copy.creator;
 		this.postGroup = copy.postGroup;
@@ -82,10 +82,13 @@ public class CommentPostGroupModel implements Serializable {
 		this.updateAt = copy.updateAt;
 		this.isDelete = copy.isDelete;
 
-		if (copy.creator.getId().equals(userId)) {
-			this.permissions = new CommentPostGroupPermissions(true, true);
-		} else {
-			this.permissions = new CommentPostGroupPermissions(false, false);
-		}
+		this.permissions = new CommentPostGroupPermissions(false, false);
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions.setDelete(true);
+            this.permissions.setEdit(true);
+        }
+        if (canDelete) {
+            this.permissions.setDelete(true);
+        }
 	}
 }

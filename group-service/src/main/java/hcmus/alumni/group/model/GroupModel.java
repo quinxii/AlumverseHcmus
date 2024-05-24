@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import hcmus.alumni.group.common.GroupMemberRole;
+import hcmus.alumni.group.common.GroupPermissions;
 
 @Entity
 @Table(name = "`group`")
@@ -84,14 +85,18 @@ public class GroupModel implements Serializable {
     @Transient
 	private boolean isRequestPending;
     
+    @Transient
+	private GroupPermissions permissions;
+    
     public GroupModel(String id) {
     	this.id = id;
     }
     
-    public GroupModel(GroupModel copy, GroupMemberRole userRole, boolean isRequestPending) {
+    public GroupModel(GroupModel copy, GroupMemberRole userRole, boolean isRequestPending, String userId, boolean canDelete) {
         this.id = copy.getId();
         this.name = copy.getName();
         this.creator = copy.getCreator();
+        this.description = copy.getDescription();
         this.type = copy.getType();
         this.coverUrl = copy.getCoverUrl();
         this.website = copy.getWebsite();
@@ -102,5 +107,14 @@ public class GroupModel implements Serializable {
         this.participantCount = copy.getParticipantCount();
         this.userRole = userRole;
         this.isRequestPending = isRequestPending;
+        
+        this.permissions = new GroupPermissions(false, false);
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions.setDelete(true);
+            this.permissions.setEdit(true);
+        }
+        if (canDelete) {
+            this.permissions.setDelete(true);
+        }
     }
 }

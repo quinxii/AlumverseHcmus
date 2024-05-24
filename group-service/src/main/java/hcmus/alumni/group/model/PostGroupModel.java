@@ -104,7 +104,7 @@ public class PostGroupModel implements Serializable {
         this.tags = tags;
     }
     
-    public PostGroupModel(PostGroupModel copy, Boolean isReactionDelete, String userId) {
+    public PostGroupModel(PostGroupModel copy, Boolean isReactionDelete, String userId, boolean canDelete) {
         this.id = copy.id;
         this.groupId = copy.groupId;
         this.creator = copy.creator;
@@ -123,10 +123,14 @@ public class PostGroupModel implements Serializable {
         } else {
             this.isReacted = false;
         }
+        
+        this.permissions = new PostGroupPermissions(false, false);
         if (copy.creator.getId().equals(userId)) {
-            this.permissions = new PostGroupPermissions(true, true);
-        } else {
-            this.permissions = new PostGroupPermissions(false, false);
+            this.permissions.setDelete(true);
+            this.permissions.setEdit(true);
+        }
+        if (canDelete) {
+            this.permissions.setDelete(true);
         }
     }
     

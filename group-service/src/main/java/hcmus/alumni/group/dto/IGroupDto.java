@@ -16,6 +16,11 @@ public interface IGroupDto {
     interface Status {
         String getName();
     }
+    
+    interface Permissions {
+        Boolean getEdit();
+        Boolean getDelete();
+    }
 
     String getId();
     String getName();
@@ -31,5 +36,6 @@ public interface IGroupDto {
     Integer getParticipantCount();
     GroupMemberRole getUserRole();
     boolean getIsRequestPending();
+    Permissions getPermissions();
 }
 

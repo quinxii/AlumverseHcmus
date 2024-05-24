@@ -13,14 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 import hcmus.alumni.group.model.CommentPostGroupModel;
 import hcmus.alumni.group.dto.ICommentPostGroupDto;
 
-public interface CommentPostGroupRepository extends JpaRepository<CommentPostGroupModel, String> {        
-	@Query("SELECT new CommentPostGroupModel(c, :userId) FROM CommentPostGroupModel c " +
+public interface CommentPostGroupRepository extends JpaRepository<CommentPostGroupModel, String> {
+	@Query(value = "select count(*) > 0 from comment_post_group where id = :commentId and creator = :userId", nativeQuery = true)
+	Long isCommentOwner(String commentId, String userId);
+	
+	@Query("SELECT new CommentPostGroupModel(c, :userId, :canDelete) FROM CommentPostGroupModel c " +
             "WHERE c.postGroup.id = :postGroupId AND c.isDelete = false AND c.parentId IS NULL")
-    Page<ICommentPostGroupDto> getComments(String postGroupId, String userId, Pageable pageable);
+    Page<ICommentPostGroupDto> getComments(String postGroupId, String userId, boolean canDelete, Pageable pageable);
 
-    @Query("SELECT new CommentPostGroupModel(c, :userId) FROM CommentPostGroupModel c " +
+    @Query("SELECT new CommentPostGroupModel(c, :userId, :canDelete) FROM CommentPostGroupModel c " +
             "WHERE c.isDelete = false AND c.parentId = :commentId")
-    Page<ICommentPostGroupDto> getChildrenComment(String commentId, String userId, Pageable pageable);
+    Page<ICommentPostGroupDto> getChildrenComment(String commentId, String userId, boolean canDelete, Pageable pageable);
 
     @Query("SELECT c FROM CommentPostGroupModel c WHERE c.isDelete = false AND c.parentId = :commentId")
     List<CommentPostGroupModel> getChildrenComment(String commentId);
@@ -33,8 +36,8 @@ public interface CommentPostGroupRepository extends JpaRepository<CommentPostGro
 
     @Transactional
     @Modifying
-    @Query("UPDATE CommentPostGroupModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator")
-    int deleteComment(@Param("commentId") String commentId, @Param("creator") String creator);
+    @Query("UPDATE CommentPostGroupModel c SET c.isDelete = true WHERE c.id = :commentId")
+    int deleteComment(@Param("commentId") String commentId);
 
     @Transactional
     @Modifying

@@ -18,9 +18,16 @@ import hcmus.alumni.group.model.GroupUserId;
 import hcmus.alumni.group.dto.IUserDto;
 
 public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, GroupUserId> {
+	@Query(value = "select count(*) > 0 from group_member where group_id = :groupId and user_id = :userId and role = :role and is_delete = 0", nativeQuery = true)
+	Long hasGroupMemberRole(String groupId, String userId, String role);
+	
+	@Query(value = "select count(*) > 0 from group_member where group_id = :groupId and user_id = :userId and is_delete = 0", nativeQuery = true)
+	Long isMember(String groupId, String userId);
+	
 	@Query("SELECT gm FROM GroupMemberModel gm " + 
 			"WHERE gm.id.group.id = :groupId " + 
-			"AND (:role IS NULL OR gm.role = :role)")
+			"AND (:role IS NULL OR gm.role = :role)" + 
+			"AND isDelete = false")
     Page<IGroupMemberDto> searchMembers(@Param("groupId") String groupId, @Param("role") GroupMemberRole role, Pageable pageable);
 	
 	@Query("SELECT gm FROM GroupMemberModel gm " + 
