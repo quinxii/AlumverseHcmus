@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Set;
 
 import org.hibernate.query.sqm.UnknownPathException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,6 +58,7 @@ import hcmus.alumni.group.dto.IPostGroupDto;
 import hcmus.alumni.group.dto.ICommentPostGroupDto;
 import hcmus.alumni.group.dto.IInteractPostGroupDto;
 import hcmus.alumni.group.dto.ReactRequestDto;
+import hcmus.alumni.group.dto.IUserDto;
 import hcmus.alumni.group.repository.GroupRepository;
 import hcmus.alumni.group.repository.GroupMemberRepository;
 import hcmus.alumni.group.repository.RequestJoinGroupRepository;
@@ -90,22 +93,32 @@ public class GroupServiceController {
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getGroups(
-		@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-		@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-		@RequestParam(value = "name", required = false, defaultValue = "") String name,
-		@RequestParam(value = "orderBy", required = false, defaultValue = "createAt") String orderBy,
-		@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-		@RequestParam(value = "statusId", required = false) Integer statusId) {
-		
+			Authentication authentication,
+			@RequestHeader("userId") String requestingUserId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "name", required = false, defaultValue = "") String name,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "createAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId,
+			@RequestParam(value = "privacy", required = false) Privacy privacy,
+			@RequestParam(value = "isJoined", required = false) Boolean isJoined) {
+
 		if (pageSize == 0 || pageSize > 50) {
 		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		
 		HashMap<String, Object> result = new HashMap<>();
 		
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Group.Delete"))) {
+			canDelete = true;
+		}
+		
 		try {
 		    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-		    Page<IGroupDto> groups = groupRepository.searchGroups(name, statusId, pageable);
+		    Page<IGroupDto> groups = groupRepository.searchGroups(name, statusId, privacy, isJoined, requestingUserId, canDelete, pageable);
 		
 		    result.put("totalPages", groups.getTotalPages());
 		    result.put("groups", groups.getContent());
@@ -119,70 +132,52 @@ public class GroupServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IGroupDto> getGroupById(@PathVariable String id) {
-		Optional<IGroupDto> optionalGroup = groupRepository.findGroupById(id);
-		if (optionalGroup.isEmpty()) {
-		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+	public ResponseEntity<IGroupDto> getGroupById(
+			Authentication authentication,
+			@PathVariable String id, 
+			@RequestHeader("userId") String requestingUserId) {
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Group.Delete"))) {
+			canDelete = true;
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(optionalGroup.get());
-	}
-	
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
-	@GetMapping("/joined")
-	public ResponseEntity<HashMap<String, Object>> getJoinedGroups(
-		@RequestHeader("userId") String requestingUserId,
-		@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-		@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-	    
-	    if (pageSize == 0 || pageSize > 50) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		
+	    Optional<IGroupDto> optionalGroup = groupRepository.findGroupById(id, requestingUserId, canDelete);
+	    if (optionalGroup.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	    }
-	    
-	    HashMap<String, Object> result = new HashMap<>();
-	    
-	    try {
-	        Pageable pageable = PageRequest.of(page, pageSize);
-	        Page<IGroupDto> groups = groupRepository.findGroupsByUserId(requestingUserId, pageable);
-	        
-	        result.put("totalPages", groups.getTotalPages());
-	        result.put("groups", groups.getContent());
-	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-	    }
-	    
-	    return ResponseEntity.status(HttpStatus.OK).body(result);
-	}
 
+	    return ResponseEntity.status(HttpStatus.OK).body(optionalGroup.get());
+	}
 	
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@GetMapping("/{id}/joined-friends")
+	public ResponseEntity<Set<IUserDto>> getJoinedFriendsByGroupId(@PathVariable String id, @RequestHeader("userId") String requestingUserId) {
+		Set<IUserDto> joinedFriends = groupMemberRepository.findJoinedFriends(id, requestingUserId);
+
+	    return ResponseEntity.status(HttpStatus.OK).body(joinedFriends);
+	}
+	
+	@PreAuthorize("hasAnyAuthority('Group.Create')")
 	@PostMapping("")
 	public ResponseEntity<String> createGroup(
 			@RequestHeader("userId") String creatorId,
             @RequestParam(value = "name") String name,
+            @RequestParam(value = "description", required = false, defaultValue = "") String description,
             @RequestParam(value = "type", required = false, defaultValue = "") String type,
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "PUBLIC") Privacy privacy,
-            @RequestParam(value = "avatar") MultipartFile avatar,
             @RequestParam(value = "cover") MultipartFile cover,
             @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId
 	) {
-		if (name.isEmpty() || avatar.isEmpty() || cover.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name, avatar and cover must not be empty");
+		if (name.isEmpty() || cover.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name and cover must not be empty");
         }
-		if (avatar.getSize() > 5 * 1024 * 1024 || cover.getSize() > 5 * 1024 * 1024) {
+		if (cover.getSize() > 5 * 1024 * 1024) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
 	    }
         String id = UUID.randomUUID().toString();
         try {
-            String avatarUrl = null;
             String coverUrl = null;
-
-            // Save avatar image
-            if (avatar != null) {
-                avatarUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), avatar, "avatar");
-            }
 
             // Save cover image
             if (cover != null) {
@@ -193,14 +188,15 @@ public class GroupServiceController {
             GroupModel groupModel = new GroupModel();
             groupModel.setId(id);
             groupModel.setName(name);
+            groupModel.setDescription(description);
             groupModel.setType(type);
             groupModel.setWebsite(website);
             groupModel.setPrivacy(privacy);
             groupModel.setCreator(new UserModel(creatorId));
-            groupModel.setAvatarUrl(avatarUrl);
             groupModel.setCoverUrl(coverUrl);
             groupModel.setStatus(new StatusUserGroupModel(statusId));
-
+            groupModel.setParticipantCount(1);
+            
             groupRepository.save(groupModel);
             
 			// Add creator as ADMIN
@@ -210,7 +206,7 @@ public class GroupServiceController {
 			groupUserId.setUser(new UserModel(creatorId));
 			member.setId(groupUserId);
 			member.setCreateAt(new Date());
-			member.setRole(GroupMemberRole.ADMIN);
+			member.setRole(GroupMemberRole.CREATOR);
 			groupMemberRepository.save(member);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save images");
@@ -219,31 +215,31 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"CREATOR\") or "
+			+ "1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"ADMIN\")")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateGroup(@PathVariable String id,
 			@RequestHeader("userId") String requestingUserId,
             @RequestParam(value = "name", required = false, defaultValue = "") String name,
+            @RequestParam(value = "description", required = false, defaultValue = "") String description,
             @RequestParam(value = "type", required = false, defaultValue = "") String type,
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "") Privacy privacy,
-            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
             @RequestParam(value = "cover", required = false) MultipartFile cover,
             @RequestParam(value = "statusId", required = false) Integer statusId
 	) {
         try {
     		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
-            if (optionalGroup.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Group not found");
-            }
             GroupModel groupModel = optionalGroup.get();
-            if (!groupModel.getCreator().getId().equals(requestingUserId)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You are not the creator of this group");
-            }
             boolean isPut = false;
             
             if (!name.isEmpty()) {
                 groupModel.setName(name);
+                isPut = true;
+            }
+            
+            if (!description.isEmpty()) {
+                groupModel.setDescription(description);
                 isPut = true;
             }
 
@@ -262,12 +258,6 @@ public class GroupServiceController {
                 isPut = true;
             }
 
-            if (avatar != null) {
-                String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), avatar, "avatar");
-                groupModel.setAvatarUrl(avatarUrl);
-                isPut = true;
-            }
-
             if (cover != null) {
                 String coverUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), cover, "cover");
                 groupModel.setCoverUrl(coverUrl);
@@ -275,7 +265,7 @@ public class GroupServiceController {
             }
             
             if (statusId != null) {
-            	 groupModel.setStatus(new StatusUserGroupModel(statusId));
+            	groupModel.setStatus(new StatusUserGroupModel(statusId));
                 isPut = true;
             }
             if (isPut)
@@ -287,19 +277,14 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Group.Delete') or "
+			+ "1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"CREATOR\")")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteGroup(
 			@PathVariable String id,
 			@RequestHeader("userId") String requestingUserId) {
 		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
-	    if (optionalGroup.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Group not found");
-	    }
 	    GroupModel group = optionalGroup.get();
-	    if (!group.getCreator().getId().equals(requestingUserId)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You are not the creator of this group");
-        }
 	    group.setStatus(new StatusUserGroupModel(3));
 	    groupRepository.save(group);
 	    
@@ -331,7 +316,8 @@ public class GroupServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 	
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"CREATOR\") or "
+			+ "1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"ADMIN\")")
 	@PutMapping("/{id}/members/{userId}")
     public ResponseEntity<String> updateGroupMemberRole(
     		@PathVariable String id, 
@@ -339,18 +325,12 @@ public class GroupServiceController {
     		@RequestHeader("userId") String requestingUserId,
     		@RequestBody GroupMemberModel updatedGroupMember) {
 		Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-		if (optionalMember.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Member not found");
-	    }
-    	GroupMemberModel member = optionalMember.get();
-		if (!requestingUserId.equals(userId) && member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to edit role in this group");
-        }
+		GroupMemberModel member = optionalMember.get();
 		if (requestingUserId.equals(userId)) {
-        	return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not change your role");
-        }
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not change your role");
+		}
 		if (updatedGroupMember.getRole() == null) {
-			return ResponseEntity.status(HttpStatus.OK).body("");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("");
 		}
 		int updates = groupMemberRepository.updateGroupMember(id, userId, updatedGroupMember.getRole());
 		if (updates == 0) {
@@ -359,30 +339,29 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"CREATOR\") or "
+			+ "1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"ADMIN\") or "
+			+ "#userId == #requestingUserId")
     @DeleteMapping("/{id}/members/{userId}")
     public ResponseEntity<String> deleteGroupMember(
     		@PathVariable String id, 
     		@PathVariable String userId,
     		@RequestHeader("userId") String requestingUserId) {
     	Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-    	if (optionalMember.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Member not found");
-	    }
     	GroupMemberModel member = optionalMember.get();
-        if (!requestingUserId.equals(userId) && member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to kick member in this group");
-        }
         
     	int delete = groupMemberRepository.deleteGroupMember(id, userId);
     	
-    	if (delete != 0)
+    	if (delete != 0) {
+    		groupRepository.participantCountIncrement(id, -1);
     		return ResponseEntity.status(HttpStatus.OK).body(null);
+    	}
     	else
     		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
     
-    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"CREATOR\") or "
+			+ "1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"ADMIN\")")
     @GetMapping("/{id}/requests")
     public ResponseEntity<HashMap<String, Object>> getRequestJoinsByGroupId(
         @PathVariable String id,
@@ -390,14 +369,6 @@ public class GroupServiceController {
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "pageSize", defaultValue = "10") int pageSize
     ) {
-    	Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-    	if (optionalMember.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-	    }
-    	GroupMemberModel member = optionalMember.get();
-		if (member.getRole() != GroupMemberRole.ADMIN && member.getRole() != GroupMemberRole.MOD) {
-	        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
-        }
         if (pageSize == 0 || pageSize > 50) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
@@ -413,7 +384,6 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
     
-    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
     @PostMapping("/{id}/requests")
     public ResponseEntity<String> addRequestJoin(
     		@PathVariable String id,
@@ -454,12 +424,14 @@ public class GroupServiceController {
 			member.setCreateAt(new Date());
 			member.setRole(GroupMemberRole.MEMBER);
 			groupMemberRepository.save(member);
+			groupRepository.participantCountIncrement(id, 1);
         }
 		
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 
-    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"CREATOR\") or "
+			+ "1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"ADMIN\")")
     @PutMapping("/{id}/requests/{userId}")
     public ResponseEntity<String> updateRequestJoinStatus(
         @PathVariable String id,
@@ -467,15 +439,6 @@ public class GroupServiceController {
         @RequestHeader("userId") String requestingUserId,
         @RequestParam(value = "status") String status
     ) {
-    	Optional<GroupMemberModel> optionalRequestingMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-    	if (optionalRequestingMember.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You're not in the group");
-	    }
-    	GroupMemberModel requestingMember = optionalRequestingMember.get();
-        if (requestingMember.getRole() != GroupMemberRole.ADMIN && requestingMember.getRole() != GroupMemberRole.MOD) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You have no authority to verifify request join in this group");
-        }
-        
 		Optional<RequestJoinGroupModel> optionalRequest = requestJoinGroupRepository.findByGroupIdAndUserId(id, userId);
 		if (!optionalRequest.isPresent()) {
 		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request not found");
@@ -492,6 +455,7 @@ public class GroupServiceController {
 			member.setCreateAt(new Date());
 			member.setRole(GroupMemberRole.MEMBER);
 			groupMemberRepository.save(member);
+			groupRepository.participantCountIncrement(id, 1);
 		} 
 		
 		requestJoinGroupRepository.deleteRequestJoin(id, userId);
@@ -499,6 +463,7 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("Request status updated successfully");
     }
     
+	@PreAuthorize("0 == @groupRepository.isPrivate(#id) or 1 == @groupMemberRepository.isMember(#id, #requestingUserId)")
     @GetMapping("{id}/posts")
     public ResponseEntity<HashMap<String, Object>> searchGroupPosts(
     		@PathVariable String id,
@@ -507,35 +472,42 @@ public class GroupServiceController {
             @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
             @RequestParam(value = "title", required = false, defaultValue = "") String title,
             @RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
-            @RequestParam(value = "statusId", required = false) Integer statusId) {
+            @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
     	Optional<GroupModel> optionalGroup = groupRepository.findById(id);
-	    if (optionalGroup.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-	    }
 	    GroupModel group = optionalGroup.get();
 	    Optional<GroupMemberModel> existingMemberOptional = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-	    if (group.getPrivacy().equals(Privacy.PRIVATE) && 
-	    		!(existingMemberOptional.isPresent() && !existingMemberOptional.get().isDelete())) {
-	        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
-        }
         
         if (pageSize == 0 || pageSize > 50) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
         HashMap<String, Object> result = new HashMap<>();
+        
+    	boolean canDelete = false;
+		if (1 == groupMemberRepository.hasGroupMemberRole(id, requestingUserId, "CREATOR") || 
+				1 == groupMemberRepository.hasGroupMemberRole(id, requestingUserId, "ADMIN")) {
+			canDelete = true;
+		}
+        
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(id, title, requestingUserId, tagsId, statusId, pageable);
+        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(id, title, requestingUserId, tagsId, statusId, canDelete, pageable);
 
         result.put("totalPages", posts.getTotalPages());
         result.put("posts", posts.getContent());
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
+	@PreAuthorize("0 == @postGroupRepository.isPrivateByPostId(#postId) or 1 == @postGroupRepository.isMemberByPostId(#postId, #requestingUserId)")
     @GetMapping("/posts/{postId}")
     public ResponseEntity<IPostGroupDto> getGroupPostById(
     		@PathVariable String postId, 
     		@RequestHeader("userId") String requestingUserId) {
-        Optional<IPostGroupDto> optionalPost = postGroupRepository.findPostById(postId);
+		boolean canDelete = false;
+		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "CREATOR") || 
+				1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "ADMIN")) {
+			canDelete = true;
+		}
+		
+        Optional<IPostGroupDto> optionalPost = postGroupRepository.findPostById(postId, requestingUserId, canDelete);
         if (optionalPost.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
@@ -553,27 +525,21 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
     }
 
-    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @groupMemberRepository.isMember(#id, #creator)")
     @PostMapping("{id}/posts")
     public ResponseEntity<String> addGroupPost(@PathVariable String id, //group id
     		@RequestHeader("userId") String creator,
     		@RequestBody PostGroupModel reqPostModel) {
-    	
-        // Check if the user is already a member of the group
-        Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, creator);
-        if (!optionalMember.isPresent() || optionalMember.get().isDelete()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You're not in this group.");
-        }
 
     	String postId = UUID.randomUUID().toString();
-    	PostGroupModel newPost = new PostGroupModel(id, creator, reqPostModel.getTitle(), reqPostModel.getContent(), reqPostModel.getTags(), reqPostModel.getStatus());
+    	PostGroupModel newPost = new PostGroupModel(id, creator, reqPostModel.getTitle(), reqPostModel.getContent(), reqPostModel.getTags());
     	newPost.setPublishedAt(new Date());
     	
         postGroupRepository.save(newPost);
         return ResponseEntity.status(HttpStatus.CREATED).body(newPost.getId());
     }
 
-    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @postGroupRepository.isGroupPostOwner(#postId, #creator)")
     @PutMapping("/posts/{postId}")
     public ResponseEntity<String> updateGroupPost(
     		@PathVariable String postId, 
@@ -584,9 +550,6 @@ public class GroupServiceController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
         }
         PostGroupModel post = optionalPost.get();
-        if (!creator.equals(post.getCreator().getId())) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
-        }
         
         if (!reqPostModel.getTitle().isEmpty() && reqPostModel.getTitle() != null) {
         	post.setTitle(reqPostModel.getTitle());
@@ -606,7 +569,7 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
     
-    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @postGroupRepository.isGroupPostOwner(#id, #creator)")
 	@PutMapping("/posts/{id}/images")
 	public ResponseEntity<String> createPostGroupImages(@RequestHeader("userId") String creator,
 			@PathVariable String id,
@@ -622,10 +585,6 @@ public class GroupServiceController {
 		}
 
 		PostGroupModel postGroup = optionalPostGroup.get();
-		// Check if user is creator
-		if (!postGroup.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
-		}
 		List<PicturePostGroupModel> images = postGroup.getPictures();
 
 		if (addedImages != null && deletedImageIds != null
@@ -689,19 +648,15 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-    @PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @postGroupRepository.hasGroupMemberRoleByPostId(#postId, #creator, \"CREATOR\") or "
+			+ "1 == @postGroupRepository.hasGroupMemberRoleByPostId(#postId, #creator, \"ADMIN\") or "
+			+ "1 == @postGroupRepository.isGroupPostOwner(#postId, #creator)")
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<String> deleteGroupPost(
     		@PathVariable String postId,
     		@RequestHeader("userId") String creator) {
         Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
-        if (optionalPost.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
-        }
         PostGroupModel post = optionalPost.get();
-        if (!creator.equals(post.getCreator().getId())) {
-        	return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
-        }
         post.getPictures().clear();
         post.setStatus(new StatusPostModel(4));
         postGroupRepository.save(post);
@@ -718,10 +673,16 @@ public class GroupServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		
+		boolean canDelete = false;
+		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "CREATOR") || 
+				1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "ADMIN")) {
+			canDelete = true;
+		}
 
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getComments(id, userId, pageable);
+		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getComments(id, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -744,17 +705,23 @@ public class GroupServiceController {
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
+		
+		boolean canDelete = false;
+		if (1 == commentPostGroupRepository.hasGroupMemberRoleByCommentId(commentId, userId, "CREATOR") || 
+				1 == commentPostGroupRepository.hasGroupMemberRoleByCommentId(commentId, userId, "ADMIN")) {
+			canDelete = true;
+		}
 
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getChildrenComment(commentId, userId, pageable);
+		Page<ICommentPostGroupDto> comments = commentPostGroupRepository.getChildrenComment(commentId, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#id, #creator)")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
@@ -773,44 +740,28 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @commentPostGroupRepository.isCommentOwner(#commentId, #userId)")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
-			@RequestHeader("userId") String creator,
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentPostGroupModel updatedComment) {
 		if (updatedComment.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
-
-		// Check if user is comment's creator
-		Optional<CommentPostGroupModel> optionalComment = commentPostGroupRepository.findById(commentId);
-		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Comment not found");
-		}
-		CommentPostGroupModel comment = optionalComment.get();
-		if (!comment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
-
-		commentPostGroupRepository.updateComment(commentId, creator, updatedComment.getContent());
+		commentPostGroupRepository.updateComment(commentId, userId, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @commentPostGroupRepository.hasGroupMemberRoleByCommentId(#commentId, #creator, \"CREATOR\") or "
+			+ "1 == @commentPostGroupRepository.hasGroupMemberRoleByCommentId(#commentId, #creator, \"ADMIN\") or "
+			+ "1 == @commentPostGroupRepository.isCommentOwner(#commentId, #creator)")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
 		Optional<CommentPostGroupModel> optionalComment = commentPostGroupRepository.findById(commentId);
-		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
-		}
 		CommentPostGroupModel originalComment = optionalComment.get();
-		// Check if user is comment's creator
-		if (!originalComment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
 
 		// Initilize variables
 		List<CommentPostGroupModel> childrenComments = new ArrayList<CommentPostGroupModel>();
@@ -835,7 +786,7 @@ public class GroupServiceController {
 		}
 		
 		// Delete all comments and update comment count
-		int deleted = commentPostGroupRepository.deleteComment(commentId, creator);
+		int deleted = commentPostGroupRepository.deleteComment(commentId);
 		for (String parentId : allParentId) {
 			commentPostGroupRepository.deleteChildrenComment(parentId);
 		}

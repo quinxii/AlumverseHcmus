@@ -15,8 +15,9 @@ import hcmus.alumni.group.model.RequestJoinGroupModel;
 import hcmus.alumni.group.model.GroupUserId;
 
 public interface RequestJoinGroupRepository extends JpaRepository<RequestJoinGroupModel, GroupUserId> {        
-	@Query("SELECT rj FROM RequestJoinGroupModel rj " + 
-			"WHERE rj.id.group.id = :groupId")
+	@Query("SELECT rj.id.user as user, rj.id.group as group FROM RequestJoinGroupModel rj " + 
+			"WHERE rj.id.group.id = :groupId " + 
+			"AND rj.isDelete = false")
     Page<IRequestJoinGroupDto> searchRequestJoin(@Param("groupId") String groupId, Pageable pageable);
 	
 	@Query("SELECT rj FROM RequestJoinGroupModel rj " + 

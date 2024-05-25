@@ -71,7 +71,7 @@ public class CommentNewsModel implements Serializable {
 		this.content = content;
 	}
 
-	public CommentNewsModel(CommentNewsModel copy, String userId) {
+	public CommentNewsModel(CommentNewsModel copy, String userId, boolean canDelete) {
 		this.id = copy.id;
 		this.creator = copy.creator;
 		this.news = copy.news;
@@ -82,10 +82,13 @@ public class CommentNewsModel implements Serializable {
 		this.updateAt = copy.updateAt;
 		this.isDelete = copy.isDelete;
 
-		if (copy.creator.getId().equals(userId)) {
-			this.permissions = new CommentNewsPermissions(true, true);
-		} else {
-			this.permissions = new CommentNewsPermissions(false, false);
-		}
+        this.permissions = new CommentNewsPermissions(false, false);
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions.setDelete(true);
+            this.permissions.setEdit(true);
+        }
+        if (canDelete) {
+            this.permissions.setDelete(true);
+        }
 	}
 }

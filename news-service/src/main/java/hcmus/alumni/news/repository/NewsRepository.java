@@ -67,4 +67,10 @@ public interface NewsRepository extends JpaRepository<NewsModel, String> {
 	@Modifying
 	@Query("UPDATE NewsModel n SET n.childrenCommentNumber = n.childrenCommentNumber + :count WHERE n.id = :id")
 	int commentCountIncrement(String id, @Param("count") Integer count);
+
+	@Query(value = "select distinct p.name from role_permission rp " +
+			"join role r on r.id = rp.role_id and r.is_delete = false " +
+			"join permission p on p.id = rp.permission_id and p.is_delete = false " +
+			"where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
+	List<String> getPermissions(List<String> role, String domain);
 }

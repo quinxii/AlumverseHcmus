@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -111,7 +112,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('News.Create')")
 	@PostMapping("")
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
@@ -152,7 +153,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('News.Edit')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateNews(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
@@ -206,7 +207,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('News.Delete')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteNews(@PathVariable String id) {
 		// Find news
@@ -220,7 +221,7 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('News.Edit')")
 	@PutMapping("/{id}/content")
 	public ResponseEntity<String> updateNewsContent(@PathVariable String id,
 			@RequestBody(required = false) NewsModel updatedNews) {
@@ -299,9 +300,9 @@ public class NewsServiceController {
 	}
 
 	// Get comments of a news
-	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getNewsComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -311,8 +312,14 @@ public class NewsServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, userId, pageable);
+		Page<ICommentNewsDto> comments = commentNewsRepository.getComments(id, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -320,9 +327,9 @@ public class NewsServiceController {
 	}
 
 	// Get children comments of a comment
-	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getNewsChildrenComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -338,15 +345,22 @@ public class NewsServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, userId, pageable);
+		Page<ICommentNewsDto> comments = commentNewsRepository.getChildrenComment(commentId, userId, canDelete,
+				pageable);
 
 		result.put("comments", comments.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@PreAuthorize("hasAnyAuthority('News.Comment.Create')")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
@@ -365,31 +379,23 @@ public class NewsServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@PreAuthorize("1 == @commentNewsRepository.isCommentOwner(#commentId, #userId)")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
-			@RequestHeader("userId") String creator,
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentNewsModel updatedComment) {
 		if (updatedComment.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
-		// Check if user is comment's creator
-		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
-		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Comment not found");
-		}
-		if (!optionalComment.get().getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
 
-		commentNewsRepository.updateComment(commentId, creator, updatedComment.getContent());
+		commentNewsRepository.updateComment(commentId, userId, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	// @PreAuthorize("hasAnyAuthority('Cựu sinh viên')")
+	@PreAuthorize("hasAuthority('News.Comment.Delete') or 1 == @commentNewsRepository.isCommentOwner(#commentId, #userId)")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
-			@RequestHeader("userId") String creator,
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId) {
 		// Check if comment exists
 		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
@@ -397,10 +403,6 @@ public class NewsServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
 		CommentNewsModel originalComment = optionalComment.get();
-		// Check if user is comment's creator
-		if (!originalComment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
 
 		// Initilize variables
 		List<CommentNewsModel> childrenComments = new ArrayList<CommentNewsModel>();
@@ -425,7 +427,7 @@ public class NewsServiceController {
 		}
 
 		// Delete all comments and update comment count
-		int deleted = commentNewsRepository.deleteComment(commentId, creator);
+		int deleted = commentNewsRepository.deleteComment(commentId, userId);
 		for (String parentId : allParentId) {
 			commentNewsRepository.deleteChildrenComment(parentId);
 		}

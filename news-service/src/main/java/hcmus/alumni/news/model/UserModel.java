@@ -2,6 +2,7 @@ package hcmus.alumni.news.model;
 
 import java.io.Serializable;
 import java.util.Date;
+
 import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
@@ -49,7 +50,7 @@ public class UserModel implements Serializable {
 	@Column(name = "social_media_link", columnDefinition = "TINYTEXT")
 	private String socialMediaLink;
 
-    @Column(name = "faculty_id")
+	@Column(name = "faculty_id")
 	private Integer facultyId;
 
 	@Column(name = "degree", length = 50)
@@ -100,8 +101,9 @@ public class UserModel implements Serializable {
 	@Enumerated(EnumType.STRING)
 	private Privacy facultyPrivacy = Privacy.PUBLIC;
 
-	public UserModel() {}
-	
+	public UserModel() {
+	}
+
 	public UserModel(String id) {
 		this.id = id;
 	}
