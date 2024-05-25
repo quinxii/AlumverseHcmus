@@ -92,7 +92,7 @@ public class HallOfFameServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('Hof.Create')")
 	@PostMapping("")
 	public ResponseEntity<String> createHallOfFame(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
@@ -137,7 +137,7 @@ public class HallOfFameServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('Hof.Edit')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateHallOfFame(@PathVariable String id,
 			@RequestParam(value = "title", defaultValue = "") String title,
@@ -147,7 +147,7 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "emailOfUser", required = false) String emailOfUser,
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId,
-			@RequestParam(value = "position", required = false) String position) {
+			@RequestParam(value = "position", defaultValue = "") String position) {
 
 		try {
 			// Find hall of fame
@@ -212,7 +212,7 @@ public class HallOfFameServiceController {
 
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('Hof.Edit')")
 	@PutMapping("/{id}/content")
 	public ResponseEntity<String> updateHallOfFameContent(@PathVariable String id,
 			@RequestBody(required = false) HallOfFameModel updatedHallOfFame) {
@@ -237,7 +237,7 @@ public class HallOfFameServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('Hof.Delete')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteHallOfFame(@PathVariable String id) {
 		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);

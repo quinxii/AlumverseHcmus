@@ -62,7 +62,7 @@ public class UserServiceController {
 	@Autowired
 	private ImageUtils imageUtils;
 
-    @PreAuthorize("hasAnyAuthority('Admin')")
+    // @PreAuthorize("hasAnyAuthority('Admin')")
 	@GetMapping("/alumni-verification/count")
 	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam String status) {
 		switch (status) {
@@ -83,7 +83,7 @@ public class UserServiceController {
 		}
 	}
 
-    @PreAuthorize("hasAnyAuthority('Admin')")
+    // @PreAuthorize("hasAnyAuthority('Admin')")
 	@GetMapping("/alumni-verification")
 	public ResponseEntity<HashMap<String, Object>> searchAlumniVerification(@RequestParam String status,
 			@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
@@ -189,7 +189,7 @@ public class UserServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-    @PreAuthorize("hasAnyAuthority('Admin')")
+    // @PreAuthorize("hasAnyAuthority('Admin')")
 	@GetMapping("/alumni-verification/{user_id}")
 	public ResponseEntity<Map<String, Object>> getAlumniVerificationByUserId(@PathVariable String user_id) {
 		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
@@ -219,7 +219,7 @@ public class UserServiceController {
 		return ResponseEntity.ok(response);
 	}
 
-    @PreAuthorize("hasAnyAuthority('Guest, Alumni')")
+    // @PreAuthorize("hasAnyAuthority('Guest, Alumni')")
 	@PostMapping("/alumni-verification")
 	public ResponseEntity<String> createAlumniVerification(@RequestHeader("userId") String userId,
 			@RequestParam(value = "avatar", required = false) MultipartFile avatar,
@@ -320,7 +320,7 @@ public class UserServiceController {
 //		}
 //	}
 
-    @PreAuthorize("hasAnyAuthority('Admin')")
+    // @PreAuthorize("hasAnyAuthority('Admin')")
 	@PutMapping("/alumni-verification/{id}/verify")
 	public ResponseEntity<String> updateAlumniVerificationStatus(@PathVariable String id,
 			@RequestBody Map<String, Object> requestBody) {
