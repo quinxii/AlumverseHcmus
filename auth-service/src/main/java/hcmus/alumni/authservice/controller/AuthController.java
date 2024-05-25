@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -154,6 +155,7 @@ public class AuthController {
 		}
 	}
 	
+	@PreAuthorize("hasAnyAuthority('User.Create')")
 	@PostMapping("/create-user")
     public ResponseEntity<String> adminCreateUser(
             @RequestParam String email,
@@ -191,6 +193,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
     }
 	
+	@PreAuthorize("hasAnyAuthority('User.Edit')")
 	@PutMapping("/{id}")
     public ResponseEntity<String> adminUpdateUser(@PathVariable String id,
             @RequestParam(value = "email", required = false) String email,
@@ -206,7 +209,7 @@ public class AuthController {
             @RequestParam(value = "coverUrl", required = false) String coverUrl,
             @RequestParam(value = "statusId", required = false) Integer statusId) {
         
-        Optional<UserModel> optionalUser = userRepository.findById(id);
+        Optional<UserModel> optionalUser = userRepository.findById (id);
         if (!optionalUser.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
