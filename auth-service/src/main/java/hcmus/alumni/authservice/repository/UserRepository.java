@@ -1,6 +1,7 @@
 package hcmus.alumni.authservice.repository;
 
 import java.util.Date;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -10,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.authservice.model.UserModel;
 
-
 public interface UserRepository extends JpaRepository<UserModel, String> {
+	Optional<UserModel> findById(String id);
 
     UserModel findByEmailAndPass(String email, String pass);
     UserModel findByEmail(String email);
