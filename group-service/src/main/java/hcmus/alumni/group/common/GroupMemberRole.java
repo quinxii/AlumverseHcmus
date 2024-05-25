@@ -1,5 +1,5 @@
 package hcmus.alumni.group.common;
 
 public enum GroupMemberRole {
-	ADMIN, MOD, MEMBER
+	CREATOR, ADMIN, MEMBER
 }
