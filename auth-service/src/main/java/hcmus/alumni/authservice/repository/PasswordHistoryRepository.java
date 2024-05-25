@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PasswordHistoryRepository extends JpaRepository<PasswordHistoryModel, String> {
 
-	PasswordHistoryModel findTopByUserIdOrderByCreatedAtDesc(String id);
+	PasswordHistoryModel findByUserId(String id);
 }
