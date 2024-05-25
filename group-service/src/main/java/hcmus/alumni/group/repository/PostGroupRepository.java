@@ -14,11 +14,29 @@ import org.springframework.transaction.annotation.Transactional;
 import hcmus.alumni.group.model.PostGroupModel;
 import hcmus.alumni.group.dto.IPostGroupDto;
 
-public interface PostGroupRepository extends JpaRepository<PostGroupModel, String> {        
-	@Query("SELECT DISTINCT new PostGroupModel(p, CASE WHEN ip.id IS NULL THEN FALSE ELSE TRUE END, :userId) FROM PostGroupModel p " +
+public interface PostGroupRepository extends JpaRepository<PostGroupModel, String> {
+	@Query(value = "select count(*) > 0 from post_group where id = :postId and creator = :userId", nativeQuery = true)
+	Long isGroupPostOwner(String postId, String userId);
+	
+	@Query(value = "select count(*) > 0 from post_group pg "
+			+ "join `group` g on g.id = pg.group_id and g.privacy = \"PRIVATE\" "
+			+ "where pg.id = :postId", nativeQuery = true)
+	Long isPrivateByPostId(String postId);
+	
+	@Query(value = "select count(*) > 0 from group_member gm "
+			+ "join post_group pg on pg.id = :postId "
+			+ "where pg.group_id = gm.group_id and gm.user_id = :userId and gm.role = :role and gm.is_delete = 0", nativeQuery = true)
+	Long hasGroupMemberRoleByPostId(String postId, String userId, String role);
+	
+	@Query(value = "select count(*) > 0 from group_member gm "
+			+ "join post_group pg on pg.id = :postId "
+			+ "where pg.group_id = gm.group_id and gm.user_id = :userId and gm.is_delete = 0", nativeQuery = true)
+	Long isMemberByPostId(String postId, String userId);
+	
+	@Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
 	        "LEFT JOIN p.creator c " +
 	        "LEFT JOIN  p.status s " +
-	        "LEFT JOIN FETCH p.tags t " + 
+	        "LEFT JOIN p.tags t " + 
 	        "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
 	        "WHERE (:title IS NULL OR p.title LIKE %:title%) " +
 	        "AND (:tagsId IS NULL OR t.id IN :tagsId) " + 
@@ -30,15 +48,17 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	        @Param("userId") String userId,
 	        @Param("tagsId") List<Integer> tagsId,
 	        @Param("statusId") Integer statusId,
+	        boolean canDelete,
 	        Pageable pageable);
 
 
-    @Query("SELECT p FROM PostGroupModel p " +
+    @Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
             "JOIN FETCH p.creator " +
             "JOIN FETCH p.status " +
-            "LEFT JOIN FETCH p.tags " +
+            "LEFT JOIN p.tags " +
+            "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
             "WHERE p.id = :postId")
-    Optional<IPostGroupDto> findPostById(@Param("postId") String postId);
+    Optional<IPostGroupDto> findPostById(@Param("postId") String postId, @Param("userId") String userId, boolean canDelete);
     
     @Transactional
 	@Modifying

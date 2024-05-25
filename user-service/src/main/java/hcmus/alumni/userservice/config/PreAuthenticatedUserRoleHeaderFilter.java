@@ -46,7 +46,6 @@ public class PreAuthenticatedUserRoleHeaderFilter extends OncePerRequestFilter {
 	public Collection<? extends GrantedAuthority> getAuthorities(List<String> roles) {
 		List<String> permissions = roleRepository.getPermissions(roles, "User");
 		permissions.addAll(roleRepository.getPermissions(roles, "AlumniVerify"));
-		System.out.println(permissions);
 		List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
 		for (String permission : permissions) {

@@ -12,7 +12,7 @@ public interface IGroupMemberDto {
     interface Group {
     	String getId();
         String getName();
-        String getAvatarUrl();
+        String getCoverUrl();
     }
 
     User getUser();

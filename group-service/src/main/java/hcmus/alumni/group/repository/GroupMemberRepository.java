@@ -1,6 +1,7 @@
 package hcmus.alumni.group.repository;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,11 +15,19 @@ import hcmus.alumni.group.model.GroupMemberModel;
 import hcmus.alumni.group.common.GroupMemberRole;
 import hcmus.alumni.group.dto.IGroupMemberDto;
 import hcmus.alumni.group.model.GroupUserId;
+import hcmus.alumni.group.dto.IUserDto;
 
 public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, GroupUserId> {
+	@Query(value = "select count(*) > 0 from group_member where group_id = :groupId and user_id = :userId and role = :role and is_delete = 0", nativeQuery = true)
+	Long hasGroupMemberRole(String groupId, String userId, String role);
+	
+	@Query(value = "select count(*) > 0 from group_member where group_id = :groupId and user_id = :userId and is_delete = 0", nativeQuery = true)
+	Long isMember(String groupId, String userId);
+	
 	@Query("SELECT gm FROM GroupMemberModel gm " + 
 			"WHERE gm.id.group.id = :groupId " + 
-			"AND (:role IS NULL OR gm.role = :role)")
+			"AND (:role IS NULL OR gm.role = :role)" + 
+			"AND isDelete = false")
     Page<IGroupMemberDto> searchMembers(@Param("groupId") String groupId, @Param("role") GroupMemberRole role, Pageable pageable);
 	
 	@Query("SELECT gm FROM GroupMemberModel gm " + 
@@ -42,4 +51,11 @@ public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, G
 	@Query("UPDATE GroupMemberModel gm SET gm.isDelete = true " + 
 			"WHERE gm.id.group.id = :groupId")
 	int deleteAllGroupMember(@Param("groupId") String groupId);
+	
+	@Query("SELECT DISTINCT u " +
+	        "FROM UserModel u " +
+	        "JOIN FriendModel f ON (f.id.user.id = :requestingUserId AND f.id.friend.id = u.id OR f.id.user.id = u.id AND f.id.friend.id = :requestingUserId) " +
+	        "JOIN GroupMemberModel gm ON gm.id.user.id = u.id " +
+	        "WHERE gm.id.group.id = :groupId AND gm.isDelete = false AND f.isDelete = false")
+	Set<IUserDto> findJoinedFriends(@Param("groupId") String groupId, @Param("requestingUserId") String requestingUserId);
 }

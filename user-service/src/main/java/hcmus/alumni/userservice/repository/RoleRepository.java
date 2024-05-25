@@ -3,17 +3,22 @@ package hcmus.alumni.userservice.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.userservice.dto.IRoleDto;
+import hcmus.alumni.userservice.dto.IRoleWithoutPermissionsDto;
 import hcmus.alumni.userservice.model.RoleModel;
 
 public interface RoleRepository extends JpaRepository<RoleModel, Integer> {
-    @Query("SELECT r FROM RoleModel r WHERE r.isDelete = false")
-    List<IRoleDto> findAllRoles();
+    @Query("SELECT r FROM RoleModel r " +
+            "WHERE r.isDelete = false " +
+            "AND (:name IS NULL OR r.name like %:name%)")
+    Page<IRoleWithoutPermissionsDto> searchRoles(String name, Pageable pageable);
 
     @Query("SELECT r FROM RoleModel r WHERE r.id = :id AND r.isDelete = false")
     Optional<IRoleDto> findRoleById(Integer id);
