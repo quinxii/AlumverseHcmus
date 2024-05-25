@@ -3,6 +3,7 @@ package hcmus.alumni.userservice.model;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -21,8 +22,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import hcmus.alumni.userservice.dto.RoleRequestDto;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -41,7 +44,7 @@ public class RoleModel implements Serializable {
 	@Column(name = "name", length = 100, nullable = false, unique = true)
 	private String name;
 
-	@Column(name = "description", columnDefinition = "TINYTEXT")
+	@Column(name = "description", length = 100)
 	private String description;
 
 	@CreationTimestamp
@@ -55,6 +58,7 @@ public class RoleModel implements Serializable {
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
 
+	@Getter(value = AccessLevel.NONE)
 	@OrderBy("id ASC")
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "role_permission", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
@@ -79,5 +83,21 @@ public class RoleModel implements Serializable {
 		role.getPermissions().forEach(permission -> {
 			this.permissions.add(new PermissionModel(permission.getId()));
 		});
+	}
+
+	public void clearPermissions() {
+		this.permissions.clear();
+	}
+
+	public void addPermission(PermissionModel permission) {
+		this.permissions.add(permission);
+	}
+
+	public void addPermissions(List<PermissionModel> permissions) {
+		this.permissions.addAll(permissions);
+	}
+
+	public void removePermission(PermissionModel permission) {
+		this.permissions.remove(permission);
 	}
 }

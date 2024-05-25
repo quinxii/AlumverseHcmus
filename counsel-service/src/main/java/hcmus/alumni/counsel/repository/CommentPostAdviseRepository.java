@@ -14,14 +14,17 @@ import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 
 public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAdviseModel, String> {
+    @Query(value = "select count(*) > 0 from comment_post_advise where id = :commentId and creator = :userId and is_delete = false", nativeQuery = true)
+    Long isCommentOwner(String commentId, String userId);
 
-    @Query("SELECT new CommentPostAdviseModel(c, :userId) FROM CommentPostAdviseModel c " +
+    @Query("SELECT new CommentPostAdviseModel(c, :userId, :canDelete) FROM CommentPostAdviseModel c " +
             "WHERE c.postAdvise.id = :postAdviseId AND c.isDelete = false AND c.parentId IS NULL")
-    Page<ICommentPostAdviseDto> getComments(String postAdviseId, String userId, Pageable pageable);
+    Page<ICommentPostAdviseDto> getComments(String postAdviseId, String userId, boolean canDelete, Pageable pageable);
 
-    @Query("SELECT new CommentPostAdviseModel(c, :userId) FROM CommentPostAdviseModel c " +
+    @Query("SELECT new CommentPostAdviseModel(c, :userId, :canDelete) FROM CommentPostAdviseModel c " +
             "WHERE c.isDelete = false AND c.parentId = :commentId")
-    Page<ICommentPostAdviseDto> getChildrenComment(String commentId, String userId, Pageable pageable);
+    Page<ICommentPostAdviseDto> getChildrenComment(String commentId, String userId, boolean canDelete,
+            Pageable pageable);
 
     @Query("SELECT c FROM CommentPostAdviseModel c WHERE c.isDelete = false AND c.parentId = :commentId")
     List<CommentPostAdviseModel> getChildrenComment(String commentId);
@@ -34,8 +37,8 @@ public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAd
 
     @Transactional
     @Modifying
-    @Query("UPDATE CommentPostAdviseModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator AND c.isDelete = false")
-    int deleteComment(@Param("commentId") String commentId, @Param("creator") String creator);
+    @Query("UPDATE CommentPostAdviseModel c SET c.isDelete = true WHERE c.id = :commentId AND c.isDelete = false")
+    int deleteComment(@Param("commentId") String commentId);
 
     @Transactional
     @Modifying

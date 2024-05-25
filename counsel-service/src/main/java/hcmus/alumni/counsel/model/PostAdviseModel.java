@@ -84,7 +84,7 @@ public class PostAdviseModel implements Serializable {
     private boolean isReacted;
 
     @Transient
-    private PostAdvisePermissions permissions;
+    private PostAdvisePermissions permissions = new PostAdvisePermissions(false, false);
 
     public PostAdviseModel() {
     }
@@ -110,7 +110,7 @@ public class PostAdviseModel implements Serializable {
         this.tags = tags;
     }
 
-    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete, String userId) {
+    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete, String userId, boolean canDelete) {
         this.id = copy.id;
         this.creator = copy.creator;
         this.title = copy.title;
@@ -123,15 +123,20 @@ public class PostAdviseModel implements Serializable {
         this.status = copy.status;
         this.childrenCommentNumber = copy.childrenCommentNumber;
         this.reactionCount = copy.reactionCount;
+        
         if (isReactionDelete != null) {
             this.isReacted = !isReactionDelete;
         } else {
             this.isReacted = false;
         }
+
+        this.permissions = new PostAdvisePermissions(false, false);
         if (copy.creator.getId().equals(userId)) {
-            this.permissions = new PostAdvisePermissions(true, true);
-        } else {
-            this.permissions = new PostAdvisePermissions(false, false);
+            this.permissions.setDelete(true);
+            this.permissions.setEdit(true);
+        }
+        if (canDelete) {
+            this.permissions.setDelete(true);
         }
     }
 

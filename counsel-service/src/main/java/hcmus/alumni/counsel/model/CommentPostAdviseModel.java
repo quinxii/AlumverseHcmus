@@ -71,7 +71,7 @@ public class CommentPostAdviseModel implements Serializable {
 		this.content = content;
 	}
 
-	public CommentPostAdviseModel(CommentPostAdviseModel copy, String userId) {
+	public CommentPostAdviseModel(CommentPostAdviseModel copy, String userId, boolean canDelete) {
 		this.id = copy.id;
 		this.creator = copy.creator;
 		this.postAdvise = copy.postAdvise;
@@ -82,10 +82,13 @@ public class CommentPostAdviseModel implements Serializable {
 		this.updateAt = copy.updateAt;
 		this.isDelete = copy.isDelete;
 
+		this.permissions = new CommentPostAdvisePermissions(false, false);
 		if (copy.creator.getId().equals(userId)) {
-			this.permissions = new CommentPostAdvisePermissions(true, true);
-		} else {
-			this.permissions = new CommentPostAdvisePermissions(false, false);
+			this.permissions.setDelete(true);
+			this.permissions.setEdit(true);
+		}
+		if (canDelete) {
+			this.permissions.setDelete(true);
 		}
 	}
 }

@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,6 +69,7 @@ public class CounselServiceController {
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
@@ -80,9 +82,16 @@ public class CounselServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Delete"))) {
+			canDelete = true;
+		}
+
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, userId, tagsId, pageable);
+			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, userId, canDelete, tagsId,
+					pageable);
 
 			result.put("totalPages", posts.getTotalPages());
 			result.put("posts", posts.getContent());
@@ -98,15 +107,23 @@ public class CounselServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IPostAdviseDto> getPostById(@PathVariable String id) {
-		Optional<IPostAdviseDto> optionalPost = postAdviseRepository.findPostAdviseById(id);
-		if (optionalPost.isEmpty()) {
+	public ResponseEntity<IPostAdviseDto> getPostById(Authentication authentication,
+			@RequestHeader("userId") String userId, @PathVariable String id) {
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Delete"))) {
+			canDelete = true;
+		}
+
+		IPostAdviseDto post = postAdviseRepository.findPostAdviseById(id, userId, canDelete).orElse(null);
+		if (post == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
+
+		return ResponseEntity.status(HttpStatus.OK).body(post);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Create')")
 	@PostMapping("")
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseModel reqPostAdvise) {
@@ -121,27 +138,14 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(Collections.singletonMap("id", postAdvise.getId()));
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @postAdviseRepository.isPostOwner(#id, #userId)")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updatePost(
-			@RequestHeader("userId") String creator,
+			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestBody PostAdviseModel updatedPostAdvise) {
-		if (creator.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
-		}
-
 		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
-		if (optionalPostAdvise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
-		}
-
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
-
-		// Check if user is creator
-		if (!postAdvise.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
-		}
 
 		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
 			postAdvise.setTitle(updatedPostAdvise.getTitle());
@@ -157,9 +161,9 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @postAdviseRepository.isPostOwner(#id, #userId)")
 	@PutMapping("/{id}/images")
-	public ResponseEntity<String> createPostAdviseImages(@RequestHeader("userId") String creator,
+	public ResponseEntity<String> createPostAdviseImages(@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "addedImages", required = false) List<MultipartFile> addedImages,
 			@RequestParam(value = "deletedImageIds", required = false) List<String> deletedImageIds) {
@@ -168,16 +172,8 @@ public class CounselServiceController {
 		}
 
 		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
-		if (optionalPostAdvise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid post id");
-		}
-
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
-		// Check if user is creator
-		
-		if (!postAdvise.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
-		}
+
 		List<PicturePostAdviseModel> images = postAdvise.getPictures();
 
 		if (addedImages != null && deletedImageIds != null
@@ -241,10 +237,10 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Delete') or 1 == @postAdviseRepository.isPostOwner(#id, #userId)")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deletePost(
-			@RequestHeader("userId") String creator,
+			@RequestHeader("userId") String userId,
 			@PathVariable String id) {
 		// Find advise post
 		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
@@ -253,12 +249,21 @@ public class CounselServiceController {
 		}
 
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
-		// Check if user is creator
-		if (!postAdvise.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this post");
-		}
 
-		postAdvise.getPictures().clear();
+		List<PicturePostAdviseModel> pictures = postAdvise.getPictures();
+		for (PicturePostAdviseModel picture : pictures) {
+			try {
+				imageUtils.deleteImageFromStorageByUrl(picture.getPictureUrl());
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+			} catch (IOException e) {
+				e.printStackTrace();
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+			}
+		}
+		pictures.clear();
+		
 		postAdvise.setStatus(new StatusPostModel(4));
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -267,6 +272,7 @@ public class CounselServiceController {
 	// Get comments of a news
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getPostComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -276,9 +282,15 @@ public class CounselServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getComments(id, userId, pageable);
+		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getComments(id, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -288,6 +300,7 @@ public class CounselServiceController {
 	// Get children comments of a comment
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getPostChildrenComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -303,9 +316,16 @@ public class CounselServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Comment.Delete"))) {
+			canDelete = true;
+		}
+
 		Pageable pageable = PageRequest.of(page, pageSize,
 				Sort.by(Sort.Direction.DESC, "createAt"));
 		Page<ICommentPostAdviseDto> comments = commentPostAdviseRepository.getChildrenComment(commentId, userId,
+				canDelete,
 				pageable);
 
 		result.put("comments", comments.getContent());
@@ -313,7 +333,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Comment.Create')")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
@@ -332,33 +352,23 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("1 == @commentPostAdviseRepository.isCommentOwner(#commentId, #userId)")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
-			@RequestHeader("userId") String creator,
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentPostAdviseModel updatedComment) {
 		if (updatedComment.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
 
-		// Check if user is comment's creator
-		Optional<CommentPostAdviseModel> optionalComment = commentPostAdviseRepository.findById(commentId);
-		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Comment not found");
-		}
-		CommentPostAdviseModel comment = optionalComment.get();
-		if (!comment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
-
-		commentPostAdviseRepository.updateComment(commentId, creator, updatedComment.getContent());
+		commentPostAdviseRepository.updateComment(commentId, userId, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Alumni', 'Lecturer')")
+	@PreAuthorize("hasAnyAuthority('Counsel.Comment.Delete') or 1 == @commentPostAdviseRepository.isCommentOwner(#commentId, #userId)")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
-			@RequestHeader("userId") String creator,
+			@RequestHeader("userId") String userId,
 			@PathVariable String commentId) {
 		// Check if comment exists
 		Optional<CommentPostAdviseModel> optionalComment = commentPostAdviseRepository.findById(commentId);
@@ -366,10 +376,6 @@ public class CounselServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
 		}
 		CommentPostAdviseModel originalComment = optionalComment.get();
-		// Check if user is comment's creator
-		if (!originalComment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
 
 		// Initilize variables
 		List<CommentPostAdviseModel> childrenComments = new ArrayList<CommentPostAdviseModel>();
@@ -394,7 +400,7 @@ public class CounselServiceController {
 		}
 
 		// Delete all comments and update comment count
-		int deleted = commentPostAdviseRepository.deleteComment(commentId, creator);
+		int deleted = commentPostAdviseRepository.deleteComment(commentId);
 		for (String parentId : allParentId) {
 			commentPostAdviseRepository.deleteChildrenComment(parentId);
 		}
@@ -435,6 +441,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Counsel.Reaction.Create')")
 	@PostMapping("/{id}/react")
 	public ResponseEntity<String> postPostAdviseReaction(@RequestHeader("userId") String creatorId,
 			@PathVariable String id,

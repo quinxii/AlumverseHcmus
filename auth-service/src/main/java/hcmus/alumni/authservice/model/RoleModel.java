@@ -33,7 +33,7 @@ public class RoleModel implements Serializable {
 	@Column(name = "name", length = 100, nullable = false, unique = true)
 	private String name;
 
-	@Column(name = "description", columnDefinition = "TINYTEXT")
+	@Column(name = "description", length = 100)
 	private String description;
 
 	@CreationTimestamp
@@ -49,6 +49,5 @@ public class RoleModel implements Serializable {
 
 	public RoleModel(Integer id) {
 		this.id = id;
-
 	}
 }
