@@ -352,8 +352,10 @@ public class GroupServiceController {
         
     	int delete = groupMemberRepository.deleteGroupMember(id, userId);
     	
-    	if (delete != 0)
+    	if (delete != 0) {
+    		groupRepository.participantCountIncrement(id, -1);
     		return ResponseEntity.status(HttpStatus.OK).body(null);
+    	}
     	else
     		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
@@ -422,6 +424,7 @@ public class GroupServiceController {
 			member.setCreateAt(new Date());
 			member.setRole(GroupMemberRole.MEMBER);
 			groupMemberRepository.save(member);
+			groupRepository.participantCountIncrement(id, 1);
         }
 		
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
@@ -452,6 +455,7 @@ public class GroupServiceController {
 			member.setCreateAt(new Date());
 			member.setRole(GroupMemberRole.MEMBER);
 			groupMemberRepository.save(member);
+			groupRepository.participantCountIncrement(id, 1);
 		} 
 		
 		requestJoinGroupRepository.deleteRequestJoin(id, userId);
