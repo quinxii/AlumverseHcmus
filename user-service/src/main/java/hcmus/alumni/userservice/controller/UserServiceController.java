@@ -3,11 +3,13 @@ package hcmus.alumni.userservice.controller;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -25,7 +27,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,13 +41,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.userservice.config.UserConfig;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.model.FacultyModel;
+import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
+import hcmus.alumni.userservice.model.SexModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
+import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
+import hcmus.alumni.userservice.repository.RoleRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
+import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 
 @RestController
@@ -55,12 +65,22 @@ public class UserServiceController {
 
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private RoleRepository roleRepository;
 
 	@Autowired
 	private VerifyAlumniRepository verifyAlumniRepository;
 
 	@Autowired
 	private ImageUtils imageUtils;
+	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	@Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
+	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
     @PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
 	@GetMapping("/alumni-verification/count")
@@ -353,4 +373,110 @@ public class UserServiceController {
 		
 		return ResponseEntity.ok("Alumni verification approved successfully");
 	}
+	
+
+	@PreAuthorize("hasAnyAuthority('User.Create')")
+	@PostMapping("/create-user")
+    public ResponseEntity<String> adminCreateUser(
+            @RequestParam String email,
+            @RequestParam String role,
+            @RequestParam String fullName) {
+
+        UserModel newUser = new UserModel();
+        newUser.setId(UUID.randomUUID().toString());
+        newUser.setEmail(email);
+        String pwd = UserConfig.generateRandomPassword(10);
+        newUser.setPass(passwordEncoder.encode(pwd));
+        newUser.setFullName(fullName);
+        newUser.setCreateAt(new Date());
+        
+        PasswordHistoryModel passwordHistory = new PasswordHistoryModel(newUser.getId(), newUser.getPass(), true, new Date());
+        
+        RoleModel roleModel = roleRepository.findByName(role);
+        if (roleModel == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid role");
+        }
+
+        newUser.getRoles().add(roleModel);
+        
+        try {
+            userRepository.save(newUser);
+            passwordHistoryRepository.save(passwordHistory);
+            emailSenderUtils.sendPasswordEmail(email, pwd);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input data");
+        } catch (Exception e) {
+            System.err.println(e);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+    }
+	
+	@PreAuthorize("hasAnyAuthority('User.Edit')")
+	@PutMapping("/{id}")
+    public ResponseEntity<String> adminUpdateUser(@PathVariable String id,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "fullName", required = false) String fullName,
+            @RequestParam(value = "phone", required = false) String phone,
+            @RequestParam(value = "sexId", required = false) Integer sexId,
+            @RequestParam(value = "dob", required = false) Date dob,
+            @RequestParam(value = "socialMediaLink", required = false) String socialMediaLink,
+            @RequestParam(value = "facultyId", required = false) Integer facultyId,
+            @RequestParam(value = "degree", required = false) String degree,
+            @RequestParam(value = "aboutMe", required = false) String aboutMe,
+            @RequestParam(value = "avatarUrl", required = false) String avatarUrl,
+            @RequestParam(value = "coverUrl", required = false) String coverUrl,
+            @RequestParam(value = "statusId", required = false) Integer statusId) {
+        
+        Optional<UserModel> optionalUser = userRepository.findById (id);
+        if (!optionalUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        UserModel user = optionalUser.get();
+
+        if (email != null) {
+            user.setEmail(email);
+        }
+        if (fullName != null) {
+            user.setFullName(fullName);
+        }
+        if (phone != null) {
+            user.setPhone(phone);
+        }
+        if (sexId != null) {
+            user.setSex(new SexModel(sexId));
+        }
+        if (dob != null) {
+            user.setDob(dob);
+        }
+        if (socialMediaLink != null) {
+            user.setSocialMediaLink(socialMediaLink);
+        }
+        if (facultyId != null) {
+            user.setFaculty(new FacultyModel(facultyId));
+        }
+        if (degree != null) {
+            user.setDegree(degree);
+        }
+        if (aboutMe != null) {
+            user.setAboutMe(aboutMe);
+        }
+        if (avatarUrl != null) {
+            user.setAvatarUrl(avatarUrl);
+        }
+        if (coverUrl != null) {
+            user.setCoverUrl(coverUrl);
+        }
+        if (statusId != null) {
+            user.setStatusId(statusId);
+        }
+
+        user.setUpdateAt(new Date());
+
+        userRepository.save(user);
+
+        return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
+    }
 }
