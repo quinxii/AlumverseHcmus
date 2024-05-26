@@ -20,6 +20,10 @@ public interface IEventDto {
 		Integer getId();
 		String getName();
 	}
+	interface Permissions {
+        Boolean getEdit();
+        Boolean getDelete();
+    }
 
 	String getId();
 	String getTitle();
@@ -38,4 +42,5 @@ public interface IEventDto {
 	Integer getMinimumParticipants();
 	Integer getMaximumParticipants();
 	Integer getChildrenCommentNumber();
+	Permissions getPermissions();
 }

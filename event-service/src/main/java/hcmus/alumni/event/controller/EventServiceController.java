@@ -18,6 +18,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,6 +66,8 @@ public class EventServiceController {
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
+			Authentication authentication,
+			@RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 	        @RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -78,6 +81,15 @@ public class EventServiceController {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
+	    
+	    boolean canEdit = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
+			canEdit = true;
+		}
+	    boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
+			canDelete = true;
+		}
 
 	    try {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
@@ -85,7 +97,7 @@ public class EventServiceController {
 	        
 	        Calendar cal = Calendar.getInstance();
 	        Date startDate = cal.getTime();
-	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, mode, pageable);
+	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, mode, userId, canEdit, canDelete, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -99,8 +111,20 @@ public class EventServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IEventDto> getEventById(@PathVariable String id) {
-	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
+	public ResponseEntity<IEventDto> getEventById(
+			Authentication authentication,
+			@PathVariable String id,
+			@RequestHeader("userId") String userId) {
+	    boolean canEdit = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
+			canEdit = true;
+		}
+	    boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
+			canDelete = true;
+		}
+		
+	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId, canEdit, canDelete);
 	    if (optionalEvent.isEmpty()) {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	    }
@@ -108,7 +132,7 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
 	}
     
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('Event.Create')")
 	@PostMapping("")
 	public ResponseEntity<String> createEvent(
 			@RequestHeader("userId") String creatorId,
@@ -160,9 +184,11 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('Event.Edit') or 1 == @eventRepository.isEventOwner(#id, #userId)")
 	@PutMapping("/{id}")
-	public ResponseEntity<String> updateEvent(@PathVariable String id,
+	public ResponseEntity<String> updateEvent(
+			@PathVariable String id,
+			@RequestHeader("userId") String userId,
 	        @RequestParam(value = "title", defaultValue = "") String title,
 	        @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
 	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
@@ -234,9 +260,11 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PreAuthorize("hasAnyAuthority('Admin')")
+	@PreAuthorize("hasAnyAuthority('Event.Delete') or 1 == @eventRepository.isEventOwner(#id, #userId)")
 	@DeleteMapping("/{id}")
-	public ResponseEntity<String> deleteEvent(@PathVariable String id) {
+	public ResponseEntity<String> deleteEvent(
+			@PathVariable String id,
+			@RequestHeader("userId") String userId) {
 	    // Find event
 	    Optional<EventModel> optionalEvent = eventRepository.findById(id);
 	    if (optionalEvent.isEmpty()) {
@@ -250,15 +278,26 @@ public class EventServiceController {
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotEvents(
+			Authentication authentication,
+			@RequestHeader("userId") String userId,
 	        @RequestParam(value = "limit", defaultValue = "5") Integer limit) {
 	    if (limit <= 0 || limit > 5) {
 	        limit = 5;
 	    }
 	    Calendar cal = Calendar.getInstance();
 	    Date startDate = cal.getTime();
+	    
+	    boolean canEdit = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
+			canEdit = true;
+		}
+	    boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
+			canDelete = true;
+		}
 
 	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
-	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, pageable);
+	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, userId, canEdit, canDelete, pageable);
 
 	    HashMap<String, Object> result = new HashMap<>();
 	    result.put("events", events.getContent());
@@ -268,6 +307,7 @@ public class EventServiceController {
 	
 	@GetMapping("/participated")
 	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
+			Authentication authentication,
 	        @RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
@@ -276,11 +316,20 @@ public class EventServiceController {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
+	    
+	    boolean canEdit = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
+			canEdit = true;
+		}
+	    boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
+			canDelete = true;
+		}
 
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
 	    Calendar cal = Calendar.getInstance();
         Date startDate = cal.getTime();
-        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, mode, pageable);
+        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, mode, canEdit, canDelete, pageable);
 
         result.put("totalPages", events.getTotalPages());
         result.put("events", events.getContent());
@@ -306,22 +355,31 @@ public class EventServiceController {
 	}
 	
 	@GetMapping("/{id}/participants")
-	public ResponseEntity<Map<String, Object>> getParticipantsListById(@PathVariable String id,
+	public ResponseEntity<Map<String, Object>> getParticipantsListById(
+			Authentication authentication,
+			@PathVariable String id,
+			@RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 	    if (pageSize == 0 || pageSize > 50) {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 	    Map<String, Object> result = new HashMap<>();
+	    
+	    boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Participant.Delete"))) {
+			canDelete = true;
+		}
 
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-	    Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, pageable);
+	    Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, userId, canDelete, pageable);
 
 	    result.put("participants", participantsPage.getContent());
 
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 	
+	@PreAuthorize("hasAnyAuthority('Event.Participant.Create')")
 	@PostMapping("/{id}/participants")
 	public ResponseEntity<String> addParticipant(
 	        @PathVariable String id,
@@ -346,10 +404,12 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	@DeleteMapping("/{id}/participants")
+	@PreAuthorize("hasAnyAuthority('Event.Participant.Delete') or #userId == #requestingUserId")
+	@DeleteMapping("/{id}/participants/{userId}")
 	public ResponseEntity<String> deleteParticipant(
 	        @PathVariable String id,
-	        @RequestHeader("userId") String userId) {
+	        @PathVariable String userId,
+	        @RequestHeader("userId") String requestingUserId) {
 	    // Delete the participant
 	    participantEventRepository.deleteByEventIdAndUserId(id, userId);
 
@@ -361,6 +421,7 @@ public class EventServiceController {
 	
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getEventComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -369,9 +430,14 @@ public class EventServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+			canDelete = true;
+		}
 
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentEventDto> comments = commentEventRepository.getComments(id, userId, pageable);
+		Page<ICommentEventDto> comments = commentEventRepository.getComments(id, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -380,6 +446,7 @@ public class EventServiceController {
 
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getEventChildrenComments(
+			Authentication authentication,
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -394,15 +461,21 @@ public class EventServiceController {
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
+		
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+			canDelete = true;
+		}
 
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, userId, pageable);
+		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, userId, canDelete, pageable);
 
 		result.put("comments", comments.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Event.Comment.Create')")
 	@PostMapping("/{id}/comments")
 	public ResponseEntity<CommentEventModel> createComment(
 			@RequestHeader("userId") String creator,
@@ -421,6 +494,7 @@ public class EventServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
+	@PreAuthorize("1 == @commentEventRepository.isCommentOwner(#commentId, #creator)")
 	@PutMapping("/comments/{commentId}")
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String creator,
@@ -435,21 +509,14 @@ public class EventServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Event.Comment.Delete') or 1 == @commentEventRepository.isCommentOwner(#commentId, #creator)")
 	@DeleteMapping("/comments/{commentId}")
 	public ResponseEntity<String> deleteComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId) {
 		// Check if comment exists
 		Optional<CommentEventModel> optionalComment = commentEventRepository.findById(commentId);
-		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
-		}
-		
 		CommentEventModel originalComment = optionalComment.get();
-		// Check if user is comment's creator
-		if (!originalComment.getCreator().getId().equals(creator)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the creator of this comment");
-		}
 
 		// Initilize variables
 		List<CommentEventModel> childrenComments = new ArrayList<CommentEventModel>();
@@ -474,7 +541,7 @@ public class EventServiceController {
 		}
 
 		// Delete all comments and update comment count
-		int deleted = commentEventRepository.deleteComment(commentId, creator);
+		int deleted = commentEventRepository.deleteComment(commentId);
 		for (String parentId : allParentId) {
 			commentEventRepository.deleteChildrenComment(parentId);
 		}

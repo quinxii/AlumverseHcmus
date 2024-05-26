@@ -14,13 +14,16 @@ import hcmus.alumni.event.dto.ICommentEventDto;
 import hcmus.alumni.event.model.CommentEventModel;
 
 public interface CommentEventRepository extends JpaRepository<CommentEventModel, String> {
-	@Query("SELECT new CommentEventModel(c, :userId) FROM CommentEventModel c " +
-	        "WHERE c.event.id = :eventId AND c.isDelete = false AND c.parentId IS NULL")
-	Page<ICommentEventDto> getComments(String eventId, String userId, Pageable pageable);
+	@Query(value = "select count(*) > 0 from comment_event where id = :commentId and creator = :userId", nativeQuery = true)
+	Long isCommentOwner(String commentId, String userId);
 	
-	@Query("SELECT new CommentEventModel(c, :userId) FROM CommentEventModel c " +
+	@Query("SELECT new CommentEventModel(c, :userId, :canDelete) FROM CommentEventModel c " +
+	        "WHERE c.event.id = :eventId AND c.isDelete = false AND c.parentId IS NULL")
+	Page<ICommentEventDto> getComments(String eventId, String userId, boolean canDelete,Pageable pageable);
+	
+	@Query("SELECT new CommentEventModel(c, :userId, :canDelete) FROM CommentEventModel c " +
 	        "WHERE c.isDelete = false AND c.parentId = :commentId")
-	Page<ICommentEventDto> getChildrenComment(String commentId, String userId, Pageable pageable);
+	Page<ICommentEventDto> getChildrenComment(String commentId, String userId, boolean canDelete,Pageable pageable);
 	
 	@Query("SELECT c FROM CommentEventModel c WHERE c.isDelete = false AND c.parentId = :commentId")
 	List<CommentEventModel> getChildrenComment(String commentId);
@@ -32,8 +35,8 @@ public interface CommentEventRepository extends JpaRepository<CommentEventModel,
 	
 	@Transactional
 	@Modifying
-	@Query("UPDATE CommentEventModel c SET c.isDelete = true WHERE c.id = :commentId AND c.creator.id = :creator")
-	int deleteComment(@Param("commentId") String commentId, @Param("creator") String creator);
+	@Query("UPDATE CommentEventModel c SET c.isDelete = true WHERE c.id = :commentId")
+	int deleteComment(@Param("commentId") String commentId);
 	
 	@Transactional
 	@Modifying

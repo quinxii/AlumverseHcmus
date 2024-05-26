@@ -8,6 +8,7 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import hcmus.alumni.event.common.EventPermissions;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -18,6 +19,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -95,6 +97,9 @@ public class EventModel implements Serializable {
 	@Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
 	private Integer childrenCommentNumber = 0;
 	
+	@Transient
+	private EventPermissions permissions;
+	
 	public void setTags(Integer[] tags) {
 		Set<TagModel> newTags = new HashSet<>();
 		for (Integer tag : tags) {
@@ -105,5 +110,38 @@ public class EventModel implements Serializable {
 	
 	public EventModel(String id) {
 		this.id = id;
+	}
+	
+	public EventModel(EventModel copy, String userId, boolean canEdit, boolean canDelete) {
+		this.id = copy.id;
+	    this.creator = copy.creator;
+	    this.title = copy.title;
+	    this.content = copy.content;
+	    this.thumbnail = copy.thumbnail;
+	    this.organizationLocation = copy.organizationLocation;
+	    this.organizationTime = copy.organizationTime;
+	    this.faculty = copy.faculty;
+	    this.tags = copy.tags;
+	    this.createAt = copy.createAt;
+	    this.updateAt = copy.updateAt;
+	    this.publishedAt = copy.publishedAt;
+	    this.status = copy.status;
+	    this.views = copy.views;
+	    this.participants = copy.participants;
+	    this.minimumParticipants = copy.minimumParticipants;
+	    this.maximumParticipants = copy.maximumParticipants;
+	    this.childrenCommentNumber = copy.childrenCommentNumber;
+		
+		this.permissions = new EventPermissions(false, false);
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions.setDelete(true);
+            this.permissions.setEdit(true);
+        }
+        if (canEdit) {
+            this.permissions.setEdit(true);
+        }
+        if (canDelete) {
+            this.permissions.setDelete(true);
+        }
 	}
 }

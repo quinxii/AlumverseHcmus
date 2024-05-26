@@ -13,15 +13,12 @@ import hcmus.alumni.event.model.ParticipantEventId;
 import hcmus.alumni.event.model.ParticipantEventModel;
 
 public interface ParticipantEventRepository extends JpaRepository<ParticipantEventModel, ParticipantEventId> {
-	@Query("SELECT u.id AS id, " +
-		"u.fullName AS fullName, " +
-		"u.avatarUrl AS avatarUrl, " +
-		"pe.note AS note " +
+	@Query("SELECT new ParticipantEventModel(pe, u.fullName, u.avatarUrl, :requestingUserId, :canDelete) " +
 		"FROM ParticipantEventModel pe " +
 		"JOIN UserModel u ON pe.id.userId = u.id " +
 		"WHERE pe.id.eventId = :id " +
 		"AND pe.isDelete = false")
-	Page<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id, Pageable pageable);
+	Page<IParticipantEventDto> getParticipantsByEventId(@Param("id") String id, String requestingUserId, boolean canDelete, Pageable pageable);
 
 	@Transactional
 	@Modifying
