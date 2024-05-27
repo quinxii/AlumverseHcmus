@@ -38,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.IInteractPostAdviseDto;
 import hcmus.alumni.counsel.dto.IPostAdviseDto;
+import hcmus.alumni.counsel.dto.PostAdviseRequestDto;
 import hcmus.alumni.counsel.dto.ReactRequestDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 import hcmus.alumni.counsel.model.InteractPostAdviseId;
@@ -47,9 +48,13 @@ import hcmus.alumni.counsel.model.PostAdviseModel;
 import hcmus.alumni.counsel.model.ReactModel;
 import hcmus.alumni.counsel.model.StatusPostModel;
 import hcmus.alumni.counsel.model.UserModel;
+import hcmus.alumni.counsel.model.UserVotePostAdviseId;
+import hcmus.alumni.counsel.model.UserVotePostAdviseModel;
+import hcmus.alumni.counsel.model.VoteOptionPostAdviseModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
 import hcmus.alumni.counsel.repository.InteractPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
+import hcmus.alumni.counsel.repository.UserVotePostAdviseRepository;
 import hcmus.alumni.counsel.utils.ImageUtils;
 
 @RestController
@@ -63,9 +68,16 @@ public class CounselServiceController {
 	@Autowired
 	private InteractPostAdviseRepository interactPostAdviseRepository;
 	@Autowired
+	private UserVotePostAdviseRepository userVotePostAdviseRepository;
+	@Autowired
 	private ImageUtils imageUtils;
 
 	private final int MAX_IMAGE_SIZE_PER_POST = 5;
+
+	@GetMapping("/test")
+	public Object getMethodName(@RequestParam String param) {
+		return postAdviseRepository.findById(param).orElse(null);
+	}
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
@@ -126,13 +138,13 @@ public class CounselServiceController {
 	@PreAuthorize("hasAnyAuthority('Counsel.Create')")
 	@PostMapping("")
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
-			@RequestBody PostAdviseModel reqPostAdvise) {
+			@RequestBody PostAdviseRequestDto reqPostAdvise) {
 		if (creator.isEmpty() || reqPostAdvise.getTitle().isEmpty() || reqPostAdvise.getContent().isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 					.body(Collections.singletonMap("msg", "Title and content must not be empty"));
 		}
-		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise.getTitle(), reqPostAdvise.getContent(),
-				reqPostAdvise.getTags());
+
+		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise);
 		postAdvise.setPublishedAt(new Date());
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.CREATED).body(Collections.singletonMap("id", postAdvise.getId()));
@@ -143,9 +155,8 @@ public class CounselServiceController {
 	public ResponseEntity<String> updatePost(
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
-			@RequestBody PostAdviseModel updatedPostAdvise) {
-		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
-		PostAdviseModel postAdvise = optionalPostAdvise.get();
+			@RequestBody PostAdviseRequestDto updatedPostAdvise) {
+		PostAdviseModel postAdvise = postAdviseRepository.findById(id).orElse(null);
 
 		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
 			postAdvise.setTitle(updatedPostAdvise.getTitle());
@@ -154,8 +165,11 @@ public class CounselServiceController {
 			postAdvise.setContent(updatedPostAdvise.getContent());
 		}
 		if (updatedPostAdvise.getTags() != null) {
-			postAdvise.setTags(updatedPostAdvise.getTags());
+			postAdvise.updateTags(updatedPostAdvise.getTags());
 		}
+		// if (updatedPostAdvise.getVotes() != null) {
+		// postAdvise.updateVotes(updatedPostAdvise.getVotes());
+		// }
 
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -263,7 +277,7 @@ public class CounselServiceController {
 			}
 		}
 		pictures.clear();
-		
+
 		postAdvise.setStatus(new StatusPostModel(4));
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -496,4 +510,24 @@ public class CounselServiceController {
 		postAdviseRepository.reactionCountIncrement(id, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
+
+	@PostMapping("/{id}/votes/{voteId}")
+	public ResponseEntity<HashMap<String, Object>> postVote(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id,
+			@PathVariable Integer voteId) {
+		HashMap<String, Object> result = new HashMap<>();
+		if (userVotePostAdviseRepository.userVoteCountByPost(id, userId) >= 1) {
+			result.put("error", Collections.singletonMap("msg", "You have already voted for this post"));
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+		}
+
+		// UserVotePostAdviseModel find = userVotePostAdviseRepository
+		// 		.findById(new UserVotePostAdviseId(userId, voteId, id)).orElse(null);
+
+		UserVotePostAdviseModel userVote = new UserVotePostAdviseModel(userId, voteId, id);
+		userVotePostAdviseRepository.save(userVote);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
 }

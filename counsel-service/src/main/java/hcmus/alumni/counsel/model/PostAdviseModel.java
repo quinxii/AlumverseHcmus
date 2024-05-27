@@ -1,6 +1,7 @@
 package hcmus.alumni.counsel.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -9,10 +10,12 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import hcmus.alumni.counsel.common.PostAdvisePermissions;
+import hcmus.alumni.counsel.dto.PostAdviseRequestDto;
+import hcmus.alumni.counsel.dto.PostAdviseRequestDto.TagRequestDto;
+import hcmus.alumni.counsel.dto.PostAdviseRequestDto.VoteRequestDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,6 +54,10 @@ public class PostAdviseModel implements Serializable {
     @OrderBy("pitctureOrder ASC")
     @OneToMany(mappedBy = "postAdvise", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PicturePostAdviseModel> pictures;
+
+    @OneToMany(mappedBy = "postAdvise", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<VoteOptionPostAdviseModel> votes = new ArrayList<VoteOptionPostAdviseModel>();
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
@@ -93,29 +100,28 @@ public class PostAdviseModel implements Serializable {
         this.id = id;
     }
 
-    // For request body
-    @JsonCreator
-    public PostAdviseModel(@JsonProperty("title") String title, @JsonProperty("content") String content,
-            @JsonProperty("tags") Set<TagModel> tags) {
-        this.title = title;
-        this.content = content;
-        this.tags = tags;
-    }
-
-    public PostAdviseModel(String creator, String title, String content, Set<TagModel> tags) {
+    public PostAdviseModel(String creator, PostAdviseRequestDto request) {
         this.id = java.util.UUID.randomUUID().toString();
         this.creator = new UserModel(creator);
-        this.title = title;
-        this.content = content;
-        this.tags = tags;
+        this.title = request.getTitle();
+        this.content = request.getContent();
+        if (request.getTags() != null)
+            request.getTags().forEach(tag -> this.tags.add(new TagModel(tag.getId())));
+        if (request.getVotes() != null) {
+            for (int i = 0; i < request.getVotes().size(); i++) {
+                this.votes.add(new VoteOptionPostAdviseModel(i + 1, this, request.getVotes().get(i).getName()));
+            }
+        }
     }
 
+    // Copy constructor
     public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete, String userId, boolean canDelete) {
         this.id = copy.id;
         this.creator = copy.creator;
         this.title = copy.title;
         this.pictures = copy.pictures;
         this.content = copy.content;
+        this.votes = copy.votes;
         this.tags = copy.tags;
         this.createAt = copy.createAt;
         this.updateAt = copy.updateAt;
@@ -123,7 +129,7 @@ public class PostAdviseModel implements Serializable {
         this.status = copy.status;
         this.childrenCommentNumber = copy.childrenCommentNumber;
         this.reactionCount = copy.reactionCount;
-        
+
         if (isReactionDelete != null) {
             this.isReacted = !isReactionDelete;
         } else {
@@ -138,6 +144,16 @@ public class PostAdviseModel implements Serializable {
         if (canDelete) {
             this.permissions.setDelete(true);
         }
+    }
+
+    public void updateTags(List<TagRequestDto> tags) {
+        this.tags.clear();
+        tags.forEach(tag -> this.tags.add(new TagModel(tag.getId())));
+    }
+
+    public void updateVotes(List<VoteRequestDto> votes) {
+        Set<Integer> currentIds = new HashSet<Integer>();
+        this.votes.forEach(vote -> currentIds.add(vote.getId().getVoteId()));
     }
 
     public void addPicture(PicturePostAdviseModel picture) {

@@ -21,6 +21,14 @@ public interface IPostAdviseDto {
 		String getId();
 		String getPictureUrl();
 	}
+	interface Votes {
+		interface Id {
+			Integer getVoteId();
+		}
+		Id getId();
+		String getName();
+		Integer getVoteCount();
+	}
 	interface Permissions {
 		Boolean getEdit();
 		Boolean getDelete();
@@ -29,6 +37,7 @@ public interface IPostAdviseDto {
 	String getId();
 	String getTitle();
 	List<Pictures> getPictures();
+	List<Votes> getVotes();
 	String getContent();
 	Integer getChildrenCommentNumber();
 	Integer getReactionCount();
