@@ -66,8 +66,6 @@ public class EventServiceController {
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
-			Authentication authentication,
-			@RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 	        @RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -81,15 +79,6 @@ public class EventServiceController {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
-	    
-	    boolean canEdit = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
-			canEdit = true;
-		}
-	    boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
-			canDelete = true;
-		}
 
 	    try {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
@@ -97,7 +86,7 @@ public class EventServiceController {
 	        
 	        Calendar cal = Calendar.getInstance();
 	        Date startDate = cal.getTime();
-	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, mode, userId, canEdit, canDelete, pageable);
+	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, mode, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -112,19 +101,9 @@ public class EventServiceController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<IEventDto> getEventById(
-			Authentication authentication,
-			@PathVariable String id,
-			@RequestHeader("userId") String userId) {
-	    boolean canEdit = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
-			canEdit = true;
-		}
-	    boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
-			canDelete = true;
-		}
+			@PathVariable String id) {
 		
-	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId, canEdit, canDelete);
+	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
 	    if (optionalEvent.isEmpty()) {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	    }
@@ -184,7 +163,7 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Event.Edit') or 1 == @eventRepository.isEventOwner(#id, #userId)")
+	@PreAuthorize("hasAnyAuthority('Event.Edit')")
 	@PutMapping("/{id}")
 	public ResponseEntity<String> updateEvent(
 			@PathVariable String id,
@@ -260,7 +239,7 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PreAuthorize("hasAnyAuthority('Event.Delete') or 1 == @eventRepository.isEventOwner(#id, #userId)")
+	@PreAuthorize("hasAnyAuthority('Event.Delete')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteEvent(
 			@PathVariable String id,
@@ -278,26 +257,15 @@ public class EventServiceController {
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotEvents(
-			Authentication authentication,
-			@RequestHeader("userId") String userId,
 	        @RequestParam(value = "limit", defaultValue = "5") Integer limit) {
 	    if (limit <= 0 || limit > 5) {
 	        limit = 5;
 	    }
 	    Calendar cal = Calendar.getInstance();
 	    Date startDate = cal.getTime();
-	    
-	    boolean canEdit = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
-			canEdit = true;
-		}
-	    boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
-			canDelete = true;
-		}
 
 	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
-	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, userId, canEdit, canDelete, pageable);
+	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, pageable);
 
 	    HashMap<String, Object> result = new HashMap<>();
 	    result.put("events", events.getContent());
@@ -307,7 +275,6 @@ public class EventServiceController {
 	
 	@GetMapping("/participated")
 	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
-			Authentication authentication,
 	        @RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
@@ -316,20 +283,11 @@ public class EventServiceController {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
-	    
-	    boolean canEdit = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Edit"))) {
-			canEdit = true;
-		}
-	    boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Delete"))) {
-			canDelete = true;
-		}
 
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
 	    Calendar cal = Calendar.getInstance();
         Date startDate = cal.getTime();
-        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, mode, canEdit, canDelete, pageable);
+        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, mode, pageable);
 
         result.put("totalPages", events.getTotalPages());
         result.put("events", events.getContent());
@@ -356,9 +314,7 @@ public class EventServiceController {
 	
 	@GetMapping("/{id}/participants")
 	public ResponseEntity<Map<String, Object>> getParticipantsListById(
-			Authentication authentication,
 			@PathVariable String id,
-			@RequestHeader("userId") String userId,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 	    if (pageSize == 0 || pageSize > 50) {
@@ -366,13 +322,8 @@ public class EventServiceController {
 	    }
 	    Map<String, Object> result = new HashMap<>();
 	    
-	    boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Participant.Delete"))) {
-			canDelete = true;
-		}
-
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-	    Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, userId, canDelete, pageable);
+	    Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, pageable);
 
 	    result.put("participants", participantsPage.getContent());
 

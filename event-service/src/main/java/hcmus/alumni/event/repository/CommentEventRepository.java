@@ -14,7 +14,7 @@ import hcmus.alumni.event.dto.ICommentEventDto;
 import hcmus.alumni.event.model.CommentEventModel;
 
 public interface CommentEventRepository extends JpaRepository<CommentEventModel, String> {
-	@Query(value = "select count(*) > 0 from comment_event where id = :commentId and creator = :userId", nativeQuery = true)
+	@Query(value = "select count(*) > 0 from comment_event where id = :commentId and creator = :userId and is_delete = false", nativeQuery = true)
 	Long isCommentOwner(String commentId, String userId);
 	
 	@Query("SELECT new CommentEventModel(c, :userId, :canDelete) FROM CommentEventModel c " +

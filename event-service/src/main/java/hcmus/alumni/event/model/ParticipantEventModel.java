@@ -32,28 +32,5 @@ public class ParticipantEventModel {
 
     @Column(name = "is_delete")
     private boolean isDelete;
-    
-    @Transient
-	private String fullName;
-    
-    @Transient
-	private String avatarUrl;
-    
-    @Transient
-	private ParticipantEventPermissions permissions;
-    
-    public ParticipantEventModel(ParticipantEventModel copy, String fullName, String avatarUrl, String userId, boolean canDelete) {
-    	this.id = copy.id;
-    	this.note = copy.note;
-    	this.createdAt = copy.createdAt;
-    	this.isDelete = copy.isDelete;
-    	this.fullName = fullName;
-    	this.avatarUrl = avatarUrl;
-    	
-    	this.permissions = new ParticipantEventPermissions(false);
-    	if (this.id.getUserId().equals(userId)|| canDelete) {
-            this.permissions.setDelete(true);
-        }
-    }
 }
 

@@ -23,10 +23,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 		"where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
 	List<String> getPermissions(List<String> role, String domain);
 	
-	@Query(value = "select count(*) > 0 from event where id = :eventId and creator = :userId", nativeQuery = true)
-	Long isEventOwner(String eventId, String userId);
-	
-	@Query("SELECT new EventModel(e, :userId, :canEdit, :canDelete) " +
+	@Query("SELECT e " +
         "FROM EventModel e " +
         "LEFT JOIN e.status s " +
         "LEFT JOIN e.faculty f " +
@@ -47,15 +44,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			@Param("tagsId") List<Integer> tagsId,
 			@Param("startDate") Date startDate,
 			@Param("mode") Integer mode,
-			String userId,
-			boolean canEdit,
-		    boolean canDelete,
 			Pageable pageable);
-
-	@Query("SELECT new EventModel(e, :userId, :canEdit, :canDelete) " +
-			"FROM EventModel e " +
-			"WHERE e.id = :id")
-	Optional<IEventDto> findEventById(String id, String userId, boolean canEdit, boolean canDelete);
 	
 	@Query("SELECT e " +
 			"FROM EventModel e " +
@@ -67,18 +56,15 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query("UPDATE EventModel e SET e.views = e.views + 1 WHERE e.id = :id")
     int incrementEventViews(String id);
 
-    @Query("SELECT new EventModel(e, :userId, :canEdit, :canDelete) " + 
+    @Query("SELECT e " + 
 		"FROM EventModel e " + 
     	"JOIN e.status s " + 
 		"WHERE s.id = 2 AND e.organizationTime >= :startDate")
     Page<IEventDto> getHotEvents(
     		Date startDate,
-    		String userId,
-			boolean canEdit,
-		    boolean canDelete,
 		    Pageable pageable);
     
-	@Query("SELECT new EventModel(e, :userId, :canEdit, :canDelete) " + 
+	@Query("SELECT e " + 
 		"FROM EventModel e " + 
 		"LEFT JOIN ParticipantEventModel p " + 
 		"ON p.id.eventId = e.id " + 
@@ -92,8 +78,6 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			@Param("userId") String userId, 
 			@Param("startDate") Date startDate,
 			@Param("mode") Integer mode,
-			boolean canEdit,
-		    boolean canDelete,
 			Pageable pageable);
     
     @Transactional
