@@ -13,9 +13,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import hcmus.alumni.counsel.common.PostAdvisePermissions;
-import hcmus.alumni.counsel.dto.PostAdviseRequestDto;
-import hcmus.alumni.counsel.dto.PostAdviseRequestDto.TagRequestDto;
-import hcmus.alumni.counsel.dto.PostAdviseRequestDto.VoteRequestDto;
+import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto;
+import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.TagRequestDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,8 +52,10 @@ public class PostAdviseModel implements Serializable {
 
     @OrderBy("pitctureOrder ASC")
     @OneToMany(mappedBy = "postAdvise", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<PicturePostAdviseModel> pictures;
 
+    @OrderBy("id.voteId ASC")
     @OneToMany(mappedBy = "postAdvise", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<VoteOptionPostAdviseModel> votes = new ArrayList<VoteOptionPostAdviseModel>();
@@ -88,7 +89,7 @@ public class PostAdviseModel implements Serializable {
     private Integer reactionCount = 0;
 
     @Transient
-    private boolean isReacted;
+    private Boolean isReacted;
 
     @Transient
     private PostAdvisePermissions permissions = new PostAdvisePermissions(false, false);
@@ -114,14 +115,13 @@ public class PostAdviseModel implements Serializable {
         }
     }
 
-    // Copy constructor
-    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete, String userId, boolean canDelete) {
+    // Copy constructor for responses
+    public PostAdviseModel(PostAdviseModel copy, Boolean isReactionDelete, String userId, Boolean canDelete) {
         this.id = copy.id;
         this.creator = copy.creator;
         this.title = copy.title;
         this.pictures = copy.pictures;
         this.content = copy.content;
-        this.votes = copy.votes;
         this.tags = copy.tags;
         this.createAt = copy.createAt;
         this.updateAt = copy.updateAt;
@@ -129,6 +129,13 @@ public class PostAdviseModel implements Serializable {
         this.status = copy.status;
         this.childrenCommentNumber = copy.childrenCommentNumber;
         this.reactionCount = copy.reactionCount;
+
+        // Deep copy of votes without initializing userVotes
+        if (copy.votes != null) {
+            for (VoteOptionPostAdviseModel voteOption : copy.votes) {
+                this.votes.add(new VoteOptionPostAdviseModel(voteOption));
+            }
+        }
 
         if (isReactionDelete != null) {
             this.isReacted = !isReactionDelete;
@@ -149,11 +156,6 @@ public class PostAdviseModel implements Serializable {
     public void updateTags(List<TagRequestDto> tags) {
         this.tags.clear();
         tags.forEach(tag -> this.tags.add(new TagModel(tag.getId())));
-    }
-
-    public void updateVotes(List<VoteRequestDto> votes) {
-        Set<Integer> currentIds = new HashSet<Integer>();
-        this.votes.forEach(vote -> currentIds.add(vote.getId().getVoteId()));
     }
 
     public void addPicture(PicturePostAdviseModel picture) {

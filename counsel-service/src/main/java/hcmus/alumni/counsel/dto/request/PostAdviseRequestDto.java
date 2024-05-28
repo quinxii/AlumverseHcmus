@@ -1,4 +1,4 @@
-package hcmus.alumni.counsel.dto;
+package hcmus.alumni.counsel.dto.request;
 
 import java.util.List;
 

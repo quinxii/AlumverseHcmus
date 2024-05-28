@@ -3,7 +3,9 @@ package hcmus.alumni.counsel.model;
 import java.io.Serializable;
 import java.util.Date;
 
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
@@ -19,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "user_vote_post_advise")
@@ -32,12 +35,14 @@ public class UserVotePostAdviseModel implements Serializable {
     private UserVotePostAdviseId id;
 
     @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @MapsId("voteOptionPostAdviseId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
             @JoinColumn(name = "vote_id", referencedColumnName = "id", nullable = false),
             @JoinColumn(name = "post_advise_id", referencedColumnName = "post_advise_id", nullable = false)
     })
+    @JsonBackReference
     private VoteOptionPostAdviseModel voteOptionPostAdvise;
 
     @MapsId("userId")
@@ -45,7 +50,7 @@ public class UserVotePostAdviseModel implements Serializable {
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private UserModel user;
 
-    @CreationTimestamp
+    @UpdateTimestamp
     @Column(name = "create_at")
     private Date createAt;
 
