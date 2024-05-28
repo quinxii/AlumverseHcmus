@@ -71,7 +71,7 @@ public class CommentEventModel implements Serializable {
 		this.content = content;
 	}
 	
-	public CommentEventModel(CommentEventModel copy, String userId) {
+	public CommentEventModel(CommentEventModel copy, String userId, boolean canDelete) {
 		this.id = copy.id;
 		this.creator = copy.creator;
 		this.event = copy.event;
@@ -82,10 +82,13 @@ public class CommentEventModel implements Serializable {
 		this.updateAt = copy.updateAt;
 		this.isDelete = copy.isDelete;
 
-		if (copy.creator.getId().equals(userId)) {
-			this.permissions = new CommentEventPermissions(true, true);
-		} else {
-			this.permissions = new CommentEventPermissions(false, false);
-		}
+		this.permissions = new CommentEventPermissions(false, false);
+        if (copy.creator.getId().equals(userId)) {
+            this.permissions.setDelete(true);
+            this.permissions.setEdit(true);
+        }
+        if (canDelete) {
+            this.permissions.setDelete(true);
+        }
 	}
 }
