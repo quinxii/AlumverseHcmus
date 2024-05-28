@@ -9,6 +9,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,6 +36,7 @@ public class PasswordHistoryModel {
     @Column(name = "created_at")
     private Date createdAt;
     
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private Date updatedAt;
 
