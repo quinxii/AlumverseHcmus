@@ -50,17 +50,6 @@ public class JwtUtils {
 				.setExpiration(new Date(System.currentTimeMillis() + expirationTime))
 				.signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
 	}
-	
-	public String generateForgotPwdToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(email)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
 
 	private Key getSignKey() {
 		byte[] keyBytes = Decoders.BASE64.decode(SECRET);
