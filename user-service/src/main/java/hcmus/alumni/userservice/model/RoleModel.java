@@ -100,4 +100,5 @@ public class RoleModel implements Serializable {
 	public void removePermission(PermissionModel permission) {
 		this.permissions.remove(permission);
 	}
+	
 }
