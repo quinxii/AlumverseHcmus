@@ -4,7 +4,6 @@ import java.util.Date;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import hcmus.alumni.event.common.ParticipantEventPermissions;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;

@@ -355,12 +355,11 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Event.Participant.Delete') or #userId == #requestingUserId")
-	@DeleteMapping("/{id}/participants/{userId}")
+	@PreAuthorize("hasAnyAuthority('Event.Participant.Delete')")
+	@DeleteMapping("/{id}/participants")
 	public ResponseEntity<String> deleteParticipant(
 	        @PathVariable String id,
-	        @PathVariable String userId,
-	        @RequestHeader("userId") String requestingUserId) {
+	        @RequestHeader("userId") String userId) {
 	    // Delete the participant
 	    participantEventRepository.deleteByEventIdAndUserId(id, userId);
 
