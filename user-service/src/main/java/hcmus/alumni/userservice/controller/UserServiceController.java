@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -29,7 +30,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,7 +46,6 @@ import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
-import hcmus.alumni.userservice.model.SexModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
@@ -376,23 +375,25 @@ public class UserServiceController {
 	
 
 	@PreAuthorize("hasAnyAuthority('User.Create')")
-	@PostMapping("/create-user")
-    public ResponseEntity<String> adminCreateUser(
-            @RequestParam String email,
-            @RequestParam String role,
-            @RequestParam String fullName) {
+	@PostMapping("")
+    public ResponseEntity<String> adminCreateUser(@RequestBody UserModel req) {
 
         UserModel newUser = new UserModel();
         newUser.setId(UUID.randomUUID().toString());
-        newUser.setEmail(email);
+        newUser.setEmail(req.getEmail());
         String pwd = UserConfig.generateRandomPassword(10);
         newUser.setPass(passwordEncoder.encode(pwd));
-        newUser.setFullName(fullName);
-        newUser.setCreateAt(new Date());
-        
+        newUser.setFullName(req.getFullName());
         PasswordHistoryModel passwordHistory = new PasswordHistoryModel(newUser.getId(), newUser.getPass(), true, new Date());
         
-        RoleModel roleModel = roleRepository.findByName(role);
+        Set<RoleModel> roles = req.getRoles();
+        String roleName = null;
+        for (RoleModel role : roles) {
+            roleName = role.getName();
+            break; 
+        }
+
+        RoleModel roleModel = roleRepository.findByName(roleName);
         if (roleModel == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid role");
         }
@@ -402,7 +403,7 @@ public class UserServiceController {
         try {
             userRepository.save(newUser);
             passwordHistoryRepository.save(passwordHistory);
-            emailSenderUtils.sendPasswordEmail(email, pwd);
+            emailSenderUtils.sendPasswordEmail(req.getEmail(), pwd);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input data");
         } catch (Exception e) {
@@ -416,17 +417,6 @@ public class UserServiceController {
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
 	@PutMapping("/{id}")
     public ResponseEntity<String> adminUpdateUser(@PathVariable String id,
-            @RequestParam(value = "email", required = false) String email,
-            @RequestParam(value = "fullName", required = false) String fullName,
-            @RequestParam(value = "phone", required = false) String phone,
-            @RequestParam(value = "sexId", required = false) Integer sexId,
-            @RequestParam(value = "dob", required = false) Date dob,
-            @RequestParam(value = "socialMediaLink", required = false) String socialMediaLink,
-            @RequestParam(value = "facultyId", required = false) Integer facultyId,
-            @RequestParam(value = "degree", required = false) String degree,
-            @RequestParam(value = "aboutMe", required = false) String aboutMe,
-            @RequestParam(value = "avatarUrl", required = false) String avatarUrl,
-            @RequestParam(value = "coverUrl", required = false) String coverUrl,
             @RequestParam(value = "statusId", required = false) Integer statusId) {
         
         Optional<UserModel> optionalUser = userRepository.findById (id);
@@ -436,39 +426,6 @@ public class UserServiceController {
 
         UserModel user = optionalUser.get();
 
-        if (email != null) {
-            user.setEmail(email);
-        }
-        if (fullName != null) {
-            user.setFullName(fullName);
-        }
-        if (phone != null) {
-            user.setPhone(phone);
-        }
-        if (sexId != null) {
-            user.setSex(new SexModel(sexId));
-        }
-        if (dob != null) {
-            user.setDob(dob);
-        }
-        if (socialMediaLink != null) {
-            user.setSocialMediaLink(socialMediaLink);
-        }
-        if (facultyId != null) {
-            user.setFaculty(new FacultyModel(facultyId));
-        }
-        if (degree != null) {
-            user.setDegree(degree);
-        }
-        if (aboutMe != null) {
-            user.setAboutMe(aboutMe);
-        }
-        if (avatarUrl != null) {
-            user.setAvatarUrl(avatarUrl);
-        }
-        if (coverUrl != null) {
-            user.setCoverUrl(coverUrl);
-        }
         if (statusId != null) {
             user.setStatusId(statusId);
         }
