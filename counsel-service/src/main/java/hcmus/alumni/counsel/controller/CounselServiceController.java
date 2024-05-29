@@ -6,12 +6,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.query.sqm.UnknownPathException;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
@@ -35,10 +38,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
-import hcmus.alumni.counsel.dto.IInteractPostAdviseDto;
-import hcmus.alumni.counsel.dto.IPostAdviseDto;
-import hcmus.alumni.counsel.dto.ReactRequestDto;
+import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto;
+import hcmus.alumni.counsel.dto.request.ReactRequestDto;
+import hcmus.alumni.counsel.dto.response.ICommentPostAdviseDto;
+import hcmus.alumni.counsel.dto.response.IInteractPostAdviseDto;
+import hcmus.alumni.counsel.dto.response.IUserVotePostAdviseDto;
+import hcmus.alumni.counsel.dto.response.PostAdviseDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 import hcmus.alumni.counsel.model.InteractPostAdviseId;
 import hcmus.alumni.counsel.model.InteractPostAdviseModel;
@@ -47,9 +52,14 @@ import hcmus.alumni.counsel.model.PostAdviseModel;
 import hcmus.alumni.counsel.model.ReactModel;
 import hcmus.alumni.counsel.model.StatusPostModel;
 import hcmus.alumni.counsel.model.UserModel;
+import hcmus.alumni.counsel.model.UserVotePostAdviseId;
+import hcmus.alumni.counsel.model.UserVotePostAdviseModel;
+import hcmus.alumni.counsel.model.VoteOptionPostAdviseModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
 import hcmus.alumni.counsel.repository.InteractPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
+import hcmus.alumni.counsel.repository.UserVotePostAdviseRepository;
+import hcmus.alumni.counsel.repository.VoteOptionPostAdviseRepository;
 import hcmus.alumni.counsel.utils.ImageUtils;
 
 @RestController
@@ -57,15 +67,39 @@ import hcmus.alumni.counsel.utils.ImageUtils;
 @RequestMapping("/counsel")
 public class CounselServiceController {
 	@Autowired
+	private final ModelMapper mapper = new ModelMapper();
+
+	@Autowired
 	private PostAdviseRepository postAdviseRepository;
 	@Autowired
 	private CommentPostAdviseRepository commentPostAdviseRepository;
 	@Autowired
 	private InteractPostAdviseRepository interactPostAdviseRepository;
 	@Autowired
+	private VoteOptionPostAdviseRepository voteOptionPostAdviseRepository;
+	@Autowired
+	private UserVotePostAdviseRepository userVotePostAdviseRepository;
+
+	@Autowired
 	private ImageUtils imageUtils;
 
 	private final int MAX_IMAGE_SIZE_PER_POST = 5;
+
+	@GetMapping("/test")
+	public Object getMethodName(@RequestHeader("userId") String userId,
+			@RequestParam String param) {
+		PostAdviseModel post = postAdviseRepository.findPostAdviseById(param, userId, true).orElse(null);
+		Set<Integer> voteIds = userVotePostAdviseRepository.getVoteIdsByUserAndPost(userId, param);
+
+		for (VoteOptionPostAdviseModel vote : post.getVotes()) {
+			if (voteIds.contains(vote.getId().getVoteId())) {
+				vote.setIsVoted(true);
+			}
+		}
+
+		System.out.println(voteIds);
+		return mapper.map(post, PostAdviseDto.class);
+	}
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
@@ -90,11 +124,36 @@ public class CounselServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IPostAdviseDto> posts = postAdviseRepository.searchPostAdvise(title, userId, canDelete, tagsId,
+			Page<PostAdviseModel> postsPage = postAdviseRepository.searchPostAdvise(title, userId, canDelete, tagsId,
 					pageable);
 
-			result.put("totalPages", posts.getTotalPages());
-			result.put("posts", posts.getContent());
+			result.put("totalPages", postsPage.getTotalPages());
+			List<PostAdviseModel> postList = postsPage.getContent();
+			List<Object[]> resultList = userVotePostAdviseRepository.getVoteIdsByUserAndPosts(userId,
+					postList.stream().map(PostAdviseModel::getId).toList());
+
+			// Create a map with key is post id and value is a set of vote ids
+			HashMap<String, Set<Integer>> voteIdsMap = new HashMap<String, Set<Integer>>();
+			for (Object[] obj : resultList) {
+				Set<Integer> voteIds = voteIdsMap.get(String.valueOf(obj[0]));
+				if (voteIds == null) {
+					voteIds = new HashSet<Integer>();
+				}
+				voteIds.add(Integer.valueOf(String.valueOf(obj[1])));
+				voteIdsMap.put(String.valueOf(obj[0]), voteIds);
+			}
+
+			// Set isVoted for each vote option
+			for (PostAdviseModel post : postList) {
+				Set<Integer> voteIds = voteIdsMap.get(post.getId());
+				for (VoteOptionPostAdviseModel vote : post.getVotes()) {
+					if (voteIds.contains(vote.getId().getVoteId())) {
+						vote.setIsVoted(true);
+					}
+				}
+			}
+
+			result.put("posts", postList.stream().map(p -> mapper.map(p, PostAdviseDto.class)).toList());
 		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
 			System.err.println(e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -107,7 +166,7 @@ public class CounselServiceController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<IPostAdviseDto> getPostById(Authentication authentication,
+	public ResponseEntity<PostAdviseDto> getPostById(Authentication authentication,
 			@RequestHeader("userId") String userId, @PathVariable String id) {
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
@@ -115,24 +174,33 @@ public class CounselServiceController {
 			canDelete = true;
 		}
 
-		IPostAdviseDto post = postAdviseRepository.findPostAdviseById(id, userId, canDelete).orElse(null);
+		PostAdviseModel post = postAdviseRepository.findPostAdviseById(id, userId, canDelete).orElse(null);
+
 		if (post == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
 
-		return ResponseEntity.status(HttpStatus.OK).body(post);
+		Set<Integer> voteIds = userVotePostAdviseRepository.getVoteIdsByUserAndPost(userId, id);
+
+		for (VoteOptionPostAdviseModel vote : post.getVotes()) {
+			if (voteIds.contains(vote.getId().getVoteId())) {
+				vote.setIsVoted(true);
+			}
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(mapper.map(post, PostAdviseDto.class));
 	}
 
 	@PreAuthorize("hasAnyAuthority('Counsel.Create')")
 	@PostMapping("")
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
-			@RequestBody PostAdviseModel reqPostAdvise) {
+			@RequestBody PostAdviseRequestDto reqPostAdvise) {
 		if (creator.isEmpty() || reqPostAdvise.getTitle().isEmpty() || reqPostAdvise.getContent().isEmpty()) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 					.body(Collections.singletonMap("msg", "Title and content must not be empty"));
 		}
-		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise.getTitle(), reqPostAdvise.getContent(),
-				reqPostAdvise.getTags());
+
+		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise);
 		postAdvise.setPublishedAt(new Date());
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.CREATED).body(Collections.singletonMap("id", postAdvise.getId()));
@@ -143,9 +211,8 @@ public class CounselServiceController {
 	public ResponseEntity<String> updatePost(
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
-			@RequestBody PostAdviseModel updatedPostAdvise) {
-		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
-		PostAdviseModel postAdvise = optionalPostAdvise.get();
+			@RequestBody PostAdviseRequestDto updatedPostAdvise) {
+		PostAdviseModel postAdvise = postAdviseRepository.findById(id).orElse(null);
 
 		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
 			postAdvise.setTitle(updatedPostAdvise.getTitle());
@@ -154,7 +221,7 @@ public class CounselServiceController {
 			postAdvise.setContent(updatedPostAdvise.getContent());
 		}
 		if (updatedPostAdvise.getTags() != null) {
-			postAdvise.setTags(updatedPostAdvise.getTags());
+			postAdvise.updateTags(updatedPostAdvise.getTags());
 		}
 
 		postAdviseRepository.save(postAdvise);
@@ -263,7 +330,7 @@ public class CounselServiceController {
 			}
 		}
 		pictures.clear();
-		
+
 		postAdvise.setStatus(new StatusPostModel(4));
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -416,11 +483,14 @@ public class CounselServiceController {
 	}
 
 	@GetMapping("/{id}/react")
-	public ResponseEntity<HashMap<String, Object>> getPostAdviseReaction(@RequestHeader("userId") String creatorId,
+	public ResponseEntity<HashMap<String, Object>> getPostAdviseReactionUsers(@RequestHeader("userId") String creatorId,
 			@PathVariable String id,
 			@RequestParam Integer reactId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		try {
@@ -496,4 +566,87 @@ public class CounselServiceController {
 		postAdviseRepository.reactionCountIncrement(id, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
+
+	@GetMapping("/{id}/votes/{voteId}")
+	public ResponseEntity<HashMap<String, Object>> getVoteUsers(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "id") String postId,
+			@PathVariable Integer voteId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
+		if (pageSize == 0 || pageSize > 50) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
+			Page<IUserVotePostAdviseDto> users = userVotePostAdviseRepository.getUsers(voteId, postId, pageable);
+
+			result.put("totalPages", users.getTotalPages());
+			result.put("users", users.getContent());
+		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
+			System.err.println(e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			System.err.println(e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PostMapping("/{id}/votes/{voteId}")
+	public ResponseEntity<HashMap<String, Object>> postVote(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "id") String postId,
+			@PathVariable Integer voteId) {
+		HashMap<String, Object> result = new HashMap<>();
+		if (userVotePostAdviseRepository.userVoteCountByPost(postId, userId) >= 1) {
+			result.put("error", Collections.singletonMap("msg", "You have already voted for this post"));
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+		}
+
+		UserVotePostAdviseModel userVote = new UserVotePostAdviseModel(userId, voteId, postId);
+		userVotePostAdviseRepository.save(userVote);
+		voteOptionPostAdviseRepository.voteCountIncrement(voteId, postId, 1);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@PutMapping("/{id}/votes/{voteId}")
+	public ResponseEntity<HashMap<String, Object>> putVote(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "id") String postId,
+			@PathVariable(name = "voteId") Integer oldVoteId,
+			@RequestBody HashMap<String, String> body) {
+		HashMap<String, Object> result = new HashMap<>();
+
+		Integer updatedVoteId = Integer.valueOf(body.get("updatedVoteId"));
+		int updated = userVotePostAdviseRepository.updateVoteOption(updatedVoteId, userId, oldVoteId, postId);
+
+		if (updated == 0) {
+			result.put("error", Collections.singletonMap("msg", "Not found"));
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@PreAuthorize("1 == @userVotePostAdviseRepository.isVoteOwner(#userId, #voteId, #postId)")
+	@DeleteMapping("/{id}/votes/{voteId}")
+	public ResponseEntity<String> deleteVote(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "id") String postId,
+			@PathVariable Integer voteId) {
+		UserVotePostAdviseModel userVote = userVotePostAdviseRepository
+				.findById(new UserVotePostAdviseId(userId, voteId, postId)).orElse(null);
+
+		if (userVote == null) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+		}
+
+		userVotePostAdviseRepository.delete(userVote);
+		voteOptionPostAdviseRepository.voteCountIncrement(voteId, postId, -1);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
 }
