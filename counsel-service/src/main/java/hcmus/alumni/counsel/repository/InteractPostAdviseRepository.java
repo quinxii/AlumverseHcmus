@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import hcmus.alumni.counsel.dto.IInteractPostAdviseDto;
+import hcmus.alumni.counsel.dto.response.IInteractPostAdviseDto;
 import hcmus.alumni.counsel.model.InteractPostAdviseId;
 import hcmus.alumni.counsel.model.InteractPostAdviseModel;
 
