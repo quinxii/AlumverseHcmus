@@ -386,19 +386,16 @@ public class UserServiceController {
         newUser.setFullName(req.getFullName());
         PasswordHistoryModel passwordHistory = new PasswordHistoryModel(newUser.getId(), newUser.getPass(), true, new Date());
         
-        Set<RoleModel> roles = req.getRoles();
-        String roleName = null;
-        for (RoleModel role : roles) {
-            roleName = role.getName();
-            break; 
+        Set<RoleModel> roles = new HashSet<>();
+        for (RoleModel role : req.getRoles()) {
+            Optional<RoleModel> roleModelOptional = roleRepository.findById(role.getId());
+            if (!roleModelOptional.isPresent()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid role: " + role.getId());
+            }
+            roles.add(roleModelOptional.get());
         }
 
-        RoleModel roleModel = roleRepository.findByName(roleName);
-        if (roleModel == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid role");
-        }
-
-        newUser.getRoles().add(roleModel);
+        newUser.setRoles(roles);
         
         try {
             userRepository.save(newUser);
