@@ -22,22 +22,22 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception e) {
-        System.out.println(e.getCause());
-        ErrorResponse error = new ErrorResponse(500, "Lỗi hệ thống. Vui lòng thử lại sau.");
+        System.out.println(e.getMessage());
+        ErrorResponse error = new ErrorResponse(500, "Lỗi hệ thống, vui lòng thử lại sau");
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
-        ErrorResponse error = new ErrorResponse(403, "Quyền truy cập bị từ chối.");
+        ErrorResponse error = new ErrorResponse(403, "Quyền truy cập bị từ chối");
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
         String name = ex.getParameterName();
-        ErrorResponse error = new ErrorResponse(40000, "Tham số " + name + " bị thiếu.");
+        ErrorResponse error = new ErrorResponse(40000, "Tham số " + name + " bị thiếu");
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestPartException.class)
     public ResponseEntity<ErrorResponse> handleMissingParts(MissingServletRequestPartException ex) {
         String name = ex.getRequestPartName();
-        ErrorResponse error = new ErrorResponse(40001, "File " + name + " bị thiếu.");
+        ErrorResponse error = new ErrorResponse(40001, "File " + name + " bị thiếu");
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
         String name = ex.getName();
         String requiredType = ex.getRequiredType().getSimpleName();
         ErrorResponse error = new ErrorResponse(40003,
-                "Tham số " + name + " phải là " + requiredType + ".");
+                "Tham số " + name + " phải là " + requiredType);
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }

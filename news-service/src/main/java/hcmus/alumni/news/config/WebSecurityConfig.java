@@ -15,8 +15,6 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class WebSecurityConfig {
 	@Autowired
 	PreAuthenticatedUserRoleHeaderFilter authFilter;
-	@Autowired
-	CustomAccessDeniedHandler accessDeniedHandler;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
