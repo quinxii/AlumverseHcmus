@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
+import hcmus.alumni.news.exception.AppException;
 import hcmus.alumni.news.model.CommentNewsModel;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
@@ -93,10 +95,9 @@ public class NewsServiceController {
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
 		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+			throw new AppException(4003, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(4004, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -106,7 +107,7 @@ public class NewsServiceController {
 	public ResponseEntity<INewsDto> getNewsById(@PathVariable String id) {
 		Optional<INewsDto> optionalNews = newsRepository.findNewsById(id);
 		if (optionalNews.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+			throw new AppException(4005, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		newsRepository.viewsIncrement(id);
 		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
@@ -120,8 +121,11 @@ public class NewsServiceController {
 			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
-		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
+		if (title.isEmpty()) {
+			throw new AppException(4006, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		if (thumbnail.isEmpty()) {
+			throw new AppException(4007, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		if (thumbnail.getSize() > 5 * 1024 * 1024) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");

@@ -22,7 +22,6 @@ public class WebSecurityConfig {
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		return http.csrf(csrf -> csrf.disable()).addFilterBefore(authFilter, BasicAuthenticationFilter.class)
 				.authorizeHttpRequests(auth -> auth.requestMatchers("/error").permitAll().anyRequest().authenticated())
-				.exceptionHandling(((exceptionHandling) -> exceptionHandling.accessDeniedHandler(accessDeniedHandler)))
 				.build();
 	}
 }
