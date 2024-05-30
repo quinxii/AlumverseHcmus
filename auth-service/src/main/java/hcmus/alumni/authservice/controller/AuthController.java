@@ -1,13 +1,12 @@
 package hcmus.alumni.authservice.controller;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,13 +23,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import hcmus.alumni.authservice.config.CustomUserDetails;
+import hcmus.alumni.authservice.dto.PermissionNameOnly;
 import hcmus.alumni.authservice.dto.ResetPasswordRequestDto;
 import hcmus.alumni.authservice.model.PasswordHistoryModel;
-import hcmus.alumni.authservice.model.PermissionModel;
 import hcmus.alumni.authservice.model.RoleModel;
 import hcmus.alumni.authservice.model.UserModel;
 import hcmus.alumni.authservice.repository.EmailActivationCodeRepository;
 import hcmus.alumni.authservice.repository.PasswordHistoryRepository;
+import hcmus.alumni.authservice.repository.PermissionRepository;
 import hcmus.alumni.authservice.repository.UserRepository;
 import hcmus.alumni.authservice.utils.EmailSenderUtils;
 import hcmus.alumni.authservice.utils.JwtUtils;
@@ -52,6 +52,8 @@ public class AuthController {
 	private PasswordEncoder passwordEncoder;
 	@Autowired
 	private PasswordHistoryRepository passwordHistoryRepository;
+	@Autowired
+	private PermissionRepository permissionRepository;
 
 	private UserUtils userUtils = UserUtils.getInstance();
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
@@ -75,11 +77,13 @@ public class AuthController {
 				CustomUserDetails cud = (CustomUserDetails) authenticate.getPrincipal();
 
 				Set<RoleModel> roles = cud.getUser().getRoles();
+	            List<Integer> roleIds = roles.stream().map(RoleModel::getId).collect(Collectors.toList());
 
-				List<String> permissionNames = new ArrayList<>();
-				roles.forEach(role -> {
-				    permissionNames.addAll(role.getPermissions());
-				});
+	            List<PermissionNameOnly> permissionNamesOnly = permissionRepository.findPermissionNamesByRoleIds(roleIds);
+	            List<String> permissionNames = permissionNamesOnly.stream()
+	                .map(PermissionNameOnly::getName)
+	                .distinct()
+	                .collect(Collectors.toList());
 
 				Map<String, Object> response = new HashMap<>();
 				response.put("jwt", jwtUtils.generateToken(cud.getUser()));
