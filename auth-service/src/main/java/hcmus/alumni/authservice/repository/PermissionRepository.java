@@ -9,7 +9,6 @@ import org.springframework.data.repository.CrudRepository;
 import java.util.List;
 
 public interface PermissionRepository extends CrudRepository<PermissionModel, Integer> {
-
-    @Query("SELECT p.name AS name FROM PermissionModel p JOIN p.roles r WHERE r.id IN :roles")
-    List<PermissionNameOnly> findPermissionNamesByRoleIds(@Param("roles") List<Integer> roles);
+	@Query("SELECT p.name AS name FROM PermissionModel p JOIN RolePermissionModel rp ON rp.id.permissionId = p.id WHERE rp.id.roleId IN :roleIds")
+    List<PermissionNameOnly> findPermissionNamesByRoleIds(@Param("roleIds") List<Integer> roleIds);
 }
