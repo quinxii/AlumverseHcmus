@@ -631,8 +631,10 @@ public class CounselServiceController {
 		try {
 			int updated = userVotePostAdviseRepository.updateVoteOption(updatedVoteId, userId, oldVoteId, postId);
 			if (updated == 0) {
-				throw new AppException(61700, "Không tìm thấy lựa chọn", HttpStatus.BAD_REQUEST);
+				throw new AppException(61700, "Không tìm thấy bình chọn", HttpStatus.BAD_REQUEST);
 			}
+			voteOptionPostAdviseRepository.voteCountIncrement(oldVoteId, postId, -1);
+			voteOptionPostAdviseRepository.voteCountIncrement(updatedVoteId, postId, 1);
 		} catch (DataIntegrityViolationException e) {
 			throw new AppException(61701, "Lựa chọn cập nhật không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
