@@ -133,6 +133,9 @@ public class CounselServiceController {
 			// Set isVoted for each vote option
 			for (PostAdviseModel post : postList) {
 				Set<Integer> voteIds = voteIdsMap.get(post.getId());
+				if (voteIds == null) {
+					continue;
+				}
 				for (VoteOptionPostAdviseModel vote : post.getVotes()) {
 					if (voteIds.contains(vote.getId().getVoteId())) {
 						vote.setIsVoted(true);
