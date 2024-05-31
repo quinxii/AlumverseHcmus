@@ -589,23 +589,15 @@ public class CounselServiceController {
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
 		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
-		try {
-			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
-			Page<IUserVotePostAdviseDto> users = userVotePostAdviseRepository.getUsers(voteId, postId, pageable);
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
+		Page<IUserVotePostAdviseDto> users = userVotePostAdviseRepository.getUsers(voteId, postId, pageable);
 
-			result.put("totalPages", users.getTotalPages());
-			result.put("users", users.getContent());
-		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-		}
+		result.put("totalPages", users.getTotalPages());
+		result.put("users", users.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -615,14 +607,16 @@ public class CounselServiceController {
 			@RequestHeader("userId") String userId,
 			@PathVariable(name = "id") String postId,
 			@PathVariable Integer voteId) {
-		HashMap<String, Object> result = new HashMap<>();
 		if (userVotePostAdviseRepository.userVoteCountByPost(postId, userId) >= 1) {
-			result.put("error", Collections.singletonMap("msg", "You have already voted for this post"));
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+			throw new AppException(61600, "Chỉ được bình chọn tối đa 1 lựa chọn", HttpStatus.BAD_REQUEST);
 		}
 
 		UserVotePostAdviseModel userVote = new UserVotePostAdviseModel(userId, voteId, postId);
-		userVotePostAdviseRepository.save(userVote);
+		try {
+			userVotePostAdviseRepository.save(userVote);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(61601, "Lựa chọn không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 		voteOptionPostAdviseRepository.voteCountIncrement(voteId, postId, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
@@ -633,15 +627,16 @@ public class CounselServiceController {
 			@PathVariable(name = "id") String postId,
 			@PathVariable(name = "voteId") Integer oldVoteId,
 			@RequestBody HashMap<String, String> body) {
-		HashMap<String, Object> result = new HashMap<>();
-
 		Integer updatedVoteId = Integer.valueOf(body.get("updatedVoteId"));
-		int updated = userVotePostAdviseRepository.updateVoteOption(updatedVoteId, userId, oldVoteId, postId);
-
-		if (updated == 0) {
-			result.put("error", Collections.singletonMap("msg", "Not found"));
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+		try {
+			int updated = userVotePostAdviseRepository.updateVoteOption(updatedVoteId, userId, oldVoteId, postId);
+			if (updated == 0) {
+				throw new AppException(61700, "Không tìm thấy lựa chọn", HttpStatus.BAD_REQUEST);
+			}
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(61701, "Lựa chọn cập nhật không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
+
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
@@ -651,14 +646,7 @@ public class CounselServiceController {
 			@RequestHeader("userId") String userId,
 			@PathVariable(name = "id") String postId,
 			@PathVariable Integer voteId) {
-		UserVotePostAdviseModel userVote = userVotePostAdviseRepository
-				.findById(new UserVotePostAdviseId(userId, voteId, postId)).orElse(null);
-
-		if (userVote == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
-		}
-
-		userVotePostAdviseRepository.delete(userVote);
+		userVotePostAdviseRepository.deleteById(new UserVotePostAdviseId(userId, voteId, postId));
 		voteOptionPostAdviseRepository.voteCountIncrement(voteId, postId, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
