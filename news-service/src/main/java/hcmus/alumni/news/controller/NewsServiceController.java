@@ -92,9 +92,9 @@ public class NewsServiceController {
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
 		} catch (IllegalArgumentException e) {
-			throw new AppException(40100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+			throw new AppException(40200, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (InvalidDataAccessApiUsageException e) {
-			throw new AppException(40101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(40201, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -104,7 +104,7 @@ public class NewsServiceController {
 	public ResponseEntity<INewsDto> getNewsById(@PathVariable String id) {
 		Optional<INewsDto> optionalNews = newsRepository.findNewsById(id);
 		if (optionalNews.isEmpty()) {
-			throw new AppException(40200, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(40300, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		newsRepository.viewsIncrement(id);
 		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
@@ -119,10 +119,10 @@ public class NewsServiceController {
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (title.isEmpty()) {
-			throw new AppException(40300, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(40400, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		if (thumbnail.isEmpty()) {
-			throw new AppException(40301, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(40401, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		String id = UUID.randomUUID().toString();
 
@@ -147,7 +147,7 @@ public class NewsServiceController {
 			newsRepository.save(news);
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new AppException(40302, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(40402, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
@@ -199,7 +199,7 @@ public class NewsServiceController {
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new AppException(40400, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(40500, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
@@ -210,7 +210,7 @@ public class NewsServiceController {
 		// Find news
 		Optional<NewsModel> optionalNews = newsRepository.findById(id);
 		if (optionalNews.isEmpty()) {
-			throw new AppException(40500, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(40600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		NewsModel news = optionalNews.get();
 		news.setStatus(new StatusPostModel(4));
@@ -228,7 +228,7 @@ public class NewsServiceController {
 		// Find news
 		Optional<NewsModel> optionalNews = newsRepository.findById(id);
 		if (optionalNews.isEmpty()) {
-			throw new AppException(40600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(40700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		NewsModel news = optionalNews.get();
 		if (!updatedNews.getContent().equals("")) {
@@ -251,7 +251,7 @@ public class NewsServiceController {
 		}
 		Optional<NewsModel> optionalNews = newsRepository.findById(id);
 		if (optionalNews.isEmpty()) {
-			throw new AppException(40700, "Không tìm thấy bài viết gốc", HttpStatus.NOT_FOUND);
+			throw new AppException(40800, "Không tìm thấy bài viết gốc", HttpStatus.NOT_FOUND);
 		}
 		FacultyModel faculty = optionalNews.get().getFaculty();
 		Integer facultyId = null;
@@ -339,7 +339,7 @@ public class NewsServiceController {
 		// Check if parent comment deleted
 		Optional<CommentNewsModel> parentComment = commentNewsRepository.findById(commentId);
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
-			throw new AppException(41000, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+			throw new AppException(41100, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 
 		// Delete all post permissions regardless of being creator or not
@@ -363,7 +363,7 @@ public class NewsServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentNewsModel comment) {
 		if (comment.getContent() == null || comment.getContent().equals("")) {
-			throw new AppException(41100, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(41200, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		comment.setId(UUID.randomUUID().toString());
@@ -373,9 +373,9 @@ public class NewsServiceController {
 		try {
 			commentNewsRepository.save(comment);
 		} catch (JpaObjectRetrievalFailureException e) {
-			throw new AppException(41101, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(41201, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		} catch (DataIntegrityViolationException e) {
-			throw new AppException(41102, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+			throw new AppException(41202, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 
 		if (comment.getParentId() != null) {
@@ -393,7 +393,7 @@ public class NewsServiceController {
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentNewsModel updatedComment) {
 		if (updatedComment.getContent() == null || updatedComment.getContent().equals("")) {
-			throw new AppException(41200, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(41300, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		commentNewsRepository.updateComment(commentId, userId, updatedComment.getContent());
@@ -408,7 +408,7 @@ public class NewsServiceController {
 		// Check if comment exists
 		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
 		if (optionalComment.isEmpty()) {
-			throw new AppException(41300, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+			throw new AppException(41400, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
 		}
 		CommentNewsModel originalComment = optionalComment.get();
 

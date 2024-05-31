@@ -80,7 +80,6 @@ public class ImageUtils {
 			}
 			gcp.getStorage().delete(gcp.getBucketName(), extractedImageName);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

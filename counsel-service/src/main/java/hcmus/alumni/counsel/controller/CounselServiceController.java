@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import org.hibernate.query.sqm.UnknownPathException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -144,12 +143,10 @@ public class CounselServiceController {
 			}
 
 			result.put("posts", postList.stream().map(p -> mapper.map(p, PostAdviseDto.class)).toList());
-		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		} catch (IllegalArgumentException e) {
+			throw new AppException(60100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(60101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -167,7 +164,7 @@ public class CounselServiceController {
 		PostAdviseModel post = postAdviseRepository.findPostAdviseById(id, userId, canDelete).orElse(null);
 
 		if (post == null) {
-			throw new AppException(60100, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(60200, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 
 		Set<Integer> voteIds = userVotePostAdviseRepository.getVoteIdsByUserAndPost(userId, id);
@@ -186,10 +183,10 @@ public class CounselServiceController {
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseRequestDto reqPostAdvise) {
 		if (reqPostAdvise.getTitle() == null || reqPostAdvise.getTitle().isEmpty()) {
-			throw new AppException(60200, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(60300, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		if (reqPostAdvise.getContent() == null || reqPostAdvise.getContent().isEmpty()) {
-			throw new AppException(60201, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(60301, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise);
@@ -237,7 +234,9 @@ public class CounselServiceController {
 
 		if (addedImages != null && deletedImageIds != null
 				&& images.size() + addedImages.size() - deletedImageIds.size() > MAX_IMAGE_SIZE_PER_POST) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Exceed images can be uploaded per post");
+			throw new AppException(60500, "Vượt quá giới hạn " + MAX_IMAGE_SIZE_PER_POST + " ảnh mỗi bài viết",
+					HttpStatus.BAD_REQUEST);
+
 		}
 
 		// Delete images
@@ -250,14 +249,14 @@ public class CounselServiceController {
 						if (successful) {
 							deletedImages.add(image);
 						} else {
-							throw new AppException(60400, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
+							throw new AppException(60501, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
 						}
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
-						throw new AppException(60401, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+						throw new AppException(60502, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					} catch (IOException e) {
 						e.printStackTrace();
-						throw new AppException(60401, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+						throw new AppException(60502, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					}
 
 				}
@@ -287,7 +286,7 @@ public class CounselServiceController {
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
-				throw new AppException(60402, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new AppException(60503, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
 
@@ -303,7 +302,7 @@ public class CounselServiceController {
 		// Find advise post
 		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
 		if (optionalPostAdvise.isEmpty()) {
-			throw new AppException(60500, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(60600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
@@ -314,10 +313,10 @@ public class CounselServiceController {
 				imageUtils.deleteImageFromStorageByUrl(picture.getPictureUrl());
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
-				throw new AppException(60501, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
+				throw new AppException(60601, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
 			} catch (IOException e) {
 				e.printStackTrace();
-				throw new AppException(60501, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new AppException(60601, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
 		pictures.clear();
@@ -371,7 +370,7 @@ public class CounselServiceController {
 		// Check if parent comment deleted
 		Optional<CommentPostAdviseModel> parentComment = commentPostAdviseRepository.findById(commentId);
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
-			throw new AppException(60700, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+			throw new AppException(60800, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 
 		// Delete all post permissions regardless of being creator or not
@@ -407,9 +406,9 @@ public class CounselServiceController {
 		try {
 			commentPostAdviseRepository.save(comment);
 		} catch (JpaObjectRetrievalFailureException e) {
-			throw new AppException(40801, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(40901, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		} catch (DataIntegrityViolationException e) {
-			throw new AppException(40802, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+			throw new AppException(40902, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 
 		if (comment.getParentId() != null) {
@@ -427,7 +426,7 @@ public class CounselServiceController {
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentPostAdviseModel updatedComment) {
 		if (updatedComment.getContent() == null || updatedComment.getContent().equals("")) {
-			throw new AppException(60900, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(61000, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		commentPostAdviseRepository.updateComment(commentId, userId, updatedComment.getContent());
@@ -442,7 +441,7 @@ public class CounselServiceController {
 		// Check if comment exists
 		Optional<CommentPostAdviseModel> optionalComment = commentPostAdviseRepository.findById(commentId);
 		if (optionalComment.isEmpty()) {
-			throw new AppException(61000, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+			throw new AppException(61100, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
 		}
 		CommentPostAdviseModel originalComment = optionalComment.get();
 
@@ -495,20 +494,12 @@ public class CounselServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
-		try {
-			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
-			Page<IInteractPostAdviseDto> users = interactPostAdviseRepository.getReactionUsers(id, reactId,
-					pageable);
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
+		Page<IInteractPostAdviseDto> users = interactPostAdviseRepository.getReactionUsers(id, reactId,
+				pageable);
 
-			result.put("totalPages", users.getTotalPages());
-			result.put("users", users.getContent());
-		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-		}
+		result.put("totalPages", users.getTotalPages());
+		result.put("users", users.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -522,7 +513,7 @@ public class CounselServiceController {
 				.findById(new InteractPostAdviseId(id, creatorId));
 
 		if (!optionalInteractPostAdvise.isEmpty() && optionalInteractPostAdvise.get().getIsDelete() == false) {
-			throw new AppException(61200, "Đã thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
+			throw new AppException(61300, "Đã thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostAdviseModel interactPostAdvise = new InteractPostAdviseModel(id, creatorId,
@@ -530,7 +521,7 @@ public class CounselServiceController {
 		try {
 			interactPostAdviseRepository.save(interactPostAdvise);
 		} catch (JpaObjectRetrievalFailureException e) {
-			throw new AppException(61201, "postId hoặc reactId không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(61301, "postId hoặc reactId không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		postAdviseRepository.reactionCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
@@ -541,14 +532,14 @@ public class CounselServiceController {
 			@PathVariable String id,
 			@RequestBody ReactRequestDto req) {
 		if (req.getReactId() == null) {
-			throw new AppException(61300, "reactId không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(61400, "reactId không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		Optional<InteractPostAdviseModel> optionalInteractPostAdvise = interactPostAdviseRepository
 				.findById(new InteractPostAdviseId(id, creatorId));
 
 		if (optionalInteractPostAdvise.isEmpty()) {
-			throw new AppException(61301, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
+			throw new AppException(61401, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();
@@ -560,7 +551,7 @@ public class CounselServiceController {
 		try {
 			interactPostAdviseRepository.save(interactPostAdvise);
 		} catch (DataIntegrityViolationException e) {
-			throw new AppException(61302, "reactId không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(61402, "reactId không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
@@ -572,7 +563,7 @@ public class CounselServiceController {
 				.findById(new InteractPostAdviseId(id, creatorId));
 
 		if (optionalInteractPostAdvise.isEmpty()) {
-			throw new AppException(61400, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
+			throw new AppException(61500, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();
@@ -608,14 +599,14 @@ public class CounselServiceController {
 			@PathVariable(name = "id") String postId,
 			@PathVariable Integer voteId) {
 		if (userVotePostAdviseRepository.userVoteCountByPost(postId, userId) >= 1) {
-			throw new AppException(61600, "Chỉ được bình chọn tối đa 1 lựa chọn", HttpStatus.BAD_REQUEST);
+			throw new AppException(61700, "Chỉ được bình chọn tối đa 1 lựa chọn", HttpStatus.BAD_REQUEST);
 		}
 
 		UserVotePostAdviseModel userVote = new UserVotePostAdviseModel(userId, voteId, postId);
 		try {
 			userVotePostAdviseRepository.save(userVote);
 		} catch (DataIntegrityViolationException e) {
-			throw new AppException(61601, "Lựa chọn không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(61701, "Lựa chọn không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		voteOptionPostAdviseRepository.voteCountIncrement(voteId, postId, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
@@ -631,12 +622,12 @@ public class CounselServiceController {
 		try {
 			int updated = userVotePostAdviseRepository.updateVoteOption(updatedVoteId, userId, oldVoteId, postId);
 			if (updated == 0) {
-				throw new AppException(61700, "Không tìm thấy bình chọn", HttpStatus.BAD_REQUEST);
+				throw new AppException(61800, "Không tìm thấy bình chọn", HttpStatus.BAD_REQUEST);
 			}
 			voteOptionPostAdviseRepository.voteCountIncrement(oldVoteId, postId, -1);
 			voteOptionPostAdviseRepository.voteCountIncrement(updatedVoteId, postId, 1);
 		} catch (DataIntegrityViolationException e) {
-			throw new AppException(61701, "Lựa chọn cập nhật không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(61801, "Lựa chọn cập nhật không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);

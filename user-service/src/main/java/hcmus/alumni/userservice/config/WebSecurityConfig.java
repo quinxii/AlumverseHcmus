@@ -12,13 +12,10 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	PreAuthenticatedUserRoleHeaderFilter authFilter;
-	@Autowired
-	CustomAccessDeniedHandler accessDeniedHandler;
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http.antMatcher("/**").csrf(csrf -> csrf.disable()).addFilterBefore(authFilter, BasicAuthenticationFilter.class)
-				.authorizeRequests(requests -> requests.antMatchers("/error").permitAll().anyRequest().authenticated())
-				.exceptionHandling(handling -> handling.accessDeniedHandler(accessDeniedHandler));
+				.authorizeRequests(requests -> requests.antMatchers("/error").permitAll().anyRequest().authenticated());
 	}
 }

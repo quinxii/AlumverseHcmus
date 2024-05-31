@@ -18,6 +18,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import hcmus.alumni.userservice.common.Privacy;
 import lombok.AllArgsConstructor;
@@ -28,9 +29,9 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class UserModel implements Serializable {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Id
+    @Id
     @Column(name = "id", length = 36, nullable = false)
     private String id;
 
@@ -39,13 +40,9 @@ public class UserModel implements Serializable {
 
     @Column(name = "pass", length = 60, nullable = false)
     private String pass;
-    
+
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-            )
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<RoleModel> roles = new HashSet<>();
 
     @Column(name = "full_name", length = 100)
@@ -54,28 +51,28 @@ public class UserModel implements Serializable {
     @Column(name = "phone", length = 15)
     private String phone;
 
-	@OneToOne
+    @OneToOne
     @JoinColumn(name = "sex_id") // Foreign key constraint
-	private SexModel sex;
+    private SexModel sex;
 
     @Column(name = "dob")
     private Date dob;
-    
+
     @Column(name = "social_media_link", columnDefinition = "TINYTEXT")
     private String socialMediaLink;
-    
-	@OneToOne
+
+    @OneToOne
     @JoinColumn(name = "faculty_id") // Foreign key constraint
-	private FacultyModel faculty;
-    
+    private FacultyModel faculty;
+
     @Column(name = "degree", length = 50)
     private String degree;
-    
+
     @Column(name = "about_me", columnDefinition = "TEXT")
     private String aboutMe;
 
     @Column(name = "avatar_url", columnDefinition = "TINYTEXT")
-    private String avatarUrl;
+    private String avatarUrl = "https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none";
 
     @Column(name = "cover_url", columnDefinition = "TINYTEXT")
     private String coverUrl;
@@ -83,10 +80,11 @@ public class UserModel implements Serializable {
     @Column(name = "status_id")
     private Integer statusId;
 
-	@CreationTimestamp
+    @CreationTimestamp
     @Column(name = "create_at")
     private Date createAt;
 
+    @UpdateTimestamp
     @Column(name = "update_at")
     private Date updateAt;
 
@@ -111,15 +109,16 @@ public class UserModel implements Serializable {
     @Column(name = "dob_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
     private Privacy dobPrivacy = Privacy.PUBLIC;
-    
+
     @Column(name = "faculty_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
     private Privacy facultyPrivacy = Privacy.PUBLIC;
-    
-    public UserModel() {}
-    
+
+    public UserModel() {
+    }
+
     public UserModel(String email, String pass) {
-    	this.email = email;
-    	this.pass = pass;
-	}
+        this.email = email;
+        this.pass = pass;
+    }
 }
