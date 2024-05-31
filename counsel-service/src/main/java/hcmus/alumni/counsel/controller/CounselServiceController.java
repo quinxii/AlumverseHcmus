@@ -88,22 +88,6 @@ public class CounselServiceController {
 
 	private final int MAX_IMAGE_SIZE_PER_POST = 5;
 
-	@GetMapping("/test")
-	public Object getMethodName(@RequestHeader("userId") String userId,
-			@RequestParam String param) {
-		PostAdviseModel post = postAdviseRepository.findPostAdviseById(param, userId, true).orElse(null);
-		Set<Integer> voteIds = userVotePostAdviseRepository.getVoteIdsByUserAndPost(userId, param);
-
-		for (VoteOptionPostAdviseModel vote : post.getVotes()) {
-			if (voteIds.contains(vote.getId().getVoteId())) {
-				vote.setIsVoted(true);
-			}
-		}
-
-		System.out.println(voteIds);
-		return mapper.map(post, PostAdviseDto.class);
-	}
-
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getPosts(
 			Authentication authentication,
