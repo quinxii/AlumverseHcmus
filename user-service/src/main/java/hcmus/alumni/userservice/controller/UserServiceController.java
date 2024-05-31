@@ -3,11 +3,14 @@ package hcmus.alumni.userservice.controller;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -25,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,13 +41,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.userservice.config.UserConfig;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.model.FacultyModel;
+import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
+import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
+import hcmus.alumni.userservice.repository.RoleRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
+import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 
 @RestController
@@ -55,12 +64,22 @@ public class UserServiceController {
 
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private RoleRepository roleRepository;
 
 	@Autowired
 	private VerifyAlumniRepository verifyAlumniRepository;
 
 	@Autowired
 	private ImageUtils imageUtils;
+	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	@Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
+	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
     @PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
 	@GetMapping("/alumni-verification/count")
@@ -353,4 +372,65 @@ public class UserServiceController {
 		
 		return ResponseEntity.ok("Alumni verification approved successfully");
 	}
+	
+
+	@PreAuthorize("hasAnyAuthority('User.Create')")
+	@PostMapping("")
+    public ResponseEntity<String> adminCreateUser(@RequestBody UserModel req) {
+
+        UserModel newUser = new UserModel();
+        newUser.setId(UUID.randomUUID().toString());
+        newUser.setEmail(req.getEmail());
+        String pwd = UserConfig.generateRandomPassword(10);
+        newUser.setPass(passwordEncoder.encode(pwd));
+        newUser.setFullName(req.getFullName());
+        PasswordHistoryModel passwordHistory = new PasswordHistoryModel(newUser.getId(), newUser.getPass(), true, new Date());
+        
+        Set<RoleModel> roles = new HashSet<>();
+        for (RoleModel role : req.getRoles()) {
+            Optional<RoleModel> roleModelOptional = roleRepository.findById(role.getId());
+            if (!roleModelOptional.isPresent()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid role: " + role.getId());
+            }
+            roles.add(roleModelOptional.get());
+        }
+
+        newUser.setRoles(roles);
+        
+        try {
+            userRepository.save(newUser);
+            passwordHistoryRepository.save(passwordHistory);
+            emailSenderUtils.sendPasswordEmail(req.getEmail(), pwd);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input data");
+        } catch (Exception e) {
+            System.err.println(e);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+    }
+	
+	@PreAuthorize("hasAnyAuthority('User.Edit')")
+	@PutMapping("/{id}")
+    public ResponseEntity<String> adminUpdateUser(@PathVariable String id,
+            @RequestParam(value = "statusId", required = false) Integer statusId) {
+        
+        Optional<UserModel> optionalUser = userRepository.findById (id);
+        if (!optionalUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        UserModel user = optionalUser.get();
+
+        if (statusId != null) {
+            user.setStatusId(statusId);
+        }
+
+        user.setUpdateAt(new Date());
+
+        userRepository.save(user);
+
+        return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
+    }
 }

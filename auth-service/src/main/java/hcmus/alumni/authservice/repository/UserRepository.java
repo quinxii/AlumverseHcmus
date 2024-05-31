@@ -1,6 +1,8 @@
 package hcmus.alumni.authservice.repository;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -10,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.authservice.model.UserModel;
 
-
 public interface UserRepository extends JpaRepository<UserModel, String> {
+	Optional<UserModel> findById(String id);
 
     UserModel findByEmailAndPass(String email, String pass);
     UserModel findByEmail(String email);
@@ -23,5 +25,6 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
     @Modifying
     @Query("UPDATE UserModel u SET u.lastLogin = :lastLogin WHERE u.email = :email")
     int setLastLogin(@Param("email") String email, @Param("lastLogin") Date lastLogin);
+    
 }
 
