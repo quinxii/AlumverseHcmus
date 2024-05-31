@@ -1,4 +1,4 @@
-package hcmus.alumni.news.config;
+package hcmus.alumni.counsel.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -13,8 +13,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
-import hcmus.alumni.news.exception.AppException;
-import hcmus.alumni.news.exception.ErrorResponse;
+import hcmus.alumni.counsel.exception.AppException;
+import hcmus.alumni.counsel.exception.ErrorResponse;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
         String name = ex.getParameterName();
-        ErrorResponse error = new ErrorResponse(40000, "Tham số " + name + " bị thiếu");
+        ErrorResponse error = new ErrorResponse(60000, "Tham số " + name + " bị thiếu");
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
@@ -46,14 +46,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestPartException.class)
     public ResponseEntity<ErrorResponse> handleMissingParts(MissingServletRequestPartException ex) {
         String name = ex.getRequestPartName();
-        ErrorResponse error = new ErrorResponse(40001, "File " + name + " bị thiếu");
+        ErrorResponse error = new ErrorResponse(60001, "File " + name + " bị thiếu");
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleMaxSizeException(MaxUploadSizeExceededException ex) {
-        ErrorResponse error = new ErrorResponse(40002, "Dung lượng file không được vượt quá " + maxFileSize);
+        ErrorResponse error = new ErrorResponse(60002, "Dung lượng file không được vượt quá " + maxFileSize);
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTypeMismatchParams(MethodArgumentTypeMismatchException ex) {
         String name = ex.getName();
         String requiredType = ex.getRequiredType().getSimpleName();
-        ErrorResponse error = new ErrorResponse(40003,
+        ErrorResponse error = new ErrorResponse(60003,
                 "Tham số " + name + " phải là " + requiredType);
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
@@ -70,7 +70,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
-        ErrorResponse error = new ErrorResponse(40004, "Request body không được để trống");
+        ErrorResponse error = new ErrorResponse(60004, "Request body không được để trống");
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }

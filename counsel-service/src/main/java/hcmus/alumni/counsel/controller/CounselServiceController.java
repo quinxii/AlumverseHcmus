@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.hibernate.query.sqm.UnknownPathException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -39,6 +41,7 @@ import hcmus.alumni.counsel.dto.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.IInteractPostAdviseDto;
 import hcmus.alumni.counsel.dto.IPostAdviseDto;
 import hcmus.alumni.counsel.dto.ReactRequestDto;
+import hcmus.alumni.counsel.exception.AppException;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 import hcmus.alumni.counsel.model.InteractPostAdviseId;
 import hcmus.alumni.counsel.model.InteractPostAdviseModel;
@@ -77,8 +80,8 @@ public class CounselServiceController {
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -95,12 +98,10 @@ public class CounselServiceController {
 
 			result.put("totalPages", posts.getTotalPages());
 			result.put("posts", posts.getContent());
-		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		} catch (IllegalArgumentException e) {
+			throw new AppException(60000, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(60001, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -117,7 +118,7 @@ public class CounselServiceController {
 
 		IPostAdviseDto post = postAdviseRepository.findPostAdviseById(id, userId, canDelete).orElse(null);
 		if (post == null) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+			throw new AppException(60100, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(post);
@@ -127,10 +128,13 @@ public class CounselServiceController {
 	@PostMapping("")
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseModel reqPostAdvise) {
-		if (creator.isEmpty() || reqPostAdvise.getTitle().isEmpty() || reqPostAdvise.getContent().isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body(Collections.singletonMap("msg", "Title and content must not be empty"));
+		if (reqPostAdvise.getTitle() == null || reqPostAdvise.getTitle().isEmpty()) {
+			throw new AppException(60200, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
+		if (reqPostAdvise.getContent() == null || reqPostAdvise.getContent().isEmpty()) {
+			throw new AppException(60201, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
 		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise.getTitle(), reqPostAdvise.getContent(),
 				reqPostAdvise.getTags());
 		postAdvise.setPublishedAt(new Date());
@@ -191,15 +195,14 @@ public class CounselServiceController {
 						if (successful) {
 							deletedImages.add(image);
 						} else {
-							return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-									.body("Error deleting images");
+							throw new AppException(60400, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
 						}
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
-						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+						throw new AppException(60401, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					} catch (IOException e) {
 						e.printStackTrace();
-						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+						throw new AppException(60401, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					}
 
 				}
@@ -229,7 +232,7 @@ public class CounselServiceController {
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving images");
+				throw new AppException(60402, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
 
@@ -245,7 +248,7 @@ public class CounselServiceController {
 		// Find advise post
 		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
 		if (optionalPostAdvise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post advise not found");
+			throw new AppException(60500, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
@@ -256,14 +259,14 @@ public class CounselServiceController {
 				imageUtils.deleteImageFromStorageByUrl(picture.getPictureUrl());
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+				throw new AppException(60501, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
 			} catch (IOException e) {
 				e.printStackTrace();
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+				throw new AppException(60501, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
 		pictures.clear();
-		
+
 		postAdvise.setStatus(new StatusPostModel(4));
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -277,8 +280,8 @@ public class CounselServiceController {
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -305,15 +308,15 @@ public class CounselServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		// Check if parent comment deleted
 		Optional<CommentPostAdviseModel> parentComment = commentPostAdviseRepository.findById(commentId);
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+			throw new AppException(60700, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 
 		// Delete all post permissions regardless of being creator or not
@@ -338,10 +341,21 @@ public class CounselServiceController {
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentPostAdviseModel comment) {
+		if (comment.getContent() == null || comment.getContent().equals("")) {
+			throw new AppException(60800, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
 		comment.setId(UUID.randomUUID().toString());
 		comment.setPostAdvise(new PostAdviseModel(id));
 		comment.setCreator(new UserModel(creator));
-		commentPostAdviseRepository.save(comment);
+
+		try {
+			commentPostAdviseRepository.save(comment);
+		} catch (JpaObjectRetrievalFailureException e) {
+			throw new AppException(40801, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(40802, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+		}
 
 		if (comment.getParentId() != null) {
 			commentPostAdviseRepository.commentCountIncrement(comment.getParentId(), 1);
@@ -357,8 +371,8 @@ public class CounselServiceController {
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentPostAdviseModel updatedComment) {
-		if (updatedComment.getContent() == null) {
-			return ResponseEntity.status(HttpStatus.OK).body("");
+		if (updatedComment.getContent() == null || updatedComment.getContent().equals("")) {
+			throw new AppException(60900, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		commentPostAdviseRepository.updateComment(commentId, userId, updatedComment.getContent());
@@ -373,7 +387,7 @@ public class CounselServiceController {
 		// Check if comment exists
 		Optional<CommentPostAdviseModel> optionalComment = commentPostAdviseRepository.findById(commentId);
 		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+			throw new AppException(61000, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
 		}
 		CommentPostAdviseModel originalComment = optionalComment.get();
 
@@ -450,12 +464,16 @@ public class CounselServiceController {
 				.findById(new InteractPostAdviseId(id, creatorId));
 
 		if (!optionalInteractPostAdvise.isEmpty() && optionalInteractPostAdvise.get().getIsDelete() == false) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You have already reacted to this post");
+			throw new AppException(61200, "Đã thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostAdviseModel interactPostAdvise = new InteractPostAdviseModel(id, creatorId,
 				req.getReactId());
-		interactPostAdviseRepository.save(interactPostAdvise);
+		try {
+			interactPostAdviseRepository.save(interactPostAdvise);
+		} catch (JpaObjectRetrievalFailureException e) {
+			throw new AppException(61201, "postId hoặc reactId không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 		postAdviseRepository.reactionCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
@@ -464,11 +482,15 @@ public class CounselServiceController {
 	public ResponseEntity<String> putPostAdviseReaction(@RequestHeader("userId") String creatorId,
 			@PathVariable String id,
 			@RequestBody ReactRequestDto req) {
+		if (req.getReactId() == null) {
+			throw new AppException(61300, "reactId không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
 		Optional<InteractPostAdviseModel> optionalInteractPostAdvise = interactPostAdviseRepository
 				.findById(new InteractPostAdviseId(id, creatorId));
 
 		if (optionalInteractPostAdvise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+			throw new AppException(61301, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();
@@ -477,7 +499,11 @@ public class CounselServiceController {
 		}
 
 		interactPostAdvise.setReact(new ReactModel(req.getReactId()));
-		interactPostAdviseRepository.save(interactPostAdvise);
+		try {
+			interactPostAdviseRepository.save(interactPostAdvise);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(61302, "reactId không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
@@ -488,7 +514,7 @@ public class CounselServiceController {
 				.findById(new InteractPostAdviseId(id, creatorId));
 
 		if (optionalInteractPostAdvise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+			throw new AppException(61400, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();

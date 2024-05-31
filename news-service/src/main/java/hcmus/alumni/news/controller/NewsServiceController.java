@@ -47,9 +47,6 @@ import hcmus.alumni.news.model.UserModel;
 import hcmus.alumni.news.repository.CommentNewsRepository;
 import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.PersistenceContext;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
