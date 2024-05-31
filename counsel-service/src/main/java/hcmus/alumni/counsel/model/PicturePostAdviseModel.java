@@ -2,6 +2,8 @@ package hcmus.alumni.counsel.model;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -27,6 +29,7 @@ public class PicturePostAdviseModel implements Serializable {
     @Id
     @ManyToOne
     @JoinColumn(name = "post_advise_id", nullable = false)
+    @JsonBackReference
     private PostAdviseModel postAdvise;
 
     @Column(name = "picture_url", nullable = false, length = 255)

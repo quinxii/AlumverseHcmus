@@ -1,4 +1,4 @@
-package hcmus.alumni.counsel.dto;
+package hcmus.alumni.authservice.dto;
 
 import java.io.Serializable;
 
@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ReactRequestDto implements Serializable {
+public class ResetPasswordRequestDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    Integer reactId;
+    String email;
+    String oldPassword;
+    String newPassword;
 }

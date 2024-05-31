@@ -16,7 +16,13 @@ import hcmus.alumni.event.dto.IEventDto;
 import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.EventModel;
 
-public interface EventRepository extends JpaRepository<EventModel, String> {        
+public interface EventRepository extends JpaRepository<EventModel, String> {
+	@Query(value = "select distinct p.name from role_permission rp " +
+		"join role r on r.id = rp.role_id and r.is_delete = false " +
+		"join permission p on p.id = rp.permission_id and p.is_delete = false " +
+		"where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
+	List<String> getPermissions(List<String> role, String domain);
+	
 	@Query("SELECT e " +
         "FROM EventModel e " +
         "LEFT JOIN e.status s " +
@@ -39,7 +45,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			@Param("startDate") Date startDate,
 			@Param("mode") Integer mode,
 			Pageable pageable);
-
+	
 	@Query("SELECT e " +
 			"FROM EventModel e " +
 			"WHERE e.id = :id")
@@ -50,10 +56,16 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query("UPDATE EventModel e SET e.views = e.views + 1 WHERE e.id = :id")
     int incrementEventViews(String id);
 
-    @Query("SELECT n FROM EventModel n JOIN n.status s WHERE s.id = 2 AND n.organizationTime >= :startDate")
-    Page<IEventDto> getHotEvents(Date startDate, Pageable pageable);
+    @Query("SELECT e " + 
+		"FROM EventModel e " + 
+    	"JOIN e.status s " + 
+		"WHERE s.id = 2 AND e.organizationTime >= :startDate")
+    Page<IEventDto> getHotEvents(
+    		Date startDate,
+		    Pageable pageable);
     
-	@Query("SELECT e FROM EventModel e " + 
+	@Query("SELECT e " + 
+		"FROM EventModel e " + 
 		"LEFT JOIN ParticipantEventModel p " + 
 		"ON p.id.eventId = e.id " + 
 		"WHERE p.id.userId = :userId " + 
