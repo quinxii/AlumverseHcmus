@@ -1,7 +1,6 @@
 package hcmus.alumni.userservice.controller;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -388,9 +387,6 @@ public class UserServiceController {
 		if (statusId != null) {
 			user.setStatusId(statusId);
 		}
-
-		user.setUpdateAt(new Date());
-
 		userRepository.save(user);
 
 		return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
