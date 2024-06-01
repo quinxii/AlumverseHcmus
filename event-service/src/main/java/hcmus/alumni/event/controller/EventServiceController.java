@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -46,6 +49,7 @@ import hcmus.alumni.event.repository.CommentEventRepository;
 import hcmus.alumni.event.repository.EventRepository;
 import hcmus.alumni.event.repository.ParticipantEventRepository;
 import hcmus.alumni.event.utils.ImageUtils;
+import hcmus.alumni.event.exception.AppException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -75,8 +79,8 @@ public class EventServiceController {
 	        @RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
 	        @RequestParam(value = "statusId", required = false) Integer statusId,
 	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
-	    if (pageSize == 0 || pageSize > 50) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    if (pageSize <= 0 || pageSize > 50) {
+	    	pageSize = 50;
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
 
@@ -91,10 +95,10 @@ public class EventServiceController {
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
 	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-	    }
+	    	throw new AppException(50100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(50101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -105,7 +109,7 @@ public class EventServiceController {
 		
 	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
 	    if (optionalEvent.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+	    	throw new AppException(50200, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 	    }
 	    eventRepository.incrementEventViews(id);
 	    return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
@@ -125,11 +129,11 @@ public class EventServiceController {
 	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
-	    if (creatorId.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
+	    if (title.isEmpty()) {
+	    	throw new AppException(50300, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 	    }
-	    if (thumbnail.getSize() > 5 * 1024 * 1024) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+	    if (thumbnail.isEmpty()) {
+	    	throw new AppException(50301, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
 	    }
 	    String id = UUID.randomUUID().toString();
 
@@ -157,8 +161,8 @@ public class EventServiceController {
 	        event.setStatus(new StatusPostModel(statusId));
 	        eventRepository.save(event);
 	    } catch (IOException e) {
-	        // TODO Auto-generated catch block
-	        System.err.println(e);
+	    	e.printStackTrace();
+			throw new AppException(50302, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
@@ -178,16 +182,13 @@ public class EventServiceController {
 	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
-	    if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
-	    }
 	    boolean isPut = false;
 
 	    try {
 	        // Find event
 	        Optional<EventModel> optionalEvent = eventRepository.findById(id);
 	        if (optionalEvent.isEmpty()) {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+	        	throw new AppException(50400, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 	        }
 	        EventModel event = optionalEvent.get();
 	        if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -247,7 +248,7 @@ public class EventServiceController {
 	    // Find event
 	    Optional<EventModel> optionalEvent = eventRepository.findById(id);
 	    if (optionalEvent.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+	    	throw new AppException(50500, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 	    }
 	    EventModel event = optionalEvent.get();
 	    event.setStatus(new StatusPostModel(4));
@@ -279,8 +280,8 @@ public class EventServiceController {
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
-	    if (pageSize == 0 || pageSize > 50) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    if (pageSize <= 0 || pageSize > 50) {
+	    	pageSize = 50;
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
 
@@ -317,8 +318,8 @@ public class EventServiceController {
 			@PathVariable String id,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-	    if (pageSize == 0 || pageSize > 50) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    if (pageSize <= 0 || pageSize > 50) {
+	    	pageSize = 50;
 	    }
 	    Map<String, Object> result = new HashMap<>();
 	    
@@ -338,12 +339,12 @@ public class EventServiceController {
 	        @RequestBody ParticipantEventModel participantEvent) {
 		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
 		if (optionalEvent.isEmpty()) 
-		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+			throw new AppException(51000, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 		Optional<ParticipantEventModel> existingParticipant = participantEventRepository.findById(new ParticipantEventId(id, userId));
 		if (existingParticipant.isPresent() && !existingParticipant.get().isDelete())
-		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You are already attending the event!");
+			throw new AppException(51001, "Người dùng đã tham gia sự kiện", HttpStatus.BAD_REQUEST);
 		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants()) 
-		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The number of participants has reached the maximum limit!");
+			throw new AppException(51002, "Số lượng người tham gia sự kiện đã đạt mức tối đa", HttpStatus.BAD_REQUEST);
 		
 	    ParticipantEventModel participant = participantEvent;
 	    participant.setId(new ParticipantEventId(id, userId));
@@ -376,8 +377,8 @@ public class EventServiceController {
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
@@ -401,15 +402,15 @@ public class EventServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		// Check if parent comment deleted
 		Optional<CommentEventModel> parentComment = commentEventRepository.findById(commentId);
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+			throw new AppException(51300, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 		
 		boolean canDelete = false;
@@ -430,10 +431,21 @@ public class EventServiceController {
 	public ResponseEntity<CommentEventModel> createComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentEventModel comment) {
+		if (comment.getContent() == null || comment.getContent().equals("")) {
+			throw new AppException(51400, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		
 		comment.setId(UUID.randomUUID().toString());
 		comment.setEvent(new EventModel(id));
 		comment.setCreator(new UserModel(creator));
-		commentEventRepository.save(comment);
+		
+		try {
+			commentEventRepository.save(comment);
+		} catch (JpaObjectRetrievalFailureException e) {
+			throw new AppException(51401, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(51402, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+		}
 		
 		if (comment.getParentId() != null) {
 	        commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
@@ -449,13 +461,10 @@ public class EventServiceController {
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String commentId, @RequestBody CommentEventModel updatedComment) {
-		if (updatedComment.getContent() == null) {
-			return ResponseEntity.status(HttpStatus.OK).body("");
+		if (updatedComment.getContent() == null || updatedComment.getContent().equals("")) {
+			throw new AppException(51500, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
-		int updates = commentEventRepository.updateComment(commentId, creator, updatedComment.getContent());
-		if (updates == 0) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
-		}
+		commentEventRepository.updateComment(commentId, creator, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
@@ -466,6 +475,9 @@ public class EventServiceController {
 			@PathVariable String commentId) {
 		// Check if comment exists
 		Optional<CommentEventModel> optionalComment = commentEventRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
+			throw new AppException(51600, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+		}
 		CommentEventModel originalComment = optionalComment.get();
 
 		// Initilize variables
