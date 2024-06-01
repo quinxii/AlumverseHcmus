@@ -167,7 +167,7 @@ public class NewsServiceController {
 			// Find news
 			Optional<NewsModel> optionalNews = newsRepository.findById(id);
 			if (optionalNews.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+				throw new AppException(40500, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 			}
 			NewsModel news = optionalNews.get();
 			if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -199,7 +199,7 @@ public class NewsServiceController {
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new AppException(40500, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(40501, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
