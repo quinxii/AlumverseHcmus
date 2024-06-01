@@ -247,7 +247,7 @@ public class HallOfFameServiceController {
 	public ResponseEntity<String> deleteHallOfFame(@PathVariable String id) {
 		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
 		if (optionalHallOfFame.isEmpty()) {
-			throw new AppException(40700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(30700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		HallOfFameModel hof = optionalHallOfFame.get();
 		hof.setStatus(new StatusPostModel(4));
