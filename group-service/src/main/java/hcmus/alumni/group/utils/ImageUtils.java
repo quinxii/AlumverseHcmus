@@ -73,4 +73,8 @@ public class ImageUtils {
 	public String getGroupPath(String id) {
 		return groupPath + id + "/";
 	}
+	
+	public String getPostGroupPath(String groupId, String postId) {
+		return groupPath + groupId + "/posts/" + postId + "/";
+	}
 }

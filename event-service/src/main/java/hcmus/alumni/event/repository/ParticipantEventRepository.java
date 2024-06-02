@@ -25,6 +25,6 @@ public interface ParticipantEventRepository extends JpaRepository<ParticipantEve
 
 	@Transactional
 	@Modifying
-	@Query("UPDATE ParticipantEventModel pe SET pe.isDelete = true WHERE pe.id.eventId = :eventId AND pe.id.userId = :userId")
+	@Query("UPDATE ParticipantEventModel pe SET pe.isDelete = true WHERE pe.id.eventId = :eventId AND pe.id.userId = :userId AND pe.isDelete = false")
 	int deleteByEventIdAndUserId(@Param("eventId") String eventId, @Param("userId") String userId);
 }

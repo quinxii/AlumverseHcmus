@@ -129,12 +129,6 @@ public class EventServiceController {
 	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
-	    if (title.isEmpty()) {
-	    	throw new AppException(50300, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
-	    }
-	    if (thumbnail.isEmpty()) {
-	    	throw new AppException(50301, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
-	    }
 	    String id = UUID.randomUUID().toString();
 
 	    try {
@@ -162,7 +156,7 @@ public class EventServiceController {
 	        eventRepository.save(event);
 	    } catch (IOException e) {
 	    	e.printStackTrace();
-			throw new AppException(50302, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(50300, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
@@ -321,6 +315,12 @@ public class EventServiceController {
 	    if (pageSize <= 0 || pageSize > 50) {
 	    	pageSize = 50;
 	    }
+	    
+	    Optional<EventModel> optionalEvent = eventRepository.findById(id);
+	    if (optionalEvent.isEmpty()) {
+	    	throw new AppException(50900, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
+	    }
+	    
 	    Map<String, Object> result = new HashMap<>();
 	    
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -362,10 +362,12 @@ public class EventServiceController {
 	        @PathVariable String id,
 	        @RequestHeader("userId") String userId) {
 	    // Delete the participant
-	    participantEventRepository.deleteByEventIdAndUserId(id, userId);
+	    int updatedRow = participantEventRepository.deleteByEventIdAndUserId(id, userId);
 
-	    // Update participant count for the event
-	    eventRepository.participantCountIncrement(id, -1);
+	    if (updatedRow == 1)
+	    	eventRepository.participantCountIncrement(id, -1);
+	    else
+	    	throw new AppException(51100, "Không tìm thấy thành viên", HttpStatus.NOT_FOUND);
 
 	    return ResponseEntity.status(HttpStatus.OK).body(null);
 	}

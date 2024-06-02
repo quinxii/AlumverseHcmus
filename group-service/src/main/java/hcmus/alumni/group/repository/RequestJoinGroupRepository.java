@@ -21,7 +21,7 @@ public interface RequestJoinGroupRepository extends JpaRepository<RequestJoinGro
     Page<IRequestJoinGroupDto> searchRequestJoin(@Param("groupId") String groupId, Pageable pageable);
 	
 	@Query("SELECT rj FROM RequestJoinGroupModel rj " + 
-			"WHERE rj.id.group.id = :groupId AND rj.id.user.id = :userId")
+			"WHERE rj.id.group.id = :groupId AND rj.id.user.id = :userId AND rj.isDelete = false")
     Optional<RequestJoinGroupModel> findByGroupIdAndUserId(@Param("groupId") String groupId, @Param("userId") String userId);
 	
 	@Transactional

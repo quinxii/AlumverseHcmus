@@ -129,6 +129,7 @@ public class GroupServiceController {
 			throw new AppException(70100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (InvalidDataAccessApiUsageException e) {
 			throw new AppException(70101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 		
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -171,12 +172,6 @@ public class GroupServiceController {
             @RequestParam(value = "cover") MultipartFile cover,
             @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId
 	) {
-		if (name.isEmpty()) {
-			throw new AppException(70400, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
-        }
-		if (cover.isEmpty()) {
-			throw new AppException(70401, "Ảnh cover không được để trống", HttpStatus.BAD_REQUEST);
-        }
         String id = UUID.randomUUID().toString();
         try {
             String coverUrl = null;
@@ -211,7 +206,7 @@ public class GroupServiceController {
 			member.setRole(GroupMemberRole.CREATOR);
 			groupMemberRepository.save(member);
         } catch (IOException e) {
-        	throw new AppException(70403, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+        	throw new AppException(70400, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
@@ -527,12 +522,21 @@ public class GroupServiceController {
     public ResponseEntity<String> addGroupPost(@PathVariable String id, //group id
     		@RequestHeader("userId") String creator,
     		@RequestBody PostGroupModel reqPostModel) {
+		if (reqPostModel.getTitle() == null || reqPostModel.getTitle().isEmpty()) {
+			throw new AppException(71500, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		if (reqPostModel.getContent() == null || reqPostModel.getContent().isEmpty()) {
+			throw new AppException(71501, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
+		}
 
-    	String postId = UUID.randomUUID().toString();
     	PostGroupModel newPost = new PostGroupModel(id, creator, reqPostModel.getTitle(), reqPostModel.getContent(), reqPostModel.getTags());
     	newPost.setPublishedAt(new Date());
     	
-        postGroupRepository.save(newPost);
+    	try {
+            postGroupRepository.save(newPost);
+        } catch (DataIntegrityViolationException ex) {
+            throw new AppException(71502, "Không tìm thấy nhóm", HttpStatus.BAD_REQUEST);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(newPost.getId());
     }
 
@@ -628,7 +632,7 @@ public class GroupServiceController {
 				for (int i = 0; i < addedImages.size(); i++) {
 					int order = imagesSize + i;
 					String pictureId = UUID.randomUUID().toString();
-					String pictureUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id),
+					String pictureUrl = imageUtils.saveImageToStorage(imageUtils.getPostGroupPath(postGroup.getGroupId(), id),
 							addedImages.get(i),
 							pictureId);
 					postGroup.getPictures()
@@ -652,7 +656,7 @@ public class GroupServiceController {
     		@PathVariable String postId,
     		@RequestHeader("userId") String creator) {
         Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
-        if (optionalPostGroup.isEmpty()) {
+        if (optionalPost.isEmpty()) {
 			throw new AppException(71800, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
         PostGroupModel post = optionalPost.get();
