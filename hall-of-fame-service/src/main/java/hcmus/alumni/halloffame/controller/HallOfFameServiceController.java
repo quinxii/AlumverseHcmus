@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -86,7 +87,7 @@ public class HallOfFameServiceController {
 			result.put("hof", hof.getContent());
 		} catch (IllegalArgumentException e) {
 			throw new AppException(30200, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
-		} catch (Exception e) {
+		} catch (InvalidDataAccessApiUsageException e) {
 			throw new AppException(30201, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 

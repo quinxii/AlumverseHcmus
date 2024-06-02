@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MissingServletRequestParameterException.class)
 	public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
 		String name = ex.getParameterName();
-		ErrorResponse error = new ErrorResponse(40000, "Tham số " + name + " bị thiếu");
+		ErrorResponse error = new ErrorResponse(10000, "Tham số " + name + " bị thiếu");
 
 		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}
@@ -46,14 +46,14 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MissingServletRequestPartException.class)
 	public ResponseEntity<ErrorResponse> handleMissingParts(MissingServletRequestPartException ex) {
 		String name = ex.getRequestPartName();
-		ErrorResponse error = new ErrorResponse(40001, "File " + name + " bị thiếu");
+		ErrorResponse error = new ErrorResponse(10001, "File " + name + " bị thiếu");
 
 		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	public ResponseEntity<ErrorResponse> handleMaxSizeException(MaxUploadSizeExceededException ex) {
-		ErrorResponse error = new ErrorResponse(40002, "Dung lượng file không được vượt quá " + maxFileSize);
+		ErrorResponse error = new ErrorResponse(10002, "Dung lượng file không được vượt quá " + maxFileSize);
 
 		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}
@@ -62,14 +62,14 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ErrorResponse> handleTypeMismatchParams(MethodArgumentTypeMismatchException ex) {
 		String name = ex.getName();
 		String requiredType = ex.getRequiredType().getSimpleName();
-		ErrorResponse error = new ErrorResponse(40003, "Tham số " + name + " phải là " + requiredType);
+		ErrorResponse error = new ErrorResponse(10003, "Tham số " + name + " phải là " + requiredType);
 
 		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
-		ErrorResponse error = new ErrorResponse(40004, "Request body không được để trống");
+		ErrorResponse error = new ErrorResponse(10004, "Request body không được để trống");
 
 		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}

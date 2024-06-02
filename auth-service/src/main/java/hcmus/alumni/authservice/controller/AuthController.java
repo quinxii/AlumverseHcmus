@@ -91,7 +91,7 @@ public class AuthController {
 
 				return ResponseEntity.status(HttpStatus.OK).body(response);
 			} else {
-				throw new AppException(10100, "Xác thực không thành công", HttpStatus.UNAUTHORIZED);
+				throw new AppException(10100, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
 			}
 		} catch (BadCredentialsException e) {
 			throw new AppException(10100, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
@@ -124,7 +124,7 @@ public class AuthController {
 		}
 
 		if (email == null || email.isEmpty()) {
-			throw new AppException(10301, "Vui lòng cung cấp email", HttpStatus.BAD_REQUEST);
+			throw new AppException(10301, "Email không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		try {
@@ -138,8 +138,12 @@ public class AuthController {
 
 	@PostMapping("/verify-authorize-code")
 	public ResponseEntity<String> verifyAuthorizeCode(@RequestParam String email, @RequestParam String activationCode) {
-		if (email == null || email.isEmpty() || activationCode == null || activationCode.isEmpty()) {
-			throw new AppException(10400, "Vui lòng cung cấp email và mã xác thực", HttpStatus.BAD_REQUEST);
+		if (email == null || email.isEmpty()) {
+			throw new AppException(10400, "Email không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
+		if (activationCode == null || activationCode.isEmpty()) {
+			throw new AppException(10401, "Mã xác thực không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		try {
@@ -147,11 +151,11 @@ public class AuthController {
 			if (isValid) {
 				return ResponseEntity.status(HttpStatus.OK).body("");
 			} else {
-				throw new AppException(10401, "Mã xác thực không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
+				throw new AppException(10402, "Mã xác thực không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new AppException(10402, "Xác minh mã xác thực thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(10403, "Xác minh mã xác thực thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
