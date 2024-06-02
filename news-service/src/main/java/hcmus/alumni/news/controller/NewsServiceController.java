@@ -435,7 +435,7 @@ public class NewsServiceController {
 		}
 
 		// Delete all comments and update comment count
-		int deleted = commentNewsRepository.deleteComment(commentId, userId);
+		int deleted = commentNewsRepository.deleteComment(commentId);
 		for (String parentId : allParentId) {
 			commentNewsRepository.deleteChildrenComment(parentId);
 		}

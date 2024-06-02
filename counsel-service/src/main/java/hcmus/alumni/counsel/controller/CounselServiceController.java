@@ -593,6 +593,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Counsel.Vote')")
 	@PostMapping("/{id}/votes/{voteId}")
 	public ResponseEntity<HashMap<String, Object>> postVote(
 			@RequestHeader("userId") String userId,
@@ -612,6 +613,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Counsel.Vote')")
 	@PutMapping("/{id}/votes/{voteId}")
 	public ResponseEntity<HashMap<String, Object>> putVote(
 			@RequestHeader("userId") String userId,
@@ -633,7 +635,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("1 == @userVotePostAdviseRepository.isVoteOwner(#userId, #voteId, #postId)")
+	@PreAuthorize("hasAnyAuthority('Counsel.Vote')")
 	@DeleteMapping("/{id}/votes/{voteId}")
 	public ResponseEntity<String> deleteVote(
 			@RequestHeader("userId") String userId,
