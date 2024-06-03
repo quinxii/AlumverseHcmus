@@ -202,6 +202,9 @@ public class CounselServiceController {
 			@PathVariable String id,
 			@RequestBody PostAdviseRequestDto updatedPostAdvise) {
 		PostAdviseModel postAdvise = postAdviseRepository.findById(id).orElse(null);
+		if (postAdvise == null) {
+			throw new AppException(60400, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
 
 		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
 			postAdvise.setTitle(updatedPostAdvise.getTitle());
@@ -316,7 +319,7 @@ public class CounselServiceController {
 				throw new AppException(60601, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
 			} catch (IOException e) {
 				e.printStackTrace();
-				throw new AppException(60601, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new AppException(60602, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
 		pictures.clear();
@@ -326,7 +329,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	// Get comments of a news
+	// Get comments of a post
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getPostComments(
 			Authentication authentication,
@@ -396,7 +399,7 @@ public class CounselServiceController {
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentPostAdviseModel comment) {
 		if (comment.getContent() == null || comment.getContent().equals("")) {
-			throw new AppException(60800, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(60900, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		comment.setId(UUID.randomUUID().toString());
