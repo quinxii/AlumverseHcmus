@@ -129,6 +129,13 @@ public class EventServiceController {
 	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
+		if (title.equals("")) {
+			throw new AppException(50300, "Title không được để trống", HttpStatus.BAD_REQUEST);
+        }
+		if (thumbnail.isEmpty()) {
+			throw new AppException(50301, "thumbnail không được để trống", HttpStatus.BAD_REQUEST);
+        }
+		
 	    String id = UUID.randomUUID().toString();
 
 	    try {
@@ -156,7 +163,7 @@ public class EventServiceController {
 	        eventRepository.save(event);
 	    } catch (IOException e) {
 	    	e.printStackTrace();
-			throw new AppException(50300, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(50302, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
@@ -342,7 +349,7 @@ public class EventServiceController {
 			throw new AppException(51000, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 		Optional<ParticipantEventModel> existingParticipant = participantEventRepository.findById(new ParticipantEventId(id, userId));
 		if (existingParticipant.isPresent() && !existingParticipant.get().isDelete())
-			throw new AppException(51001, "Người dùng đã tham gia sự kiện", HttpStatus.BAD_REQUEST);
+			throw new AppException(51001, "Đã tham gia sự kiện", HttpStatus.BAD_REQUEST);
 		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants()) 
 			throw new AppException(51002, "Số lượng người tham gia sự kiện đã đạt mức tối đa", HttpStatus.BAD_REQUEST);
 		

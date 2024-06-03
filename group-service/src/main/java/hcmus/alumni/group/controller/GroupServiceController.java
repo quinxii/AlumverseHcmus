@@ -169,15 +169,21 @@ public class GroupServiceController {
             @RequestParam(value = "type", required = false, defaultValue = "") String type,
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "PUBLIC") Privacy privacy,
-            @RequestParam(value = "cover") MultipartFile cover,
+            @RequestParam(value = "cover", required = false) MultipartFile cover,
             @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId
 	) {
+		if (name.equals("")) {
+			throw new AppException(70400, "Name không được để trống", HttpStatus.BAD_REQUEST);
+        }
+		
         String id = UUID.randomUUID().toString();
         try {
             String coverUrl = null;
 
             // Save cover image
-            if (cover != null) {
+            if (cover == null || cover.isEmpty()) {
+            	coverUrl = imageUtils.getDefaultCoverUrl();
+            } else {
                 coverUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), cover, "cover");
             }
 
@@ -206,7 +212,7 @@ public class GroupServiceController {
 			member.setRole(GroupMemberRole.CREATOR);
 			groupMemberRepository.save(member);
         } catch (IOException e) {
-        	throw new AppException(70400, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+        	throw new AppException(70401, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
@@ -329,7 +335,7 @@ public class GroupServiceController {
 		Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
 		GroupMemberModel member = optionalMember.get();
 		if (requestingUserId.equals(userId)) {
-			throw new AppException(70800, "Không thể thay đổi role của bản thân", HttpStatus.BAD_REQUEST);
+			throw new AppException(70800, "Không thể thay đổi vai trò của bản thân", HttpStatus.BAD_REQUEST);
 		}
 		if (updatedGroupMember.getRole() == null) {
 			throw new AppException(70801, "Role không được để trống", HttpStatus.BAD_REQUEST);
@@ -404,7 +410,7 @@ public class GroupServiceController {
         // Check if there's a pending request to join the group
         Optional<RequestJoinGroupModel> pendingRequestOptional = requestJoinGroupRepository.findByGroupIdAndUserId(id, userId);
         if (pendingRequestOptional.isPresent() && !pendingRequestOptional.get().isDelete()) {
-        	throw new AppException(71102, "Yêu cầu tham gia đang chờ kiểm duyệt", HttpStatus.BAD_REQUEST);
+        	throw new AppException(71102, "Yêu cầu tham gia đang chờ xét duyệt", HttpStatus.BAD_REQUEST);
         }
         
         //create request if group is private, auto join as member if group is public

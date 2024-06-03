@@ -77,4 +77,8 @@ public class ImageUtils {
 	public String getPostGroupPath(String groupId, String postId) {
 		return groupPath + groupId + "/posts/" + postId + "/";
 	}
+	
+	public String getDefaultCoverUrl() {
+		return gcp.getDomainName() + gcp.getBucketName() + "/" + groupPath + "defaultCover";
+	}
 }
