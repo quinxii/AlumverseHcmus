@@ -15,14 +15,11 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class WebSecurityConfig {
 	@Autowired
 	PreAuthenticatedUserRoleHeaderFilter authFilter;
-	@Autowired
-	CustomAccessDeniedHandler accessDeniedHandler;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		return http.csrf(csrf -> csrf.disable()).addFilterBefore(authFilter, BasicAuthenticationFilter.class)
 				.authorizeHttpRequests(auth -> auth.requestMatchers("/error").permitAll().anyRequest().authenticated())
-				.exceptionHandling(((exceptionHandling) -> exceptionHandling.accessDeniedHandler(accessDeniedHandler)))
 				.build();
 	}
 }

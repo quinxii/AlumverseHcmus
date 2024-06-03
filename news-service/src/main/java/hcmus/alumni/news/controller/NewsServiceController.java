@@ -11,12 +11,15 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -34,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
+import hcmus.alumni.news.exception.AppException;
 import hcmus.alumni.news.model.CommentNewsModel;
 import hcmus.alumni.news.model.FacultyModel;
 import hcmus.alumni.news.model.NewsModel;
@@ -43,16 +47,11 @@ import hcmus.alumni.news.model.UserModel;
 import hcmus.alumni.news.repository.CommentNewsRepository;
 import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.utils.ImageUtils;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/news")
 public class NewsServiceController {
-	@PersistenceContext
-	private EntityManager em;
-
 	@Autowired
 	private NewsRepository newsRepository;
 	@Autowired
@@ -79,8 +78,8 @@ public class NewsServiceController {
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
 			@RequestParam(value = "statusId", required = false) Integer statusId) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -93,10 +92,9 @@ public class NewsServiceController {
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
 		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+			throw new AppException(40200, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(40201, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -106,7 +104,7 @@ public class NewsServiceController {
 	public ResponseEntity<INewsDto> getNewsById(@PathVariable String id) {
 		Optional<INewsDto> optionalNews = newsRepository.findNewsById(id);
 		if (optionalNews.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+			throw new AppException(40300, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		newsRepository.viewsIncrement(id);
 		return ResponseEntity.status(HttpStatus.OK).body(optionalNews.get());
@@ -120,11 +118,11 @@ public class NewsServiceController {
 			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
-		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All fields must not be empty");
+		if (title.isEmpty()) {
+			throw new AppException(40400, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
-		if (thumbnail.getSize() > 5 * 1024 * 1024) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+		if (thumbnail.isEmpty()) {
+			throw new AppException(40401, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		String id = UUID.randomUUID().toString();
 
@@ -148,7 +146,8 @@ public class NewsServiceController {
 			}
 			newsRepository.save(news);
 		} catch (IOException e) {
-			System.err.println(e);
+			e.printStackTrace();
+			throw new AppException(40402, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
@@ -162,16 +161,13 @@ public class NewsServiceController {
 			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
-		if (thumbnail != null && thumbnail.getSize() > 5 * 1024 * 1024) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
-		}
 		boolean isPut = false;
 
 		try {
 			// Find news
 			Optional<NewsModel> optionalNews = newsRepository.findById(id);
 			if (optionalNews.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+				throw new AppException(40500, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 			}
 			NewsModel news = optionalNews.get();
 			if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -202,7 +198,8 @@ public class NewsServiceController {
 				newsRepository.save(news);
 			}
 		} catch (IOException e) {
-			System.err.println(e);
+			e.printStackTrace();
+			throw new AppException(40501, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
@@ -213,7 +210,7 @@ public class NewsServiceController {
 		// Find news
 		Optional<NewsModel> optionalNews = newsRepository.findById(id);
 		if (optionalNews.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+			throw new AppException(40600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		NewsModel news = optionalNews.get();
 		news.setStatus(new StatusPostModel(4));
@@ -231,7 +228,7 @@ public class NewsServiceController {
 		// Find news
 		Optional<NewsModel> optionalNews = newsRepository.findById(id);
 		if (optionalNews.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+			throw new AppException(40700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		NewsModel news = optionalNews.get();
 		if (!updatedNews.getContent().equals("")) {
@@ -254,7 +251,7 @@ public class NewsServiceController {
 		}
 		Optional<NewsModel> optionalNews = newsRepository.findById(id);
 		if (optionalNews.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+			throw new AppException(40800, "Không tìm thấy bài viết gốc", HttpStatus.NOT_FOUND);
 		}
 		FacultyModel faculty = optionalNews.get().getFaculty();
 		Integer facultyId = null;
@@ -307,8 +304,8 @@ public class NewsServiceController {
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -334,15 +331,15 @@ public class NewsServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		// Check if parent comment deleted
 		Optional<CommentNewsModel> parentComment = commentNewsRepository.findById(commentId);
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+			throw new AppException(41100, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 
 		// Delete all post permissions regardless of being creator or not
@@ -365,10 +362,21 @@ public class NewsServiceController {
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentNewsModel comment) {
+		if (comment.getContent() == null || comment.getContent().equals("")) {
+			throw new AppException(41200, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
 		comment.setId(UUID.randomUUID().toString());
 		comment.setNews(new NewsModel(id));
 		comment.setCreator(new UserModel(creator));
-		commentNewsRepository.save(comment);
+
+		try {
+			commentNewsRepository.save(comment);
+		} catch (JpaObjectRetrievalFailureException e) {
+			throw new AppException(41201, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(41202, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+		}
 
 		if (comment.getParentId() != null) {
 			commentNewsRepository.commentCountIncrement(comment.getParentId(), 1);
@@ -384,8 +392,8 @@ public class NewsServiceController {
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentNewsModel updatedComment) {
-		if (updatedComment.getContent() == null) {
-			return ResponseEntity.status(HttpStatus.OK).body("");
+		if (updatedComment.getContent() == null || updatedComment.getContent().equals("")) {
+			throw new AppException(41300, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		commentNewsRepository.updateComment(commentId, userId, updatedComment.getContent());
@@ -400,7 +408,7 @@ public class NewsServiceController {
 		// Check if comment exists
 		Optional<CommentNewsModel> optionalComment = commentNewsRepository.findById(commentId);
 		if (optionalComment.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+			throw new AppException(41400, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
 		}
 		CommentNewsModel originalComment = optionalComment.get();
 
@@ -427,7 +435,7 @@ public class NewsServiceController {
 		}
 
 		// Delete all comments and update comment count
-		int deleted = commentNewsRepository.deleteComment(commentId, userId);
+		int deleted = commentNewsRepository.deleteComment(commentId);
 		for (String parentId : allParentId) {
 			commentNewsRepository.deleteChildrenComment(parentId);
 		}

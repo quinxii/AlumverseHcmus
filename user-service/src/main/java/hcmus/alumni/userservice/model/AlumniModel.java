@@ -13,7 +13,6 @@ import javax.persistence.Table;
 import hcmus.alumni.userservice.common.Privacy;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "[alumni]")

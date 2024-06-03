@@ -13,7 +13,7 @@ import hcmus.alumni.userservice.model.UserModel;
 
 public interface UserRepository extends JpaRepository<UserModel, String> {
 	Optional<UserModel> findById(String id);
-	
+
 	UserModel findByEmailAndPass(String email, String pass);
 
 	UserModel findByEmail(String email);
@@ -34,6 +34,11 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	@Query("UPDATE UserModel u SET u.fullName = :fullName, u.socialMediaLink = :socialMediaLink, u.faculty = :faculty WHERE u.id = :userId")
 	int setDataFirstVerifyAlumni(@Param("userId") String userId, @Param("fullName") String fullName,
 			@Param("socialMediaLink") String socialMediaLink, @Param("faculty") FacultyModel faculty);
+
+	@Transactional
+	@Modifying
+	@Query(value = "UPDATE user_role SET role_id = 3 WHERE user_id = :userId AND role_id = 1", nativeQuery = true)
+	int updateRoleFromGuestToAlumni(String userId);
 
 	@Query("SELECT u.fullName FROM UserModel u WHERE u.id = :userId")
 	String findFullNameByUserId(@Param("userId") String userId);
