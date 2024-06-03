@@ -243,7 +243,7 @@ public class NewsServiceController {
 	}
 
 	@GetMapping("/{id}/related")
-	public ResponseEntity<HashMap<String, Object>> getMostViewed(
+	public ResponseEntity<HashMap<String, Object>> getRelatedNews(
 			@PathVariable String id,
 			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
 		if (limit <= 0 || limit > 10) {
