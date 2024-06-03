@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.halloffame.dto.IHallOfFameDto;
+import hcmus.alumni.halloffame.exception.AppException;
 import hcmus.alumni.halloffame.model.FacultyModel;
 import hcmus.alumni.halloffame.model.HallOfFameModel;
 import hcmus.alumni.halloffame.model.StatusPostModel;
@@ -53,7 +56,7 @@ public class HallOfFameServiceController {
 
 	@GetMapping("/count")
 	public ResponseEntity<Long> getHofCount(@RequestParam(value = "status") String status) {
-		if (status.equals("")) {
+		if (status.equals(StringUtils.EMPTY)) {
 			ResponseEntity.status(HttpStatus.OK).body(0L);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(halloffameRepository.getCountByStatus(status));
@@ -69,8 +72,8 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "statusId", required = false) Integer statusId,
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -83,13 +86,22 @@ public class HallOfFameServiceController {
 			result.put("totalPages", hof.getTotalPages());
 			result.put("hof", hof.getContent());
 		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			result.put("error", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+			throw new AppException(30200, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(30201, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<IHallOfFameDto> getHallOfFameById(@PathVariable String id) {
+		Optional<IHallOfFameDto> optionalHof = halloffameRepository.findHallOfFameById(id);
+		if (optionalHof.isEmpty()) {
+			throw new AppException(30300, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
+		halloffameRepository.viewsIncrement(id);
+		return ResponseEntity.status(HttpStatus.OK).body(optionalHof.get());
 	}
 
 	@PreAuthorize("hasAnyAuthority('Hof.Create')")
@@ -102,26 +114,25 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili,
 			@RequestParam(value = "position", required = false) String position) {
-		if (creator.isEmpty() || title.isEmpty() || thumbnail.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Title and thumbnail must not be empty");
+		if (title.isEmpty()) {
+			throw new AppException(30400, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
-		if (thumbnail.getSize() > 5 * 1024 * 1024) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
+		if (thumbnail.isEmpty()) {
+			throw new AppException(30401, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
 		}
+
+		String id = UUID.randomUUID().toString();
 
 		UserModel linkedUser = null;
 		if (emailOfUser != null) {
 			linkedUser = userRepository.findByEmail(emailOfUser);
 			if (linkedUser == null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
+				throw new AppException(30402, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
 			}
 		}
 
-		String id = UUID.randomUUID().toString();
 		try {
-			// Save thumbnail image
 			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
-			// Save hall of fame to database
 			FacultyModel faculty = null;
 			if (!facultyId.equals(0)) {
 				faculty = new FacultyModel(facultyId);
@@ -131,8 +142,8 @@ public class HallOfFameServiceController {
 
 			halloffameRepository.save(halloffame);
 		} catch (IOException e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save thumbnail");
+			e.printStackTrace();
+			throw new AppException(30403, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
@@ -150,22 +161,19 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "position", defaultValue = "") String position) {
 
 		try {
-			// Find hall of fame
 			Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
 			if (optionalHallOfFame.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
+				throw new AppException(30500, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 			}
 
 			HallOfFameModel halloffame = optionalHallOfFame.get();
 			boolean isPut = false;
 
-			// Update fields if provided
 			if (!title.equals("")) {
 				halloffame.setTitle(title);
 				isPut = true;
 			}
 			if (thumbnail != null && !thumbnail.isEmpty()) {
-				// Save new thumbnail
 				imageUtils.saveImageToStorage(imageUtils.getHofPath(id), thumbnail, "thumbnail");
 			}
 			if (!summary.equals("")) {
@@ -184,7 +192,7 @@ public class HallOfFameServiceController {
 			if (emailOfUser != null) {
 				UserModel linkedUser = userRepository.findByEmail(emailOfUser);
 				if (linkedUser == null) {
-					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not existed");
+					throw new AppException(30501, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
 				}
 				halloffame.setLinkedUser(linkedUser);
 				isPut = true;
@@ -199,17 +207,15 @@ public class HallOfFameServiceController {
 				isPut = true;
 			}
 
-			// Save hall of fame
 			if (isPut) {
 				halloffameRepository.save(halloffame);
 			}
-			return ResponseEntity.status(HttpStatus.OK).body("Updated successfully!");
 
 		} catch (IOException e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update hall of fame");
+			e.printStackTrace();
+			throw new AppException(30502, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
+		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
 	@PreAuthorize("hasAnyAuthority('Hof.Edit')")
@@ -219,10 +225,10 @@ public class HallOfFameServiceController {
 		if (updatedHallOfFame.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
-		// Find hof
+		
 		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
 		if (optionalHallOfFame.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+			throw new AppException(30600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		HallOfFameModel halloffame = optionalHallOfFame.get();
 		if (!updatedHallOfFame.getContent().equals("")) {
@@ -242,21 +248,12 @@ public class HallOfFameServiceController {
 	public ResponseEntity<String> deleteHallOfFame(@PathVariable String id) {
 		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
 		if (optionalHallOfFame.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid id");
+			throw new AppException(30700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		HallOfFameModel hof = optionalHallOfFame.get();
 		hof.setStatus(new StatusPostModel(4));
 		halloffameRepository.save(hof);
-		return ResponseEntity.status(HttpStatus.OK).body("Updated status successfully!");
+		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@GetMapping("/{id}")
-	public ResponseEntity<IHallOfFameDto> getHallOfFameById(@PathVariable String id) {
-		Optional<IHallOfFameDto> optionalHof = halloffameRepository.findHallOfFameById(id);
-		if (optionalHof.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-		}
-		halloffameRepository.viewsIncrement(id);
-		return ResponseEntity.status(HttpStatus.OK).body(optionalHof.get());
-	}
 }
