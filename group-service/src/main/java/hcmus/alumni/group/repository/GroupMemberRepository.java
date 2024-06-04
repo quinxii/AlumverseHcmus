@@ -37,7 +37,7 @@ public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, G
 	@Transactional
 	@Modifying
 	@Query("UPDATE GroupMemberModel gm SET gm.role = :role " + 
-			"WHERE gm.id.group.id = :groupId AND gm.id.user.id = :userId")
+			"WHERE gm.id.group.id = :groupId AND gm.id.user.id = :userId AND isDelete = false")
 	int updateGroupMember(@Param("groupId") String groupId, @Param("userId") String userId, @Param("role") GroupMemberRole content);
 	
 	@Transactional

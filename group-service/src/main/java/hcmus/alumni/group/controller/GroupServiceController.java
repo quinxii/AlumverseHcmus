@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.Set;
 
 import org.hibernate.query.sqm.UnknownPathException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -36,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.group.common.Privacy;
 import hcmus.alumni.group.common.GroupMemberRole;
+import hcmus.alumni.group.exception.AppException;
 import hcmus.alumni.group.model.GroupModel;
 import hcmus.alumni.group.model.UserModel;
 import hcmus.alumni.group.model.StatusPostModel;
@@ -104,8 +107,8 @@ public class GroupServiceController {
 			@RequestParam(value = "privacy", required = false) Privacy privacy,
 			@RequestParam(value = "isJoined", required = false) Boolean isJoined) {
 
-		if (pageSize == 0 || pageSize > 50) {
-		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		
 		HashMap<String, Object> result = new HashMap<>();
@@ -123,9 +126,9 @@ public class GroupServiceController {
 		    result.put("totalPages", groups.getTotalPages());
 		    result.put("groups", groups.getContent());
 		} catch (IllegalArgumentException e) {
-		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-		    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+			throw new AppException(70100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(70101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		
 		return ResponseEntity.status(HttpStatus.OK).body(result);
@@ -144,7 +147,7 @@ public class GroupServiceController {
 		
 	    Optional<IGroupDto> optionalGroup = groupRepository.findGroupById(id, requestingUserId, canDelete);
 	    if (optionalGroup.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+	    	throw new AppException(70200, "Không tìm thấy nhóm", HttpStatus.NOT_FOUND);
 	    }
 
 	    return ResponseEntity.status(HttpStatus.OK).body(optionalGroup.get());
@@ -166,21 +169,21 @@ public class GroupServiceController {
             @RequestParam(value = "type", required = false, defaultValue = "") String type,
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "PUBLIC") Privacy privacy,
-            @RequestParam(value = "cover") MultipartFile cover,
+            @RequestParam(value = "cover", required = false) MultipartFile cover,
             @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId
 	) {
-		if (name.isEmpty() || cover.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name and cover must not be empty");
+		if (name.equals("")) {
+			throw new AppException(70400, "Name không được để trống", HttpStatus.BAD_REQUEST);
         }
-		if (cover.getSize() > 5 * 1024 * 1024) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File must be lower than 5MB");
-	    }
+		
         String id = UUID.randomUUID().toString();
         try {
             String coverUrl = null;
 
             // Save cover image
-            if (cover != null) {
+            if (cover == null || cover.isEmpty()) {
+            	coverUrl = imageUtils.getDefaultCoverUrl();
+            } else {
                 coverUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id), cover, "cover");
             }
 
@@ -209,7 +212,7 @@ public class GroupServiceController {
 			member.setRole(GroupMemberRole.CREATOR);
 			groupMemberRepository.save(member);
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save images");
+        	throw new AppException(70401, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
@@ -230,6 +233,9 @@ public class GroupServiceController {
 	) {
         try {
     		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
+    		if (optionalGroup.isEmpty()) {
+    	    	throw new AppException(70500, "Không tìm thấy nhóm", HttpStatus.NOT_FOUND);
+    	    }
             GroupModel groupModel = optionalGroup.get();
             boolean isPut = false;
             
@@ -271,7 +277,7 @@ public class GroupServiceController {
             if (isPut)
             	groupRepository.save(groupModel);
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save images");
+        	throw new AppException(70501, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body("");
@@ -284,6 +290,9 @@ public class GroupServiceController {
 			@PathVariable String id,
 			@RequestHeader("userId") String requestingUserId) {
 		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
+		if (optionalGroup.isEmpty()) {
+	    	throw new AppException(70600, "Không tìm thấy nhóm", HttpStatus.NOT_FOUND);
+	    }
 	    GroupModel group = optionalGroup.get();
 	    group.setStatus(new StatusUserGroupModel(3));
 	    groupRepository.save(group);
@@ -300,9 +309,8 @@ public class GroupServiceController {
 		    @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
 		    @RequestParam(value = "role", required = false) GroupMemberRole role
 	) {
-		
-		if (pageSize == 0 || pageSize > 50) {
-		    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		
 		HashMap<String, Object> result = new HashMap<>();
@@ -327,14 +335,14 @@ public class GroupServiceController {
 		Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
 		GroupMemberModel member = optionalMember.get();
 		if (requestingUserId.equals(userId)) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not change your role");
+			throw new AppException(70800, "Không thể thay đổi vai trò của bản thân", HttpStatus.BAD_REQUEST);
 		}
 		if (updatedGroupMember.getRole() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("");
+			throw new AppException(70801, "Role không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		int updates = groupMemberRepository.updateGroupMember(id, userId, updatedGroupMember.getRole());
 		if (updates == 0) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid id");
+			throw new AppException(70802, "Không tìm thấy thành viên trong nhóm", HttpStatus.NOT_FOUND);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(null);
     }
@@ -357,7 +365,7 @@ public class GroupServiceController {
     		return ResponseEntity.status(HttpStatus.OK).body(null);
     	}
     	else
-    		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    		throw new AppException(70900, "Không tìm thấy thành viên trong nhóm", HttpStatus.NOT_FOUND);
     }
     
 	@PreAuthorize("1 == @groupMemberRepository.hasGroupMemberRole(#id, #requestingUserId, \"CREATOR\") or "
@@ -369,8 +377,8 @@ public class GroupServiceController {
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "pageSize", defaultValue = "10") int pageSize
     ) {
-        if (pageSize == 0 || pageSize > 50) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        if (pageSize <= 0 || pageSize > 50) {
+        	pageSize = 50;
         }
 
         HashMap<String, Object> result = new HashMap<>();
@@ -390,19 +398,19 @@ public class GroupServiceController {
     		@RequestHeader("userId") String userId) {
     	Optional<GroupModel> optionalGroup = groupRepository.findById(id);
 	    if (optionalGroup.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Group not found");
+	    	throw new AppException(71100, "Không tìm thấy nhóm", HttpStatus.NOT_FOUND);
 	    }
     	
     	// Check if the user is already a member of the group
         Optional<GroupMemberModel> existingMemberOptional = groupMemberRepository.findByGroupIdAndUserId(id, userId);
         if (existingMemberOptional.isPresent() && !existingMemberOptional.get().isDelete()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You're already in this group.");
+        	throw new AppException(71101, "Người dùng đã là thành viên của nhóm", HttpStatus.BAD_REQUEST);
         }
 
         // Check if there's a pending request to join the group
         Optional<RequestJoinGroupModel> pendingRequestOptional = requestJoinGroupRepository.findByGroupIdAndUserId(id, userId);
         if (pendingRequestOptional.isPresent() && !pendingRequestOptional.get().isDelete()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Your request to join this group is pending.");
+        	throw new AppException(71102, "Yêu cầu tham gia đang chờ xét duyệt", HttpStatus.BAD_REQUEST);
         }
         
         //create request if group is private, auto join as member if group is public
@@ -441,7 +449,7 @@ public class GroupServiceController {
     ) {
 		Optional<RequestJoinGroupModel> optionalRequest = requestJoinGroupRepository.findByGroupIdAndUserId(id, userId);
 		if (!optionalRequest.isPresent()) {
-		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request not found");
+			throw new AppException(71200, "Không tìm thấy yêu cầu tham gia", HttpStatus.NOT_FOUND);
 		}
 		
 		RequestJoinGroupModel request = optionalRequest.get();
@@ -460,7 +468,7 @@ public class GroupServiceController {
 		
 		requestJoinGroupRepository.deleteRequestJoin(id, userId);
 		
-		return ResponseEntity.status(HttpStatus.OK).body("Request status updated successfully");
+		return ResponseEntity.status(HttpStatus.OK).body(null);
     }
     
 	@PreAuthorize("0 == @groupRepository.isPrivate(#id) or 1 == @groupMemberRepository.isMember(#id, #requestingUserId)")
@@ -477,8 +485,8 @@ public class GroupServiceController {
 	    GroupModel group = optionalGroup.get();
 	    Optional<GroupMemberModel> existingMemberOptional = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
         
-        if (pageSize == 0 || pageSize > 50) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        if (pageSize <= 0 || pageSize > 50) {
+        	pageSize = 50;
         }
         HashMap<String, Object> result = new HashMap<>();
         
@@ -509,19 +517,9 @@ public class GroupServiceController {
 		
         Optional<IPostGroupDto> optionalPost = postGroupRepository.findPostById(postId, requestingUserId, canDelete);
         if (optionalPost.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        	throw new AppException(71400, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
         }
         
-        Optional<GroupModel> optionalGroup = groupRepository.findById(optionalPost.get().getGroupId());
-        if (optionalGroup.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-	    }
-	    GroupModel group = optionalGroup.get();
-	    Optional<GroupMemberModel> existingMemberOptional = groupMemberRepository.findByGroupIdAndUserId(optionalPost.get().getGroupId(), requestingUserId);
-	    if (group.getPrivacy().equals(Privacy.PRIVATE) && 
-	    		!(existingMemberOptional.isPresent() && !existingMemberOptional.get().isDelete())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
-        }
         return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
     }
 
@@ -530,12 +528,21 @@ public class GroupServiceController {
     public ResponseEntity<String> addGroupPost(@PathVariable String id, //group id
     		@RequestHeader("userId") String creator,
     		@RequestBody PostGroupModel reqPostModel) {
+		if (reqPostModel.getTitle() == null || reqPostModel.getTitle().isEmpty()) {
+			throw new AppException(71500, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		if (reqPostModel.getContent() == null || reqPostModel.getContent().isEmpty()) {
+			throw new AppException(71501, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
+		}
 
-    	String postId = UUID.randomUUID().toString();
     	PostGroupModel newPost = new PostGroupModel(id, creator, reqPostModel.getTitle(), reqPostModel.getContent(), reqPostModel.getTags());
     	newPost.setPublishedAt(new Date());
     	
-        postGroupRepository.save(newPost);
+    	try {
+            postGroupRepository.save(newPost);
+        } catch (DataIntegrityViolationException ex) {
+            throw new AppException(71502, "Không tìm thấy nhóm", HttpStatus.BAD_REQUEST);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(newPost.getId());
     }
 
@@ -547,7 +554,7 @@ public class GroupServiceController {
     		@RequestBody PostGroupModel reqPostModel) {
         Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
         if (optionalPost.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
+        	throw new AppException(71600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
         }
         PostGroupModel post = optionalPost.get();
         
@@ -581,7 +588,7 @@ public class GroupServiceController {
 
 		Optional<PostGroupModel> optionalPostGroup = postGroupRepository.findById(id);
 		if (optionalPostGroup.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid post id");
+			throw new AppException(71700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 
 		PostGroupModel postGroup = optionalPostGroup.get();
@@ -589,7 +596,8 @@ public class GroupServiceController {
 
 		if (addedImages != null && deletedImageIds != null
 				&& images.size() + addedImages.size() - deletedImageIds.size() > MAX_IMAGE_SIZE_PER_POST) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Exceed images can be uploaded per post");
+			throw new AppException(71701, "Vượt quá giới hạn " + MAX_IMAGE_SIZE_PER_POST + " ảnh mỗi bài viết",
+					HttpStatus.BAD_REQUEST);
 		}
 
 		// Delete images
@@ -602,17 +610,15 @@ public class GroupServiceController {
 						if (successful) {
 							deletedImages.add(image);
 						} else {
-							return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-									.body("Error deleting images");
+							throw new AppException(71702, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
 						}
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
-						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+						throw new AppException(71703, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					} catch (IOException e) {
 						e.printStackTrace();
-						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting images");
+						throw new AppException(71703, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					}
-
 				}
 			}
 			// Remove deleted images from list
@@ -632,7 +638,7 @@ public class GroupServiceController {
 				for (int i = 0; i < addedImages.size(); i++) {
 					int order = imagesSize + i;
 					String pictureId = UUID.randomUUID().toString();
-					String pictureUrl = imageUtils.saveImageToStorage(imageUtils.getGroupPath(id),
+					String pictureUrl = imageUtils.saveImageToStorage(imageUtils.getPostGroupPath(postGroup.getGroupId(), id),
 							addedImages.get(i),
 							pictureId);
 					postGroup.getPictures()
@@ -640,7 +646,7 @@ public class GroupServiceController {
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving images");
+				throw new AppException(71704, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
 
@@ -656,6 +662,9 @@ public class GroupServiceController {
     		@PathVariable String postId,
     		@RequestHeader("userId") String creator) {
         Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
+        if (optionalPost.isEmpty()) {
+			throw new AppException(71800, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
         PostGroupModel post = optionalPost.get();
         post.getPictures().clear();
         post.setStatus(new StatusPostModel(4));
@@ -669,8 +678,8 @@ public class GroupServiceController {
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
@@ -695,15 +704,15 @@ public class GroupServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		// Check if parent comment deleted
 		Optional<CommentPostGroupModel> parentComment = commentPostGroupRepository.findById(commentId);
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+			throw new AppException(72000, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
 		
 		boolean canDelete = false;
@@ -726,10 +735,20 @@ public class GroupServiceController {
 	public ResponseEntity<String> createComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentPostGroupModel comment) {
+		if (comment.getContent() == null || comment.getContent().equals("")) {
+			throw new AppException(72100, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
+		}
 		comment.setId(UUID.randomUUID().toString());
 		comment.setPostGroup(new PostGroupModel(id));
 		comment.setCreator(new UserModel(creator));
-		commentPostGroupRepository.save(comment);
+		
+		try {
+			commentPostGroupRepository.save(comment);
+		} catch (JpaObjectRetrievalFailureException e) {
+			throw new AppException(72101, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(72102, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
+		}
 
 		if (comment.getParentId() != null) {
 			commentPostGroupRepository.commentCountIncrement(comment.getParentId(), 1);
@@ -745,8 +764,8 @@ public class GroupServiceController {
 	public ResponseEntity<String> updateComment(
 			@RequestHeader("userId") String userId,
 			@PathVariable String commentId, @RequestBody CommentPostGroupModel updatedComment) {
-		if (updatedComment.getContent() == null) {
-			return ResponseEntity.status(HttpStatus.OK).body("");
+		if (updatedComment.getContent() == null || updatedComment.getContent().equals("")) {
+			throw new AppException(72200, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		commentPostGroupRepository.updateComment(commentId, userId, updatedComment.getContent());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -761,6 +780,9 @@ public class GroupServiceController {
 			@PathVariable String commentId) {
 		// Check if comment exists
 		Optional<CommentPostGroupModel> optionalComment = commentPostGroupRepository.findById(commentId);
+		if (optionalComment.isEmpty()) {
+			throw new AppException(72300, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+		}
 		CommentPostGroupModel originalComment = optionalComment.get();
 
 		// Initilize variables
@@ -807,23 +829,18 @@ public class GroupServiceController {
 			@PathVariable String id,
 			@RequestParam Integer reactId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
+		if (pageSize <= 0 || pageSize > 50) {
+			pageSize = 50;
+		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
-		try {
-			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
-			Page<IInteractPostGroupDto> users = interactPostGroupRepository.getReactionUsers(id, reactId,
-					pageable);
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
+		Page<IInteractPostGroupDto> users = interactPostGroupRepository.getReactionUsers(id, reactId,
+				pageable);
 
-			result.put("totalPages", users.getTotalPages());
-			result.put("users", users.getContent());
-		} catch (IllegalArgumentException | UnknownPathException | InvalidDataAccessApiUsageException e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			System.err.println(e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-		}
+		result.put("totalPages", users.getTotalPages());
+		result.put("users", users.getContent());
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -836,12 +853,16 @@ public class GroupServiceController {
 				.findById(new InteractPostGroupId(id, creatorId));
 
 		if (!optionalInteractPostGroup.isEmpty() && optionalInteractPostGroup.get().getIsDelete() == false) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You have already reacted to this post");
+			throw new AppException(72500, "Đã thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostGroupModel interactPostGroup = new InteractPostGroupModel(id, creatorId,
 				req.getReactId());
-		interactPostGroupRepository.save(interactPostGroup);
+		try {
+			interactPostGroupRepository.save(interactPostGroup);
+		} catch (JpaObjectRetrievalFailureException e) {
+			throw new AppException(72501, "postId hoặc reactId không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 		postGroupRepository.reactionCountIncrement(id, 1);
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
@@ -850,11 +871,15 @@ public class GroupServiceController {
 	public ResponseEntity<String> putPostGroupReaction(@RequestHeader("userId") String creatorId,
 			@PathVariable String id,
 			@RequestBody ReactRequestDto req) {
+		if (req.getReactId() == null) {
+			throw new AppException(72600, "reactId không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		
 		Optional<InteractPostGroupModel> optionalInteractPostGroup = interactPostGroupRepository
 				.findById(new InteractPostGroupId(id, creatorId));
 
 		if (optionalInteractPostGroup.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+			throw new AppException(72601, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostGroupModel interactPostGroup = optionalInteractPostGroup.get();
@@ -863,7 +888,11 @@ public class GroupServiceController {
 		}
 
 		interactPostGroup.setReact(new ReactModel(req.getReactId()));
-		interactPostGroupRepository.save(interactPostGroup);
+		try {
+			interactPostGroupRepository.save(interactPostGroup);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(72602, "reactId không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
@@ -874,7 +903,7 @@ public class GroupServiceController {
 				.findById(new InteractPostGroupId(id, creatorId));
 
 		if (optionalInteractPostGroup.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found");
+			throw new AppException(72700, "Chưa thả cảm xúc bài viết này", HttpStatus.BAD_REQUEST);
 		}
 
 		InteractPostGroupModel interactPostGroup = optionalInteractPostGroup.get();
