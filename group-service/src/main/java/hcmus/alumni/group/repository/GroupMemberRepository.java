@@ -27,8 +27,13 @@ public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, G
 	@Query("SELECT gm FROM GroupMemberModel gm " + 
 			"WHERE gm.id.group.id = :groupId " + 
 			"AND (:role IS NULL OR gm.role = :role)" + 
-			"AND isDelete = false")
-    Page<IGroupMemberDto> searchMembers(@Param("groupId") String groupId, @Param("role") GroupMemberRole role, Pageable pageable);
+			"AND isDelete = false " + 
+			"AND gm.id.user.fullName LIKE %:name%")
+    Page<IGroupMemberDto> searchMembers(
+    		@Param("groupId") String groupId, 
+    		@Param("name") String name , 
+    		@Param("role") GroupMemberRole role, 
+    		Pageable pageable);
 	
 	@Query("SELECT gm FROM GroupMemberModel gm " + 
 			"WHERE gm.id.group.id = :groupId AND gm.id.user.id = :userId")
