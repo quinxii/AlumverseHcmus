@@ -305,6 +305,7 @@ public class GroupServiceController {
 	@GetMapping("/{id}/members")
 	public ResponseEntity<HashMap<String, Object>> getGroupMembersByGroupId(
 			@PathVariable String id,
+			@RequestParam(value = "name", required = false, defaultValue = "") String name,
 		    @RequestParam(value = "page", defaultValue = "0") int page,
 		    @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
 		    @RequestParam(value = "role", required = false) GroupMemberRole role
@@ -316,7 +317,7 @@ public class GroupServiceController {
 		HashMap<String, Object> result = new HashMap<>();
 		
 		Pageable pageable = PageRequest.of(page, pageSize);
-	    Page<IGroupMemberDto> members = groupMemberRepository.searchMembers(id, role, pageable);
+	    Page<IGroupMemberDto> members = groupMemberRepository.searchMembers(id, name, role, pageable);
 	
 	    result.put("totalPages", members.getTotalPages());
 	    result.put("members", members.getContent());
