@@ -94,7 +94,7 @@ public class NewsServiceController {
 		if (tagNames != null) {
 			if (tagNames != null) {
 				for (int i = 0; i < tagNames.size(); i++) {
-					tagNames.set(i, tagNames.get(i).trim().replaceAll(" +", " "));
+					tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
 				}
 			}
 		}
@@ -162,9 +162,13 @@ public class NewsServiceController {
 			if (!tagNames.isEmpty()) {
 				Set<TagModel> tags = new HashSet<TagModel>();
 				for (String tagName : tagNames) {
-					TagModel tag = tagRepository.findByName(tagName.trim().replaceAll(" +", " "));
+					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
+					if (sanitizedTagName.isBlank()) {
+						continue;
+					}
+					TagModel tag = tagRepository.findByName(sanitizedTagName);
 					if (tag == null) {
-						tag = new TagModel(tagName);
+						tag = new TagModel(sanitizedTagName);
 					}
 					tags.add(tag);
 				}
@@ -219,7 +223,11 @@ public class NewsServiceController {
 				Set<TagModel> updatedTags = new HashSet<TagModel>();
 
 				for (String tagName : tagNames) {
-					updatedTags.add(new TagModel(tagName));
+					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
+					if (sanitizedTagName.isBlank()) {
+						continue;
+					}
+					updatedTags.add(new TagModel(sanitizedTagName));
 				}
 				// Remove tags
 				for (Iterator<TagModel> iterator = currentTags.iterator(); iterator.hasNext();) {

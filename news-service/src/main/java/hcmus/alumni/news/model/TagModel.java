@@ -43,7 +43,11 @@ public class TagModel implements Serializable {
 	}
 
 	public TagModel(String name) {
-		this.name = name.trim().replaceAll(" +", " ");
+		this.name = name;
+	}
+
+	public static String sanitizeTagName(String name) {
+		return name.trim().replaceAll(" +", " ").toLowerCase();
 	}
 
 	@Override
@@ -53,11 +57,11 @@ public class TagModel implements Serializable {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		TagModel tagModel = (TagModel) o;
-		return name.equalsIgnoreCase(tagModel.name.trim().replaceAll(" +", " "));
+		return name.equals(tagModel.name);
 	}
 
 	@Override
 	public int hashCode() {
-		return name == null ? 0 : name.trim().replaceAll(" +", " ").hashCode();
+		return name == null ? 0 : name.hashCode();
 	}
 }
