@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -46,6 +49,7 @@ import hcmus.alumni.news.model.TagModel;
 import hcmus.alumni.news.model.UserModel;
 import hcmus.alumni.news.repository.CommentNewsRepository;
 import hcmus.alumni.news.repository.NewsRepository;
+import hcmus.alumni.news.repository.TagRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 
 @RestController
@@ -55,9 +59,14 @@ public class NewsServiceController {
 	@Autowired
 	private NewsRepository newsRepository;
 	@Autowired
+	private TagRepository tagRepository;
+	@Autowired
 	private CommentNewsRepository commentNewsRepository;
 	@Autowired
 	private ImageUtils imageUtils;
+
+	private final static int MAXIMUM_PAGES = 50;
+	private final static int MAXIMUM_TAGS = 5;
 
 	@GetMapping("/count")
 	public ResponseEntity<Long> getNewsCount(
@@ -76,18 +85,25 @@ public class NewsServiceController {
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
-			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
 			@RequestParam(value = "statusId", required = false) Integer statusId) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (tagNames != null) {
+			if (tagNames != null) {
+				for (int i = 0; i < tagNames.size(); i++) {
+					tagNames.set(i, tagNames.get(i).trim().replaceAll(" +", " "));
+				}
+			}
+		}
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 			Page<INewsDto> news = null;
 
-			news = newsRepository.searchNews(title, facultyId, tagsId, statusId, pageable);
+			news = newsRepository.searchNews(title, facultyId, tagNames, statusId, pageable);
 
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
@@ -115,14 +131,19 @@ public class NewsServiceController {
 	public ResponseEntity<String> createNews(@RequestHeader("userId") String creator,
 			@RequestParam(value = "title") String title, @RequestParam(value = "thumbnail") MultipartFile thumbnail,
 			@RequestParam(value = "summary", required = false, defaultValue = "") String summary,
-			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "scheduledTime", required = false) Long scheduledTimeMili) {
 		if (title.isEmpty()) {
-			throw new AppException(40400, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(40400, "Tiêu đề không được để trống",
+					HttpStatus.BAD_REQUEST);
 		}
 		if (thumbnail.isEmpty()) {
-			throw new AppException(40401, "Ảnh thumbnail không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(40401, "Ảnh thumbnail không được để trống",
+					HttpStatus.BAD_REQUEST);
+		}
+		if (tagNames.size() > MAXIMUM_TAGS) {
+			throw new AppException(40403, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
 		String id = UUID.randomUUID().toString();
 
@@ -138,8 +159,16 @@ public class NewsServiceController {
 			} else {
 				news.setPublishedAt(new Date());
 			}
-			if (tagsId != null) {
-				news.setTags(tagsId);
+			if (!tagNames.isEmpty()) {
+				Set<TagModel> tags = new HashSet<TagModel>();
+				for (String tagName : tagNames) {
+					TagModel tag = tagRepository.findByName(tagName.trim().replaceAll(" +", " "));
+					if (tag == null) {
+						tag = new TagModel(tagName);
+					}
+					tags.add(tag);
+				}
+				news.setTags(tags);
 			}
 			if (!facultyId.equals(0)) {
 				news.setFaculty(new FacultyModel(facultyId));
@@ -158,10 +187,13 @@ public class NewsServiceController {
 			@RequestParam(value = "title", defaultValue = "") String title,
 			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
 			@RequestParam(value = "summary", required = false, defaultValue = "") String summary,
-			@RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 		boolean isPut = false;
+		if (tagNames.size() > MAXIMUM_TAGS) {
+			throw new AppException(40502, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
 
 		try {
 			// Find news
@@ -182,8 +214,30 @@ public class NewsServiceController {
 				news.setSummary(summary);
 				isPut = true;
 			}
-			if (tagsId != null) {
-				news.setTags(tagsId);
+			if (tagNames != null) {
+				Set<TagModel> currentTags = news.getTags();
+				Set<TagModel> updatedTags = new HashSet<TagModel>();
+
+				for (String tagName : tagNames) {
+					updatedTags.add(new TagModel(tagName));
+				}
+				// Remove tags
+				for (Iterator<TagModel> iterator = currentTags.iterator(); iterator.hasNext();) {
+					TagModel tag = iterator.next();
+					if (!updatedTags.contains(tag)) {
+						iterator.remove();
+					}
+				}
+				// Add tags
+				for (TagModel tag : updatedTags) {
+					if (!currentTags.contains(tag)) {
+						TagModel find = tagRepository.findByName(tag.getName());
+						if (find == null) {
+							find = new TagModel(tag.getName());
+						}
+						currentTags.add(find);
+					}
+				}
 				isPut = true;
 			}
 			if (!facultyId.equals(0)) {
@@ -258,10 +312,10 @@ public class NewsServiceController {
 		if (faculty != null) {
 			facultyId = optionalNews.get().getFaculty().getId();
 		}
-		List<Integer> tagsId = optionalNews.get().getTags().stream().map(TagModel::getId).collect(Collectors.toList());
+		List<Long> tagIds = optionalNews.get().getTags().stream().map(TagModel::getId).collect(Collectors.toList());
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
-		Page<INewsDto> news = newsRepository.getRelatedNews(id, facultyId, tagsId, pageable);
+		Page<INewsDto> news = newsRepository.getRelatedNews(id, facultyId, tagIds, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());
@@ -304,8 +358,8 @@ public class NewsServiceController {
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -331,8 +385,8 @@ public class NewsServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 

@@ -27,10 +27,10 @@ public interface NewsRepository extends JpaRepository<NewsModel, String> {
 			"LEFT JOIN n.tags t " +
 			"WHERE (:statusId IS NULL OR s.id = :statusId) " +
 			"AND (:facultyId IS NULL OR f.id = :facultyId) " +
-			"AND (:tagsId IS NULL OR t.id IN :tagsId) " +
+			"AND (:tagNames IS NULL OR t.name IN :tagNames) " +
 			"AND s.id != 4 " +
 			"AND n.title LIKE %:title%")
-	Page<INewsDto> searchNews(String title, Integer facultyId, List<Integer> tagsId, Integer statusId,
+	Page<INewsDto> searchNews(String title, Integer facultyId, List<String> tagNames, Integer statusId,
 			Pageable pageable);
 
 	@Query("SELECT DISTINCT n " +
@@ -41,7 +41,7 @@ public interface NewsRepository extends JpaRepository<NewsModel, String> {
 			"OR (:tagsId IS NULL OR t.id IN :tagsId)) " +
 			"AND n.status.id = 2 " +
 			"AND n.id != :originalNewsId")
-	Page<INewsDto> getRelatedNews(String originalNewsId, Integer facultyId, List<Integer> tagsId, Pageable pageable);
+	Page<INewsDto> getRelatedNews(String originalNewsId, Integer facultyId, List<Long> tagsId, Pageable pageable);
 
 	@Query("SELECT n FROM NewsModel n JOIN n.status s WHERE s.id = 2")
 	Page<INewsDto> getMostViewdNews(Pageable pageable);
