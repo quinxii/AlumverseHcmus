@@ -91,7 +91,10 @@ public class RoleServiceController {
         try {
             roleRepository.save(role);
         } catch (DataIntegrityViolationException e) {
-            throw new AppException(80300, "Không tìm thấy quyền", HttpStatus.NOT_FOUND);
+            if (e.getMostSpecificCause().getMessage().contains("Duplicate entry")) {
+                throw new AppException(80300, "Tên vai trò đã tồn tại", HttpStatus.CONFLICT);
+            }
+            throw new AppException(80301, "Quyền không tồn tại", HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }

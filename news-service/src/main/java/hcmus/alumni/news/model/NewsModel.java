@@ -8,6 +8,8 @@ import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,7 +40,7 @@ public class NewsModel implements Serializable {
 
 	@Column(name = "title", columnDefinition = "TINYTEXT")
 	private String title;
-	
+
 	@Column(name = "summary", columnDefinition = "TEXT")
 	private String summary;
 
@@ -52,7 +54,7 @@ public class NewsModel implements Serializable {
 	@JoinColumn(name = "faculty_id")
 	private FacultyModel faculty;
 
-	@ManyToMany(fetch = FetchType.EAGER)
+	@ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(name = "tag_news", joinColumns = @JoinColumn(name = "news_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
 	private Set<TagModel> tags = new HashSet<>();
 
@@ -94,13 +96,5 @@ public class NewsModel implements Serializable {
 		this.content = content;
 		this.thumbnail = thumbnail;
 		this.status = new StatusPostModel(2);
-	}
-
-	public void setTags(Integer[] tags) {
-		Set<TagModel> newTags = new HashSet<>();
-		for (Integer tag : tags) {
-			newTags.add(new TagModel(tag));
-		}
-		this.tags = newTags;
 	}
 }
