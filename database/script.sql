@@ -1,830 +1,1029 @@
 BEGIN;
+
 CREATE DATABASE alumverse_hcmus;
 
 BEGIN;
+
 USE alumverse_hcmus;
 
 DROP TABLE IF EXISTS role;
-CREATE TABLE role (
-    id TINYINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(100),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    role (
+        id TINYINT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description VARCHAR(100),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS permission;
-CREATE TABLE permission (
-    id TINYINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(100),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    permission (
+        id TINYINT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description VARCHAR(100),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS role_permission;
-CREATE TABLE role_permission (
-    role_id TINYINT NOT NULL,
-    permission_id TINYINT NOT NULL,
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (role_id) REFERENCES role(id),
-    FOREIGN KEY (permission_id) REFERENCES permission(id),
-    PRIMARY KEY(role_id, permission_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    role_permission (
+        role_id TINYINT NOT NULL,
+        permission_id TINYINT NOT NULL,
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (role_id) REFERENCES role (id),
+        FOREIGN KEY (permission_id) REFERENCES permission (id),
+        PRIMARY KEY (role_id, permission_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS sex;
-CREATE TABLE sex (
-    id TINYINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    description TINYTEXT,
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    sex (
+        id TINYINT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(50) NOT NULL UNIQUE,
+        description TINYTEXT,
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS status_user_group;
-CREATE TABLE status_user_group (
-    id TINYINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description TINYTEXT,
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    status_user_group (
+        id TINYINT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description TINYTEXT,
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS status_post;
-CREATE TABLE status_post (
-    id TINYINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description TINYTEXT,
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    status_post (
+        id TINYINT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description TINYTEXT,
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS email_activation_code;
-CREATE TABLE email_activation_code (
-	email VARCHAR(255) NOT NULL UNIQUE,
-    activation_code VARCHAR(8) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    PRIMARY KEY (email(255))
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    email_activation_code (
+        email VARCHAR(255) NOT NULL UNIQUE,
+        activation_code VARCHAR(8) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        PRIMARY KEY (email (255))
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS faculty;
-CREATE TABLE faculty (
-	id TINYINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description TINYTEXT,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    faculty (
+        id TINYINT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description TINYTEXT,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS tag;
-CREATE TABLE tag (
-	id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    tag (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS user;
-CREATE TABLE user (
-    id VARCHAR(36) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    pass VARCHAR(60) NOT NULL,
-    full_name VARCHAR(100),
-    phone VARCHAR(15),
-    sex_id TINYINT,
-    dob DATE,
-    social_media_link TINYTEXT,
-    faculty_id TINYINT,
-    degree VARCHAR(50),
-    about_me TEXT,
-    avatar_url TINYTEXT,
-    cover_url TINYTEXT,
-    status_id TINYINT,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    last_login DATETIME,
-    online_status TINYINT(1) DEFAULT(0),
-    email_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    phone_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    sex_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    dob_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    faculty_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    FOREIGN KEY (sex_id) REFERENCES sex(id),
-    FOREIGN KEY (faculty_id) REFERENCES faculty(id),
-    FOREIGN KEY (status_id) REFERENCES status_user_group(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    user (
+        id VARCHAR(36) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        pass VARCHAR(60) NOT NULL,
+        full_name VARCHAR(100),
+        phone VARCHAR(15),
+        sex_id TINYINT,
+        dob DATE,
+        social_media_link TINYTEXT,
+        faculty_id TINYINT,
+        degree VARCHAR(50),
+        about_me TEXT,
+        avatar_url TINYTEXT,
+        cover_url TINYTEXT,
+        status_id TINYINT,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        last_login DATETIME,
+        online_status TINYINT (1) DEFAULT (0),
+        email_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        phone_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        sex_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        dob_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        faculty_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        FOREIGN KEY (sex_id) REFERENCES sex (id),
+        FOREIGN KEY (faculty_id) REFERENCES faculty (id),
+        FOREIGN KEY (status_id) REFERENCES status_user_group (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS user_role;
-CREATE TABLE user_role (
-	user_id VARCHAR(36) NOT NULL,
-    role_id TINYINT NOT NULL,
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (role_id) REFERENCES role(id),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(user_id, role_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    user_role (
+        user_id VARCHAR(36) NOT NULL,
+        role_id TINYINT NOT NULL,
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (role_id) REFERENCES role (id),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (user_id, role_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS alumni;
-CREATE TABLE alumni (
-    user_id VARCHAR(36) NOT NULL,
-    student_id VARCHAR(8),
-    beginning_year SMALLINT,
-    graduation_year SMALLINT,
-    class VARCHAR(10),
-    student_id_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    start_year_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    graduation_year_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    class_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    alumni (
+        user_id VARCHAR(36) NOT NULL,
+        student_id VARCHAR(8),
+        beginning_year SMALLINT,
+        graduation_year SMALLINT,
+        class VARCHAR(10),
+        student_id_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        start_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        graduation_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        class_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS teacher;
-CREATE TABLE teacher (
-    user_id VARCHAR(36) NOT NULL,
-    start_year SMALLINT,
-    end_year SMALLINT,
-    position VARCHAR(50),
-    start_year_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    end_year_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    position_privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    teacher (
+        user_id VARCHAR(36) NOT NULL,
+        start_year SMALLINT,
+        end_year SMALLINT,
+        position VARCHAR(50),
+        start_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        end_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        position_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS job;
-CREATE TABLE job (
-    user_id VARCHAR(36) NOT NULL,
-    company_name VARCHAR(255) NOT NULL,
-    position VARCHAR(100) NOT NULL,
-    start_time DATE,
-    end_time DATE,
-    privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(user_id, company_name, position)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    job (
+        user_id VARCHAR(36) NOT NULL,
+        company_name VARCHAR(255) NOT NULL,
+        position VARCHAR(100) NOT NULL,
+        start_time DATE,
+        end_time DATE,
+        privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (user_id, company_name, position)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS education;
-CREATE TABLE education (
-    user_id VARCHAR(36) NOT NULL,
-    school_name VARCHAR(255) NOT NULL,
-    degree VARCHAR(50) NOT NULL,
-    start_time DATE,
-    end_time DATE,
-    privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(user_id, school_name, degree)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    education (
+        user_id VARCHAR(36) NOT NULL,
+        school_name VARCHAR(255) NOT NULL,
+        degree VARCHAR(50) NOT NULL,
+        start_time DATE,
+        end_time DATE,
+        privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (user_id, school_name, degree)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS achievement;
-CREATE TABLE achievement (
-    user_id VARCHAR(36) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    time DATE,
-    privacy ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC'),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(user_id, name)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    achievement (
+        user_id VARCHAR(36) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        time DATE,
+        privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (user_id, name)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS verify_alumni;
-CREATE TABLE verify_alumni (
-	id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    student_id VARCHAR(8),
-    beginning_year SMALLINT,
-	social_media_link TINYTEXT,
-    faculty_id TINYINT,
-    comment TEXT,
-    status ENUM('PENDING', 'APPROVED', 'DENIED') DEFAULT('PENDING'),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (faculty_id) REFERENCES faculty(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    verify_alumni (
+        id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        student_id VARCHAR(8),
+        beginning_year SMALLINT,
+        social_media_link TINYTEXT,
+        faculty_id TINYINT,
+        comment TEXT,
+        status ENUM ('PENDING', 'APPROVED', 'DENIED') DEFAULT ('PENDING'),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (faculty_id) REFERENCES faculty (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS follow_user;
-CREATE TABLE follow_user (
-    user_id VARCHAR(36) NOT NULL,
-    follower_id VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (follower_id) REFERENCES user(id),
-    PRIMARY KEY(user_id, follower_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    follow_user (
+        user_id VARCHAR(36) NOT NULL,
+        follower_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (follower_id) REFERENCES user (id),
+        PRIMARY KEY (user_id, follower_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS friend;
-CREATE TABLE friend (
-	user_id VARCHAR(36) NOT NULL,
-	friend_id VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (friend_id) REFERENCES user(id),
-    PRIMARY KEY(user_id, friend_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    friend (
+        user_id VARCHAR(36) NOT NULL,
+        friend_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (friend_id) REFERENCES user (id),
+        PRIMARY KEY (user_id, friend_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS request_friend;
-CREATE TABLE request_friend (
-	user_id VARCHAR(36) NOT NULL,
-	friend_id VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (friend_id) REFERENCES user(id),
-    PRIMARY KEY(user_id, friend_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    request_friend (
+        user_id VARCHAR(36) NOT NULL,
+        friend_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (friend_id) REFERENCES user (id),
+        PRIMARY KEY (user_id, friend_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS `group`;
-CREATE TABLE `group` (
-	id VARCHAR(36) NOT NULL,
-	name VARCHAR(255) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    description TEXT,
-    type VARCHAR(50),
-    cover_url TINYTEXT,
-    website TINYTEXT,
-    privacy ENUM('PUBLIC', 'PRIVATE') DEFAULT('PUBLIC'),
-	create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    status_id TINYINT,
-    participant_count INT DEFAULT(0),
-    FOREIGN KEY (status_id) REFERENCES status_user_group(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    `group` (
+        id VARCHAR(36) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        description TEXT,
+        type VARCHAR(50),
+        cover_url TINYTEXT,
+        website TINYTEXT,
+        privacy ENUM ('PUBLIC', 'PRIVATE') DEFAULT ('PUBLIC'),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        status_id TINYINT,
+        participant_count INT DEFAULT (0),
+        FOREIGN KEY (status_id) REFERENCES status_user_group (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS group_member;
-CREATE TABLE group_member (
-	group_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    role ENUM('CREATOR','ADMIN','MEMBER') NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (group_id) REFERENCES `group`(id),
-    PRIMARY KEY(group_id, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    group_member (
+        group_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        role ENUM ('CREATOR', 'ADMIN', 'MEMBER') NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (group_id) REFERENCES `group` (id),
+        PRIMARY KEY (group_id, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS request_join_group;
-CREATE TABLE request_join_group (
-	group_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (group_id) REFERENCES `group`(id),
-    PRIMARY KEY(group_id, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    request_join_group (
+        group_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (group_id) REFERENCES `group` (id),
+        PRIMARY KEY (group_id, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS post_advise;
-CREATE TABLE post_advise (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    title TINYTEXT,
-    content TEXT,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    published_at DATETIME,
-    status_id TINYINT,
-    children_comment_number INT DEFAULT(0),
-	reaction_count INT DEFAULT(0),
-    allow_multiple_votes TINYINT(1) DEFAULT(0),
-    allow_add_options TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (status_id) REFERENCES status_post(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    post_advise (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        title TINYTEXT,
+        content TEXT,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        published_at DATETIME,
+        status_id TINYINT,
+        children_comment_number INT DEFAULT (0),
+        reaction_count INT DEFAULT (0),
+        allow_multiple_votes TINYINT (1) DEFAULT (0),
+        allow_add_options TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (status_id) REFERENCES status_post (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS picture_post_advise;
-CREATE TABLE picture_post_advise (
-	id VARCHAR(36) NOT NULL,
-    post_advise_id VARCHAR(36) NOT NULL,
-	picture_url VARCHAR(255) NOT NULL,
-    picture_order TINYINT NOT NULL,
-    FOREIGN KEY (post_advise_id) REFERENCES post_advise(id),
-    PRIMARY KEY(id, post_advise_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    picture_post_advise (
+        id VARCHAR(36) NOT NULL,
+        post_advise_id VARCHAR(36) NOT NULL,
+        picture_url VARCHAR(255) NOT NULL,
+        picture_order TINYINT NOT NULL,
+        FOREIGN KEY (post_advise_id) REFERENCES post_advise (id),
+        PRIMARY KEY (id, post_advise_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS post_group;
-CREATE TABLE post_group (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    title TINYTEXT,
-    content TEXT,
-    group_id VARCHAR(36),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    published_at DATETIME,
-    status_id TINYINT,
-    children_comment_number INT DEFAULT(0),
-	reaction_count INT DEFAULT(0),
-    allow_multiple_votes TINYINT(1) DEFAULT(0),
-    allow_add_options TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (status_id) REFERENCES status_post(id),
-    FOREIGN KEY (group_id) REFERENCES `group`(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    post_group (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        title TINYTEXT,
+        content TEXT,
+        group_id VARCHAR(36),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        published_at DATETIME,
+        status_id TINYINT,
+        children_comment_number INT DEFAULT (0),
+        reaction_count INT DEFAULT (0),
+        allow_multiple_votes TINYINT (1) DEFAULT (0),
+        allow_add_options TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (status_id) REFERENCES status_post (id),
+        FOREIGN KEY (group_id) REFERENCES `group` (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS picture_post_group;
-CREATE TABLE picture_post_group (
-	id VARCHAR(36) NOT NULL,
-    post_group_id VARCHAR(36) NOT NULL,
-	picture_url VARCHAR(255) NOT NULL,
-	picture_order TINYINT NOT NULL,
-    FOREIGN KEY (post_group_id) REFERENCES post_group(id),
-    PRIMARY KEY(id, post_group_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    picture_post_group (
+        id VARCHAR(36) NOT NULL,
+        post_group_id VARCHAR(36) NOT NULL,
+        picture_url VARCHAR(255) NOT NULL,
+        picture_order TINYINT NOT NULL,
+        FOREIGN KEY (post_group_id) REFERENCES post_group (id),
+        PRIMARY KEY (id, post_group_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS event;
-CREATE TABLE event (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    title TINYTEXT,
-    content TEXT,
-    thumbnail TINYTEXT,
-    faculty_id TINYINT,
-    organization_location TINYTEXT,
-    organization_time DATETIME,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    published_at DATETIME,
-    status_id TINYINT,
-    views INT DEFAULT(0),
-    participants INT DEFAULT(0),
-    minimum_participants INT DEFAULT(0),
-    maximum_participants INT DEFAULT(0),
-    children_comment_number INT DEFAULT(0),
-    FOREIGN KEY (status_id) REFERENCES status_post(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (faculty_id) REFERENCES faculty(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    event (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        title TINYTEXT,
+        content TEXT,
+        thumbnail TINYTEXT,
+        faculty_id TINYINT,
+        organization_location TINYTEXT,
+        organization_time DATETIME,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        published_at DATETIME,
+        status_id TINYINT,
+        views INT DEFAULT (0),
+        participants INT DEFAULT (0),
+        minimum_participants INT DEFAULT (0),
+        maximum_participants INT DEFAULT (0),
+        children_comment_number INT DEFAULT (0),
+        FOREIGN KEY (status_id) REFERENCES status_post (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (faculty_id) REFERENCES faculty (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS news;
-CREATE TABLE news (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    title TINYTEXT,
-    summary TEXT,
-    content TEXT,
-    thumbnail TINYTEXT,
-    faculty_id TINYINT,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    published_at DATETIME,
-    status_id TINYINT,
-    views INT DEFAULT(0),
-    children_comment_number INT DEFAULT(0),
-    FOREIGN KEY (status_id) REFERENCES status_post(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (faculty_id) REFERENCES faculty(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    news (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        title TINYTEXT,
+        summary TEXT,
+        content TEXT,
+        thumbnail TINYTEXT,
+        faculty_id TINYINT,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        published_at DATETIME,
+        status_id TINYINT,
+        views INT DEFAULT (0),
+        children_comment_number INT DEFAULT (0),
+        FOREIGN KEY (status_id) REFERENCES status_post (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (faculty_id) REFERENCES faculty (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS tag_post_advise;
-CREATE TABLE tag_post_advise (
-	post_advise_id VARCHAR(36) NOT NULL,
-    tag_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (post_advise_id) REFERENCES post_advise(id),
-    FOREIGN KEY (tag_id) REFERENCES tag(id),
-    PRIMARY KEY(post_advise_id, tag_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    tag_post_advise (
+        post_advise_id VARCHAR(36) NOT NULL,
+        tag_id INT UNSIGNED NOT NULL,
+        FOREIGN KEY (post_advise_id) REFERENCES post_advise (id),
+        FOREIGN KEY (tag_id) REFERENCES tag (id),
+        PRIMARY KEY (post_advise_id, tag_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS tag_post_group;
-CREATE TABLE tag_post_group (
-	post_group_id VARCHAR(36) NOT NULL,
-    tag_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (post_group_id) REFERENCES post_group(id),
-    FOREIGN KEY (tag_id) REFERENCES tag(id),
-    PRIMARY KEY(post_group_id, tag_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    tag_post_group (
+        post_group_id VARCHAR(36) NOT NULL,
+        tag_id INT UNSIGNED NOT NULL,
+        FOREIGN KEY (post_group_id) REFERENCES post_group (id),
+        FOREIGN KEY (tag_id) REFERENCES tag (id),
+        PRIMARY KEY (post_group_id, tag_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS tag_event;
-CREATE TABLE tag_event (
-	event_id VARCHAR(36) NOT NULL,
-    tag_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (event_id) REFERENCES event(id),
-    FOREIGN KEY (tag_id) REFERENCES tag(id),
-    PRIMARY KEY(event_id, tag_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    tag_event (
+        event_id VARCHAR(36) NOT NULL,
+        tag_id INT UNSIGNED NOT NULL,
+        FOREIGN KEY (event_id) REFERENCES event (id),
+        FOREIGN KEY (tag_id) REFERENCES tag (id),
+        PRIMARY KEY (event_id, tag_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS tag_news;
-CREATE TABLE tag_news (
-	news_id VARCHAR(36) NOT NULL,
-    tag_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (news_id) REFERENCES news(id),
-    FOREIGN KEY (tag_id) REFERENCES tag(id),
-    PRIMARY KEY(news_id, tag_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    tag_news (
+        news_id VARCHAR(36) NOT NULL,
+        tag_id INT UNSIGNED NOT NULL,
+        FOREIGN KEY (news_id) REFERENCES news (id),
+        FOREIGN KEY (tag_id) REFERENCES tag (id),
+        PRIMARY KEY (news_id, tag_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS tag_group;
-CREATE TABLE tag_group (
-	group_id VARCHAR(36) NOT NULL,
-    tag_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (group_id) REFERENCES `group`(id),
-    FOREIGN KEY (tag_id) REFERENCES tag(id),
-    PRIMARY KEY(group_id, tag_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    tag_group (
+        group_id VARCHAR(36) NOT NULL,
+        tag_id INT UNSIGNED NOT NULL,
+        FOREIGN KEY (group_id) REFERENCES `group` (id),
+        FOREIGN KEY (tag_id) REFERENCES tag (id),
+        PRIMARY KEY (group_id, tag_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS hall_of_fame;
-CREATE TABLE hall_of_fame (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    title TINYTEXT,
-	summary TEXT,
-    content TEXT,
-    thumbnail TINYTEXT,
-    position TEXT,
-    user_id VARCHAR(36),
-    faculty_id TINYINT,
-    beginning_year SMALLINT,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    published_at DATETIME,
-	status_id TINYINT,
-    views INT DEFAULT(0),
-    FOREIGN KEY (status_id) REFERENCES status_post(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (faculty_id) REFERENCES faculty(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    hall_of_fame (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        title TINYTEXT,
+        summary TEXT,
+        content TEXT,
+        thumbnail TINYTEXT,
+        position TEXT,
+        user_id VARCHAR(36),
+        faculty_id TINYINT,
+        beginning_year SMALLINT,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        published_at DATETIME,
+        status_id TINYINT,
+        views INT DEFAULT (0),
+        FOREIGN KEY (status_id) REFERENCES status_post (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (faculty_id) REFERENCES faculty (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS comment_post_advise;
-CREATE TABLE comment_post_advise (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    post_advise_id VARCHAR(36) NOT NULL,
-    parent_id VARCHAR(36),
-    content TEXT,
-    children_comment_number INT DEFAULT(0),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (parent_id) REFERENCES comment_post_advise(id),
-    FOREIGN KEY (post_advise_id) REFERENCES post_advise(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    comment_post_advise (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        post_advise_id VARCHAR(36) NOT NULL,
+        parent_id VARCHAR(36),
+        content TEXT,
+        children_comment_number INT DEFAULT (0),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (parent_id) REFERENCES comment_post_advise (id),
+        FOREIGN KEY (post_advise_id) REFERENCES post_advise (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS comment_post_group;
-CREATE TABLE comment_post_group (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    post_group_id VARCHAR(36) NOT NULL,
-    parent_id VARCHAR(36),
-    content TEXT,
-    children_comment_number INT DEFAULT(0),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (parent_id) REFERENCES comment_post_group(id),
-    FOREIGN KEY (post_group_id) REFERENCES post_group(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    comment_post_group (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        post_group_id VARCHAR(36) NOT NULL,
+        parent_id VARCHAR(36),
+        content TEXT,
+        children_comment_number INT DEFAULT (0),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (parent_id) REFERENCES comment_post_group (id),
+        FOREIGN KEY (post_group_id) REFERENCES post_group (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS comment_news;
-CREATE TABLE comment_news (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    news_id VARCHAR(36) NOT NULL,
-    parent_id VARCHAR(36),
-    content TEXT,
-    children_comment_number INT DEFAULT(0),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (parent_id) REFERENCES comment_news(id),
-    FOREIGN KEY (news_id) REFERENCES news(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    comment_news (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        news_id VARCHAR(36) NOT NULL,
+        parent_id VARCHAR(36),
+        content TEXT,
+        children_comment_number INT DEFAULT (0),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (parent_id) REFERENCES comment_news (id),
+        FOREIGN KEY (news_id) REFERENCES news (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS comment_event;
-CREATE TABLE comment_event (
-	id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    event_id VARCHAR(36) NOT NULL,
-    parent_id VARCHAR(36),
-    content TEXT,
-    children_comment_number INT DEFAULT(0),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (parent_id) REFERENCES comment_event(id),
-    FOREIGN KEY (event_id) REFERENCES event(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    comment_event (
+        id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        event_id VARCHAR(36) NOT NULL,
+        parent_id VARCHAR(36),
+        content TEXT,
+        children_comment_number INT DEFAULT (0),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (parent_id) REFERENCES comment_event (id),
+        FOREIGN KEY (event_id) REFERENCES event (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS react;
-CREATE TABLE react (
-	id TINYINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    update_at DATETIME,
-    is_delete TINYINT(1) DEFAULT(0),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    react (
+        id TINYINT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(50) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME,
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS interact_post_advise;
-CREATE TABLE interact_post_advise (
-	react_id TINYINT NOT NULL,
-    post_advise_id VARCHAR(36) NOT NULL,
-	creator VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (react_id) REFERENCES react(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (post_advise_id) REFERENCES post_advise(id),
-    PRIMARY KEY(post_advise_id, creator)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    interact_post_advise (
+        react_id TINYINT NOT NULL,
+        post_advise_id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (react_id) REFERENCES react (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (post_advise_id) REFERENCES post_advise (id),
+        PRIMARY KEY (post_advise_id, creator)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS interact_post_group;
-CREATE TABLE interact_post_group (
-	react_id TINYINT NOT NULL,
-    post_group_id VARCHAR(36) NOT NULL,
-	creator VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (react_id) REFERENCES react(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (post_group_id) REFERENCES post_group(id),
-    PRIMARY KEY(post_group_id, creator)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    interact_post_group (
+        react_id TINYINT NOT NULL,
+        post_group_id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (react_id) REFERENCES react (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (post_group_id) REFERENCES post_group (id),
+        PRIMARY KEY (post_group_id, creator)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS interact_news;
-CREATE TABLE interact_news (
-	react_id TINYINT NOT NULL,
-    news_id VARCHAR(36) NOT NULL,
-	creator VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (react_id) REFERENCES react(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (news_id) REFERENCES news(id),
-    PRIMARY KEY(news_id, creator)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    interact_news (
+        react_id TINYINT NOT NULL,
+        news_id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (react_id) REFERENCES react (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (news_id) REFERENCES news (id),
+        PRIMARY KEY (news_id, creator)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS interact_event;
-CREATE TABLE interact_event (
-	react_id TINYINT NOT NULL,
-    event_id VARCHAR(36) NOT NULL,
-	creator VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (react_id) REFERENCES react(id),
-    FOREIGN KEY (creator) REFERENCES user(id),
-    FOREIGN KEY (event_id) REFERENCES event(id),
-    PRIMARY KEY(event_id, creator)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    interact_event (
+        react_id TINYINT NOT NULL,
+        event_id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (react_id) REFERENCES react (id),
+        FOREIGN KEY (creator) REFERENCES user (id),
+        FOREIGN KEY (event_id) REFERENCES event (id),
+        PRIMARY KEY (event_id, creator)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS participant_event;
-CREATE TABLE participant_event (
-	event_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-	note TEXT,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (event_id) REFERENCES event(id),
-    PRIMARY KEY(event_id, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    participant_event (
+        event_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        note TEXT,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (event_id) REFERENCES event (id),
+        PRIMARY KEY (event_id, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS vote_option_post_advise;
-CREATE TABLE vote_option_post_advise (
-	id TINYINT NOT NULL,
-	post_advise_id VARCHAR(36) NOT NULL,
-	name VARCHAR(150) NOT NULL,
-	vote_count INT DEFAULT(0),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (post_advise_id) REFERENCES post_advise(id),
-    PRIMARY KEY(id, post_advise_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    vote_option_post_advise (
+        id TINYINT NOT NULL,
+        post_advise_id VARCHAR(36) NOT NULL,
+        name VARCHAR(150) NOT NULL,
+        vote_count INT DEFAULT (0),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (post_advise_id) REFERENCES post_advise (id),
+        PRIMARY KEY (id, post_advise_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS user_vote_post_advise;
-CREATE TABLE user_vote_post_advise (
-	vote_id TINYINT NOT NULL,
-	post_advise_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (vote_id) REFERENCES vote_option_post_advise(id),
-	FOREIGN KEY (post_advise_id) REFERENCES post_advise(id),
-	FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(vote_id, post_advise_id, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    user_vote_post_advise (
+        vote_id TINYINT NOT NULL,
+        post_advise_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (vote_id) REFERENCES vote_option_post_advise (id),
+        FOREIGN KEY (post_advise_id) REFERENCES post_advise (id),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (vote_id, post_advise_id, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS vote_option_post_group;
-CREATE TABLE vote_option_post_group (
-	id TINYINT NOT NULL,
-	post_group_id VARCHAR(36) NOT NULL,
-    name VARCHAR(150) NOT NULL,
-	vote_count INT DEFAULT(0),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (post_group_id) REFERENCES post_group(id),
-    PRIMARY KEY(id, post_group_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    vote_option_post_group (
+        id TINYINT NOT NULL,
+        post_group_id VARCHAR(36) NOT NULL,
+        name VARCHAR(150) NOT NULL,
+        vote_count INT DEFAULT (0),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (post_group_id) REFERENCES post_group (id),
+        PRIMARY KEY (id, post_group_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS user_vote_post_group;
-CREATE TABLE user_vote_post_group (
-	vote_id TINYINT NOT NULL,
-	post_group_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (vote_id) REFERENCES vote_option_post_group(id),
-	FOREIGN KEY (post_group_id) REFERENCES post_group(id),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(vote_id, post_group_id, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    user_vote_post_group (
+        vote_id TINYINT NOT NULL,
+        post_group_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (vote_id) REFERENCES vote_option_post_group (id),
+        FOREIGN KEY (post_group_id) REFERENCES post_group (id),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (vote_id, post_group_id, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 BEGIN;
+
 DROP TABLE IF EXISTS inbox;
-CREATE TABLE inbox (
-	id VARCHAR(36) NOT NULL,
-    name TINYTEXT NOT NULL,
-    typeof_inbox ENUM('INDIVIDUAL','GROUP') NOT NULL,
-    last_message TEXT,
-    last_sent_user_id varchar(36),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (last_sent_user_id) REFERENCES user(id),
-    PRIMARY KEY(id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    inbox (
+        id VARCHAR(36) NOT NULL,
+        name TINYTEXT NOT NULL,
+        typeof_inbox ENUM ('INDIVIDUAL', 'GROUP') NOT NULL,
+        last_message TEXT,
+        last_sent_user_id varchar(36),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (last_sent_user_id) REFERENCES user (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 BEGIN;
+
 DROP TABLE IF EXISTS inbox_member;
-CREATE TABLE inbox_member (
-	inbox_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    role ENUM('ADMIN', 'MEMBER') NOT NULL,
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (inbox_id) REFERENCES inbox(id),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(inbox_id, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    inbox_member (
+        inbox_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        role ENUM ('ADMIN', 'MEMBER') NOT NULL,
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (inbox_id) REFERENCES inbox (id),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (inbox_id, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 BEGIN;
+
 DROP TABLE IF EXISTS message;
-CREATE TABLE message (
-	id VARCHAR(36) NOT NULL,
-    inbox_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    content TEXT,
-    typeof_mess ENUM('TEXT','IMAGE','FILE','VIDEO','SOUND','ICON') NOT NULL,
-    children_id VARCHAR(36),
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT(1) DEFAULT(0),
-    FOREIGN KEY (inbox_id) REFERENCES inbox(id),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (children_id) REFERENCES message(id),
-    PRIMARY KEY(id, inbox_id, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    message (
+        id VARCHAR(36) NOT NULL,
+        inbox_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        content TEXT,
+        typeof_mess ENUM ('TEXT', 'IMAGE', 'FILE', 'VIDEO', 'SOUND', 'ICON') NOT NULL,
+        children_id VARCHAR(36),
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (inbox_id) REFERENCES inbox (id),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        FOREIGN KEY (children_id) REFERENCES message (id),
+        PRIMARY KEY (id, inbox_id, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 BEGIN;
+
 DROP TABLE IF EXISTS message_access;
-CREATE TABLE message_access (
-	mess_id VARCHAR(36) NOT NULL,
-    inbox_id VARCHAR(36) NOT NULL,
-    creator VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    FOREIGN KEY (mess_id, inbox_id, creator) REFERENCES message(id, inbox_id, user_id),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    PRIMARY KEY(mess_id, inbox_id, creator, user_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    message_access (
+        mess_id VARCHAR(36) NOT NULL,
+        inbox_id VARCHAR(36) NOT NULL,
+        creator VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        FOREIGN KEY (mess_id, inbox_id, creator) REFERENCES message (id, inbox_id, user_id),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (mess_id, inbox_id, creator, user_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 BEGIN;
+
 DROP TABLE IF EXISTS password_history;
-CREATE TABLE password_history (
-  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `user_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `password` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `is_auto_generated` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `passwo_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE
+    password_history (
+        `id` varchar(36) CHARACTER
+        SET
+            utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            `user_id` varchar(36) CHARACTER
+        SET
+            utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            `password` varchar(60) CHARACTER
+        SET
+            utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            `is_auto_generated` tinyint (1) NOT NULL DEFAULT '0',
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `user_id` (`user_id`),
+            CONSTRAINT `passwo_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- INDEX
 ALTER TABLE `group` ADD INDEX idx_creator (creator);
+
 ALTER TABLE post_group ADD INDEX idx_creator (creator);
+
 ALTER TABLE post_advise ADD INDEX idx_creator (creator);
+
 ALTER TABLE event ADD INDEX idx_creator (creator);
+
 ALTER TABLE news ADD INDEX idx_creator (creator);
+
 ALTER TABLE hall_of_fame ADD INDEX idx_creator (creator);
+
 ALTER TABLE comment_post_advise ADD INDEX idx_creator (creator);
+
 ALTER TABLE comment_post_group ADD INDEX idx_creator (creator);
+
 ALTER TABLE comment_news ADD INDEX idx_creator (creator);
 
 ALTER TABLE event ADD INDEX idx_create_at (create_at);
+
 ALTER TABLE news ADD INDEX idx_create_at (create_at);
+
 ALTER TABLE hall_of_fame ADD INDEX idx_create_at (create_at);
 
 -- INSERT DATA
-INSERT INTO permission (name, description) VALUES
-('User.Create', 'Tạo tài khoản'),
-('User.Edit', 'Chỉnh sửa tài khoản (gồm khoá tài khoản)'),
-('User.Delete', 'Xóa tài khoản'),
-('User.Role.Create', 'Tạo vai trò mới'),
-('User.Role.Edit', 'Chỉnh sửa vai trò. Phân quyền (gán các quyền cụ thể cho từng vai trò)'),
-('User.Role.Delete', 'Xoá vai trò'),
-('AlumniVerify.Read', 'Xem danh sách xác thực cựu sinh viên'),
-('AlumniVerify.Edit', 'Phê duyệt cựu sinh viên'),
-('AlumniVerify.Create', 'Gửi xác thực cựu sinh viên'),
-('News.Create', 'Tạo/Lên lịch đăng tin tức'),
-('News.Edit', 'Chỉnh sức tin tức (Bao gồm ẩn)'),
-('News.Delete', 'Xóa tin tức'),
-('News.Comment.Create', 'Viết bình luận'),
-('News.Comment.Delete', 'Xoá bình luận của tất cả mọi người'),
-('Event.Create', 'Tạo sự kiện'),
-('Event.Edit', 'Chỉnh sửa sự kiện (Bao gồm ẩn)'),
-('Event.Delete', 'Xóa sự kiện'),
-('Event.Participant.Create', 'Tham gia sự kiện'),
-('Event.Participant.Delete', 'Hủy tham gia sự kiện'),
-('Event.Comment.Create', 'Viết bình luận'),
-('Event.Comment.Delete', 'Xoá bình luận của tất cả mọi người'),
-('Hof.Create', 'Tạo bài viết Gương thành công'),
-('Hof.Edit', 'Chỉnh sửa bài viết Gương thành công (Bao gồm ẩn)'),
-('Hof.Delete', 'Xóa bài viết Gương thành công'),
-('Counsel.Create', 'Tạo bài viết tư vấn/cố vấn'),
-('Counsel.Delete', 'Xóa bài viết tư vấn/cố vấn của tất cả mọi người'),
-('Counsel.Reaction.Create', 'Thả cảm xúc bài viết'),
-('Counsel.Comment.Create', 'Viết bình luận'),
-('Counsel.Comment.Delete', 'Xoá bình luận của tất cả mọi người trên tất cả các post'),
-('Counsel.Vote', 'Bình chọn cuộc thăm dò ý kiến trong bài viết (gồm tạo, sửa và xóa)'),
-('Group.Create', 'Tạo nhóm'),
-('Group.Delete', 'Xóa nhóm'),
-('Group.Join', 'Tham gia nhóm'),
-('Profile.Edit', 'Chỉnh sửa thông tin cá nhân/Thay đổi mật khẩu'),
-('Message.Create', 'Gửi/Nhận tin nhắn');
+INSERT INTO
+    permission (name, description)
+VALUES
+    ('User.Create', 'Tạo tài khoản'),
+    (
+        'User.Edit',
+        'Chỉnh sửa tài khoản (gồm khoá tài khoản)'
+    ),
+    ('User.Delete', 'Xóa tài khoản'),
+    ('User.Role.Create', 'Tạo vai trò mới'),
+    (
+        'User.Role.Edit',
+        'Chỉnh sửa vai trò. Phân quyền (gán các quyền cụ thể cho từng vai trò)'
+    ),
+    ('User.Role.Delete', 'Xoá vai trò'),
+    (
+        'AlumniVerify.Read',
+        'Xem danh sách xác thực cựu sinh viên'
+    ),
+    ('AlumniVerify.Edit', 'Phê duyệt cựu sinh viên'),
+    (
+        'AlumniVerify.Create',
+        'Gửi xác thực cựu sinh viên'
+    ),
+    ('News.Create', 'Tạo/Lên lịch đăng tin tức'),
+    ('News.Edit', 'Chỉnh sức tin tức (Bao gồm ẩn)'),
+    ('News.Delete', 'Xóa tin tức'),
+    ('News.Comment.Create', 'Viết bình luận'),
+    (
+        'News.Comment.Delete',
+        'Xoá bình luận của tất cả mọi người'
+    ),
+    ('Event.Create', 'Tạo sự kiện'),
+    ('Event.Edit', 'Chỉnh sửa sự kiện (Bao gồm ẩn)'),
+    ('Event.Delete', 'Xóa sự kiện'),
+    ('Event.Participant.Create', 'Tham gia sự kiện'),
+    (
+        'Event.Participant.Delete',
+        'Hủy tham gia sự kiện'
+    ),
+    ('Event.Comment.Create', 'Viết bình luận'),
+    (
+        'Event.Comment.Delete',
+        'Xoá bình luận của tất cả mọi người'
+    ),
+    ('Hof.Create', 'Tạo bài viết Gương thành công'),
+    (
+        'Hof.Edit',
+        'Chỉnh sửa bài viết Gương thành công (Bao gồm ẩn)'
+    ),
+    ('Hof.Delete', 'Xóa bài viết Gương thành công'),
+    ('Counsel.Create', 'Tạo bài viết tư vấn/cố vấn'),
+    (
+        'Counsel.Delete',
+        'Xóa bài viết tư vấn/cố vấn của tất cả mọi người'
+    ),
+    ('Counsel.Reaction.Create', 'Thả cảm xúc bài viết'),
+    ('Counsel.Comment.Create', 'Viết bình luận'),
+    (
+        'Counsel.Comment.Delete',
+        'Xoá bình luận của tất cả mọi người trên tất cả các post'
+    ),
+    (
+        'Counsel.Vote',
+        'Bình chọn cuộc thăm dò ý kiến trong bài viết (gồm tạo, sửa và xóa)'
+    ),
+    ('Group.Create', 'Tạo nhóm'),
+    ('Group.Delete', 'Xóa nhóm'),
+    ('Group.Join', 'Tham gia nhóm'),
+    (
+        'Profile.Edit',
+        'Chỉnh sửa thông tin cá nhân/Thay đổi mật khẩu'
+    ),
+    ('Message.Create', 'Gửi/Nhận tin nhắn');
 
-INSERT into role (name) VALUES ('Admin');
-INSERT into role (name) VALUES ('FacultyManager');
-INSERT into role (name) VALUES ('Lecturer');
-INSERT into role (name) VALUES ('Alumni');
-INSERT into role (name) VALUES ('Guest');
+INSERT into
+    role (name)
+VALUES
+    ('Admin'),
+    ('FacultyManager'),
+    ('Lecturer'),
+    ('Alumni'),
+    ('Guest');
 
-INSERT INTO `role_permission` VALUES (1,1,0),(1,2,0),(1,3,0),(1,4,0),(1,5,0),(1,6,0),(1,7,0),(1,8,0),(1,10,0),(1,11,0),(1,12,0),(1,14,0),(1,15,0),(1,16,0),(1,17,0),(1,21,0),(1,22,0),(1,23,0),(1,24,0),(1,26,0),(1,29,0),(1,30,0),(1,31,0),(1,32,0),(1,33,0);
+INSERT INTO
+    `role_permission`
+VALUES
+    (1, 1, 0),
+    (1, 2, 0),
+    (1, 3, 0),
+    (1, 4, 0),
+    (1, 5, 0),
+    (1, 6, 0),
+    (1, 7, 0),
+    (1, 8, 0),
+    (1, 10, 0),
+    (1, 11, 0),
+    (1, 12, 0),
+    (1, 14, 0),
+    (1, 15, 0),
+    (1, 16, 0),
+    (1, 17, 0),
+    (1, 21, 0),
+    (1, 22, 0),
+    (1, 23, 0),
+    (1, 24, 0),
+    (1, 26, 0),
+    (1, 29, 0),
+    (1, 30, 0),
+    (1, 31, 0),
+    (1, 32, 0),
+    (1, 33, 0);
 
-INSERT into sex (name) VALUES ('Nam');
-INSERT into sex (name) VALUES ('Nữ');
+INSERT into
+    sex (name)
+VALUES
+    ('Nam'),
+    ('Nữ');
 
-INSERT into faculty (name) VALUES ('Công nghệ thông tin');
-INSERT into faculty (name) VALUES ('Vật lý – Vật lý kỹ thuật');
-INSERT into faculty (name) VALUES ('Địa chất');
-INSERT into faculty (name) VALUES ('Toán – Tin học');
-INSERT into faculty (name) VALUES ('Điện tử - Viễn thông');
-INSERT into faculty (name) VALUES ('Khoa học & Công nghệ Vật liệu');
-INSERT into faculty (name) VALUES ('Hóa học');
-INSERT into faculty (name) VALUES ('Sinh học – Công nghệ Sinh học');
-INSERT into faculty (name) VALUES ('Môi trường');
+INSERT into
+    faculty (name)
+VALUES
+    ('Công nghệ thông tin'),
+    ('Vật lý – Vật lý kỹ thuật'),
+    ('Địa chất'),
+    ('Toán – Tin học'),
+    ('Điện tử - Viễn thông'),
+    ('Khoa học & Công nghệ Vật liệu'),
+    ('Hóa học'),
+    ('Sinh học – Công nghệ Sinh học'),
+    ('Môi trường');
 
-INSERT into status_user_group (name) VALUES ('Khoá');
-INSERT into status_user_group (name) VALUES ('Bình thường');
-INSERT into status_user_group (name) VALUES ('Xoá');
+INSERT into
+    status_user_group (name)
+VALUES
+    ('Khoá'),
+    ('Bình thường'),
+    ('Xoá');
 
-INSERT into status_post (name) VALUES ('Chờ');
-INSERT into status_post (name) VALUES ('Bình thường');
-INSERT into status_post (name) VALUES ('Ẩn');
-INSERT into status_post (name) VALUES ('Xoá');
+INSERT into
+    status_post (name)
+VALUES
+    ('Chờ'),
+    ('Bình thường'),
+    ('Ẩn'),
+    ('Xoá');
 
-INSERT into react (name) VALUES ('Like');
-
--- INSERT INTO `user` VALUES ('0ac25d55-1ee6-4794-8d46-58f82cde644c','test9@gmail.com','$2a$10$uNtN8TKvvswEmIGPPs52oe7qI57s6PbhnumEL1ajpGPjJwQN3I4oi','Test 9',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:47',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('16364790-7770-40d3-a517-7cd932cc3f8c','test6@gmail.com','$2a$10$uP95hRd/Ue0LH3a6ZEpfPOAVS5PSSbI9vBO7jb/EEELFISRqegD8C','Test 6',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:40',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('30ff6fa7-035f-42e4-aa13-55c1c94ded1e','test@gmail.com','$2a$10$Y9z5lsuRMPY/wRCgZ/e3h.sdfTbtQDfw4dmK1GE6uyUbwBRoLveS.','Test',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:23',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('360e7456-2fe9-410b-b17f-70295df95641','test8@gmail.com','$2a$10$/dhD5Se7vPkKGtL.xqb6qOym2lC4BjHE48KJ94IrjKDJz0skK.oQu','Test 8',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:45',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('392a9960-7153-41d7-98eb-534a90bf45d6','test3@gmail.com','$2a$10$Xp.Cmul0P9867wgDEBbiOeu5uAk.OIAayzSTCas4/UswkiEG8H/9y','Test 3',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:33',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('53f06559-3f70-42c1-8839-99912150c1b4','test10@gmail.com','$2a$10$tckjkSfjuLq.eDh3Pgo.8u8I1IgNlclNvPVbmV.xMl70aI7l77hKi','Test 10',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:51',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('5d3c1989-8694-4495-82b9-93b172e32c89','test11@gmail.com','$2a$10$x7peVUhwAosvCkjiBVY6h.fJ3EOl/goJir97MOs86kRdFTFpQRv9W','Test 11',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:53',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('7173c1fa-bed5-4163-b1bb-6910ff51f713','test7@gmail.com','$2a$10$qZz.fSApkMVin.2JLKFvoefhXnE/ywJCJ/DM7U9Eyo0y8CmcQKoQu','Test 7',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:42',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('8393ab69-bec7-4fdf-9acb-9d63e444edb5','test4@gmail.com','$2a$10$mUmG47yPYM0gSvGeEVpBwuoprDcB6kt9a0qU7Jabp7TbyUO9QYs5y','Test 4',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:35',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('de6dc504-5db9-4e07-9740-e3e46886c0d3','zangetsu04.2002@gmail.com','$2a$10$zSchtpuhHlM00ZyreqM/l.pYtQewRd3ZJ0t8bXXsP/d/C5ooMwK.S','Trương Samuel',NULL,NULL,NULL,'https://www.facebook.com/samuel.truong.94/',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-03-29 21:00:10',NULL,'2024-04-12 11:41:19',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('e7489531-2886-45ee-8288-a5f0a54e9dbd','test5@gmail.com','$2a$10$exbhdyNKzQymgjHxS.b.5.c3aM.nuwBHPaBecFLIxkeMtW9.83ozC','Test 5',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:37',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('fa34b025-a1a0-467c-b5a7-e4ff025a2b94','test1@gmail.com','$2a$10$832I/NVlZq/.IJfQetNaJuH8.R84q7VwwYnC1ZVMouhX8aX4B8Yze','Test 1',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:27',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('fc1a4be5-7984-47c9-812e-bbce8266aaaf','test2@gmail.com','$2a$10$FFAb6j3Ui4dSWnknWh.SZOl.v/kdTOuulu/W54g1OxtteCtffWpRi','Test 2','',NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,NULL,'2024-04-03 12:01:31',NULL,NULL,0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC');
-
--- INSERT INTO `event`(id,creator,title,content,thumbnail,faculty_id,organization_location,organization_time,create_at,update_at,published_at,status_id,views,participants) VALUES ('2bc8fdb8-aa12-4402-9bd6-26ff061dcf33','0ac25d55-1ee6-4794-8d46-58f82cde644c','Giải bóng đá giao hữu MSTA mở rộng lần 2 – năm 2023','<div dir=\"auto\">Bước vào tuổi thứ 2, giải bóng đá vinh dự nhận được sự hỗ trợ và đồng hành đến từ các đơn vị :</div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/t3d/1/16/1f3c5.png\" alt=\"?\" width=\"16\" height=\"16\" /></span>Nhà tài trợ Vàng:</div>\n<div dir=\"auto\">&#8211; Công ty CP SX TM Tân Việt Sinh _ Anh Phan Văn Hùng, CSV Khoá 91 Khoa Hoá học</div>\n<div dir=\"auto\">&#8211; Công ty CP Tái chế nhựa Lam Trân</div>\n<div dir=\"auto\">&#8211; Công ty TNHH SX TM Tân Đông Dương_ Anh Trần Văn Danh, CSV Khóa 91 Khoa Hóa học</div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/ta8/1/16/1f396.png\" alt=\"?\" width=\"16\" height=\"16\" /></span>Nhà tài trợ Đồng:</div>\n<div dir=\"auto\">&#8211; Thương hiệu sơn Rexo Paint &#8211; Công ty TNHH SX TM DV Thiết bị Toàn Phát _ Anh Trần Phước Bảo CSV Khoá K03 Khoa Khoa học &amp; Công nghệ Vật liệu</div>\n<div dir=\"auto\">&#8211; Cơ sở nến thơm AGAYA _ Anh Võ Đình Vũ CSV Khoá K05 Khoa Khoa học &amp; Công nghệ Vật liệu</div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\">Chặng đường tìm kiếm nhà vô địch sẽ có sự tham gia của các đội bóng:</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/t7a/1/16/31_20e3.png\" alt=\"1️⃣\" width=\"16\" height=\"16\" /></span> BKAM FC, Cộng đồng Cựu sinh viên Công nghệ vật liệu &#8211; Đại học Bách Khoa TP.HCM</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/t99/1/16/32_20e3.png\" alt=\"2️⃣\" width=\"16\" height=\"16\" /></span> Bridgestone FC, Công ty TNHH Kinh Doanh Lốp Xe Bridgestone Việt Nam</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/tb8/1/16/33_20e3.png\" alt=\"3️⃣\" width=\"16\" height=\"16\" /></span> CHEM FC, Cựu sinh viên Khoa Hóa học &#8211; Đại học Khoa học Tự nhiên TP.HCM</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/td7/1/16/34_20e3.png\" alt=\"4️⃣\" width=\"16\" height=\"16\" /></span> FBB FC, Cựu sinh viên Khoa Sinh học &#8211; Công nghệ Sinh học &#8211; Đại học Khoa học Tự nhiên TP.HCM</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/tf6/1/16/35_20e3.png\" alt=\"5️⃣\" width=\"16\" height=\"16\" /></span> Innoplas FC, Công ty CP TM DV Nhựa Bao bì Kiến Đức</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/t15/1/16/36_20e3.png\" alt=\"6️⃣\" width=\"16\" height=\"16\" /></span> Tân Đông Dương FC, Công ty TNHH SX-TM Tân Đông Dương</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/t34/1/16/37_20e3.png\" alt=\"7️⃣\" width=\"16\" height=\"16\" /></span> MST Select FC, Đại diện Khoa Khoa học và Công nghệ Vật liệu/MST Faculty</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/t53/1/16/38_20e3.png\" alt=\"8️⃣\" width=\"16\" height=\"16\" /></span> MSTA FC, Cựu sinh viên Khoa học &amp; Công nghệ Vật liệu, Khoa Học Tự Nhiên &#8211; MSTA</div>\n<div dir=\"auto\">Giải bóng đá hân hạnh được đón tiếp các đội bóng, người hâm mộ khi trái bóng bắt đầu lăn trên sân</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/te6/1/16/1f570.png\" alt=\"?\" width=\"16\" height=\"16\" /></span>Thời gian diễn ra: 7h30-12h30 ngày 15/10/2023</div>\n<div dir=\"auto\"><span class=\"x3nfvp2 x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m xxymvpz xlup9mm x1kky2od\"><img decoding=\"async\" class=\"lazy-load xz74otr\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.xx.fbcdn.net/images/emoji.php/v9/tc6/1/16/1f6a9.png\" alt=\"?\" width=\"16\" height=\"16\" /></span>Địa điểm: Sân bóng Chảo Lửa, 30 Phan Thúc Duyện, Q. Tân Bình, TPHCM.</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/383352238_293220920156092_8301565045622634107_n.jpg',1,'Sân bóng Chảo Lửa, 30 Phan Thúc Duyện, Q. Tân Bình, TPHCM','2023-10-15 07:30:00','2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf34','0ac25d55-1ee6-4794-8d46-58f82cde644c','Ngày kết nối cộng đồng của cựu sinh viên Trường ĐH Khoa học tự nhiên TP.HCM','<p class=\"detail-sapo\" data-role=\"sapo\">Diễn đàn khoa học-doanh nghiệp và đổi mới sáng tạo lần 1-2023 của cộng đồng cựu sinh viên khoa học Trường ĐH Khoa học tự nhiên TP.HCM sẽ được tổ chức vào ngày 28.10 tới.</p>\n<div class=\"detail-cmain\">\n<div class=\"detail-content afcbc-body\" data-role=\"content\" data-io-article-url=\"https://thanhnien.vn/ngay-ket-noi-cong-dong-cua-cuu-sinh-vien-truong-dh-khoa-hoc-tu-nhien-tphcm-185231018145725379.htm\">\n<figure class=\"VCSortableInPreviewMode\">\n<div><a class=\"detail-img-lightbox\" title=\"Ban chấp hành của cộng đồng cựu sinh viên khoa học của Trường ĐH Khoa học tự nhiên TP.HCM\" href=\"https://images2.thanhnien.vn/528068263637045248/2023/10/18/img5056-16976160538701204545227.jpg\" target=\"_blank\" rel=\"noopener\" data-fancybox=\"img-lightbox\"><img decoding=\"async\" id=\"img_639010699434205184\" class=\"lazy-load lightbox-content aligncenter\" title=\"Ngày kết nối cộng đồng của cựu sinh viên Trường ĐH Khoa học tự nhiên TP.HCM  - Ảnh 1.\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%200%200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://images2.thanhnien.vn/thumb_w/640/528068263637045248/2023/10/18/img5056-16976160538701204545227.jpg\" srcset=\"\" data-srcset=\"https://images2.thanhnien.vn/thumb_w/640/528068263637045248/2023/10/18/img5056-16976160538701204545227.jpg 1x,https://images2.thanhnien.vn/528068263637045248/2023/10/18/img5056-16976160538701204545227.jpg 2x\" alt=\"Ngày kết nối cộng đồng của cựu sinh viên Trường ĐH Khoa học tự nhiên TP.HCM  - Ảnh 1.\" width=\"\" height=\"\" data-author=\"\" data-original=\"https://images2.thanhnien.vn/528068263637045248/2023/10/18/img5056-16976160538701204545227.jpg\" /></a></div><figcaption class=\"PhotoCMS_Caption\">\n<p class=\"\" style=\"text-align: center;\" data-placeholder=\"Nhập chú thích ảnh\" data-gramm=\"false\"><em>Ban chấp hành của cộng đồng cựu sinh viên khoa học của Trường ĐH Khoa học tự nhiên TP.HCM</em></p>\n</figcaption></figure>\n<p>Diễn đàn khoa học-doanh nghiệp và đổi mới sáng tạo lần 1-2023 diễn ra trong khuôn khổ Ngày kết nối cộng đồng cựu sinh viên khoa học với sự tham dự của các thế hệ sinh viên, giảng viên và các nhà khoa học Trường <a class=\"seo-suggest-link\" title=\" ĐH Khoa học tự nhiên TP.HCM\" href=\"https://thanhnien.vn/dh-khoa-hoc-tu-nhien-tphcm.html\" target=\"_blank\" rel=\"noopener\">ĐH Khoa học tự nhiên TP.HCM</a>.</p>\n<p>Ngày kết nối cộng đồng cựu sinh viên khoa học (HCMUS Alumni Day) là sự kiện thường niên tập hợp các thế hệ cựu sinh viên Trường ĐH Khoa học tự nhiên TP.HCM nhằm khơi gợi cảm xúc tự hào về quãng thời gian học tập và trưởng thành, để từ đó phát huy thế mạnh trên mọi lĩnh vực của cựu sinh viên để kết nối tạo giá trị cho cộng đồng và sự phát triển của nhà</p>\n<div>\n<div class=\"aries_stage aries_horizontalAxis\">\n<div class=\"aries_proscenium aries_hcenter aries_vcenter aries_rollAnimation\">\n<div class=\"aries_videoWrapper\">\n<div>\n<div class=\"vidverto vidverto__playlist-wrapper vidverto-wait_play vidverto-hide-controls vidverto-type_video vidverto-provider_html5 vidverto__playlist_type_playlist vidverto-ui_enabled vidverto__ratio__16_9 mw-script vidverto-paused vidverto-stopped mw_size_650\" tabindex=\"0\">\n<div class=\"vidverto-player-container\" tabindex=\"1\">\n<div class=\"vidverto__contextmenu\">\n<div class=\"vidverto__contextmenu-item\">\n<p>Chương trình sẽ gồm 3 nội dung chính. Trong đó, phần 1 là phiên chợ khoa học công nghệ, trưng bày, triển lãm các sản phẩm đổi mới sáng tạo của nhà khoa học, giảng viên, sinh viên và doanh nghiệp. Ở phần thứ 2, trong diễn đàn khoa học-doanh nghiệp và đổi mới sáng tạo, có lễ ký kết thỏa thuận hợp tác giữa nhà trường và doanh nghiệp, chia sẻ về vai trò quan trọng của nhà trường trong hoạt động nghiên cứu và phát triển sản phẩm, chia sẻ bài học kinh nghiệm thực tế hợp tác giữa doanh nghiệp và nhà trường.</p>\n<p>Đáng chú ý, Quỹ đầu tư đổi mới sáng tạo cựu sinh viên khoa học sẽ được ra mắt trong phần 3 gala kết nối cộng đồng <a class=\"seo-suggest-link\" title=\"Trường đại học nhận 15 tỉ đồng học bổng từ cựu sinh viên\" href=\"https://thanhnien.vn/truong-dai-hoc-nhan-15-ti-dong-hoc-bong-tu-cuu-sinh-vien-1851027553.htm\" target=\"_blank\" rel=\"noopener\">cựu sinh viên</a> khoa học.</p>\n</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/img5056-16976160538701204545227.webp',2,'Sảnh I - Cơ sở Nguyễn Văn Cừ','2023-10-15 07:30:00','2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf35','0ac25d55-1ee6-4794-8d46-58f82cde644c','Ngày hội Sinh viên và Doanh nghiệp – Năm 2023 (Đợt 1)','<p>Tiếp nối thành công của chương trình “Ngày hội Sinh viên và Doanh nghiệp – Năm 2022, Trường Đại học Khoa học tự nhiên, ĐHQG-HCM tiếp tục tổ chức <strong>“NGÀY HỘI SINH VIÊN VÀ DOANH NGHIỆP (ĐỢT 1) – NĂM 2023”</strong> vào ngày 04 tháng 6 năm 2023 trong khuôn viên trường tại Khu đô thị Đại học Quốc gia tại Tp. Thủ Đức, Thành phố Hồ Chí Minh.</p>\n<p>Ngày hội là dịp để sinh viên trường có điều kiện tìm hiểu thông tin và cọ xát thực tế, tạo điều kiện cho nhà trường thúc đẩy quá trình nâng cao chất lượng nguồn nhân lực, đáp ứng nhu cầu ngày càng cao của xã hội và phục vụ cho sự phát triển của đất nước. Đây cũng là cơ hội quý báu để các doanh nghiệp quảng bá thương hiệu và tuyển dụng nhân sự có chất lượng do Trường Đại học Khoa học tự nhiên, ĐHQG-HCM đào tạo.</p>\n<p><strong>NỘI DUNG CHƯƠNG TRÌNH </strong><strong>“</strong><strong>NGÀY HỘI SINH VIÊN VÀ DOANH NGHIỆP</strong> <strong>– NĂM 2023</strong> <strong>(ĐỢT 1)” BAO GỒM:</strong></p>\n<ul>\n<li><strong>HOẠT ĐỘNG ĐỒNG HÀNH CÙNG SINH VIÊN TRƯỚC NGÀY HỘI:</strong></li>\n</ul>\n<p>Chương trình hội thảo: “Blockchain and Smart-contract Foundation for Solana/Web3 developer” ngày 20/02/2023 tại Giảng đường 1, cơ sở Nguyễn Văn Cừ. Trung tâm Hỗ trợ Sinh viên phối hợp với MMG Unitour tổ chức.</p>\n<p>Chương trình hội thảo: “Hoàn Thiện CV &#8211; It&#8217;s So Easy”, ngày 19/5/2023 trên nền tảng Zoom. Trung tâm Hỗ trợ Sinh viên phối hợp với Công ty TNHH Công nghệ và Đào tạo YOOT.</p>\n<ul>\n<li><strong>LỄ KHAI MẠC</strong> <strong>“</strong><strong>NGÀY HỘI SINH VIÊN VÀ DOANH NGHIỆP</strong> <strong>– NĂM 2023</strong> <strong>(ĐỢT 1)”:</strong></li>\n</ul>\n<p>Diễn ra từ 08g00 đến 09g30, ngày 04/6/2023 tại sân Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM (Cơ sở 2, Khu đô thị Đại học Quốc gia tại Thành phố Thủ Đức, Thành phố Hồ Chí Minh.</p>\n<ul>\n<li><strong>CHƯƠNG TRÌNH TRAO HỌC BỔNG “THẮP SÁNG ƯỚC MƠ – NĂM 20</strong><strong>23”:</strong></li>\n</ul>\n<p>Dành cho sinh viên có hoàn cảnh khó khăn, học tập tốt, nhiệt tình tham gia công tác đoàn thể, xã hội hoặc sinh viên là cán bộ Đoàn – Hội có điểm học tập tốt, tổng cộng 10 suất học bổng, mỗi suất trị giá <strong>5.000.000 đồng/suất</strong>.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20800%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/352278222_639817681511133_1602529392426168078_n.jpg\" width=\"800\" /></p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20800%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/352281161_639818271511074_938661896132170928_n.jpg\" width=\"800\" /></p>\n<ul>\n<li><strong>HỘI THẢO CHUYÊN ĐỀ:</strong></li>\n</ul>\n<p>Chương trình hội thảo: “CIMB Asean Scholarship 2023 – Be The Next Generation of Change-makers” tổ chức ngày 04/6/2023 tại Hội trường B, cơ sở Linh Trung. Buổi hội thảo nhằm đưa ra lời khuyên và kinh nghiệm hữu ích cho các bạn sinh viên muốn săn thành công học bổng Đông Nam Á của CIMB.</p>\n<p>Tọa đàm “Xu hướng, Thách thức, Cơ hội – Tương lai Công nghệ dữ liệu” ngày 04/6/2023 tại sân khấu Trung tâm do Công ty TNHH Bosch Global Software Technologies tổ chức.</p>\n<ul>\n<li><strong>34 DOANH NGHIỆP </strong>–<strong> 48 SÀN DỊCH VỤ </strong>–<strong> VIỆC LÀM:</strong> Giới thiệu nhu cầu tuyển dụng của công ty/doanh nghiệp, tương tác và tuyển dụng trực tiếp.</li>\n</ul>\n<p>Các công ty/doanh nghiệp tham gia sàn dịch vụ, việc làm bao gồm: Ngân hàng Thương mại Cổ phần Á Châu (ACB); Ngân hàng TNHH MTV CIMB Việt Nam; Công ty TNHH Xây dựng và Môi trường Trí Việt; VNPT Thành phố Hồ Chí Minh; Công ty TNHH Bosch Global Software Technologies Vietnam; Công ty Tài chính TNHH MTV Home Credit Việt Nam; Công ty TNHH MiTek Việt Nam; Công ty Cổ phần Dịch vụ Tức thời – Ahamove; Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank) – Chi nhánh TP.HCM; Công ty Cổ phần Giáo dục và Đào Tạo Imap Việt Nam; Công ty Cổ phần Anh văn Hội Việt – Mỹ; SILICON STACK; Công ty Manulife Vietnam; Amaris Vietnam Company Limited; Công ty TNHH Phần mềm FPT Hồ Chí Minh; Công ty Cổ phần Dịch vụ Di động Trực tuyến (M_Service); SPIRALEDGE; Công ty TNHH Công nghệ Faraday Việt Nam; Công ty TNHH MM Mega Market (Việt Nam); Công ty Cổ phần Bản Viên; Công ty TNHH CMC Global; Ngân hàng Thương mại Cổ phần Phát triển TP.HCM (HD Bank); Công ty TNHH Bảo hiểm Shinhan Life Việt Nam; Công ty Cổ phần Chứng khoán Kis Việt Nam; Công ty Ajinomoto Việt Nam; DIGI-TEXX VIETNAM; Ngân hàng TNHH MTV WOORI Việt Nam, Công ty Cổ phần Công nghệ Mindfully; Công ty TNHH Fourth Valley Concierge Việt Nam; Công ty Cổ phần Acecook Việt Nam; Công ty TNHH NEC Việt Nam; Công ty Cổ phần Thương mại – Dịch vụ Phong Vũ; Công ty TNHH A I Ơ I Studios.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20800%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/352197979_639818444844390_1566350994400558157_n.jpg\" width=\"800\" /></p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20800%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/352539722_639818558177712_2803423986615485669_n.jpg\" width=\"800\" /></p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20800%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/352560475_639818604844374_506236059079553531_n.jpg\" width=\"800\" /></p>\n<ul>\n<li><strong>PHỎNG VẤN VIỆC LÀM:</strong></li>\n</ul>\n<p>Phòng phỏng vấn của Ngân hàng Thương mại Cổ phần Á Châu (Địa điểm: Phòng 6.8 &#8211; Tòa Nhà điều hành).</p>\n<ul>\n<li><strong>KHU VỰC TRIỂN LÃM </strong><strong>“Ý TƯỞNG KHỞI NGHIỆP </strong>–<strong> SẢN PHẨM SÁNG TẠO”:</strong></li>\n</ul>\n<p>Mô hình “Xe Điều Khiển, Board Mạch Vi Điều Khiển”;</p>\n<p>Mô hình “Trải Nghiệm Không Chạm Trò Chơi Phân Loại Rác”;</p>\n<p>Sản phẩm thân thiện với môi trường “Túi Thơm; Polyme Có Khả Năng Phân Hủy”.</p>\n<ul>\n<li><strong>10 GIAN HÀNG CỦA THẦY CÔ, CÁN BỘ TRẺ, SINH VIÊN VÀ CLB ĐỘI NHÓM TRƯỜNG: </strong>Khu vực trưng bày và kinh doanh các sản phẩm với giá ưu đãi cho sinh viên như thực phẩm, nước uống, đồ handmade, phụ kiện, quần áo, đồ điện tử.</li>\n<li><strong>KHU VỰC TRIỂN LÃM CÁC CƠ HỘI THỰC TẬP VÀ VIỆC LÀM: </strong>Gần 300 nguồn thông tin về nhu cầu tuyển dụng của các công ty/doanh nghiệp lĩnh vực kinh tế và kỹ thuật, cơ hội thực tập tại các công ty với các đầu công việc full-time, part-time.</li>\n<li><strong>MỘT SỐ HOẠT ĐỘNG KHÁC:</strong> Các chương trình bốc thăm trúng thưởng, chương trình ưu đãi tại một số gian hàng tham gia trong ngày hội, các chương trình học bổng, quà tặng trong ngày hội,…</li>\n</ul>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20800%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/352769783_639817538177814_1435430566281169473_n.jpg\" width=\"800\" /></p>\n<p>“Ngày hội Sinh viên và Doanh nghiệp – Năm 2023 (Đợt 1)” được chỉ đạo thực hiện bởi Ban Giám Hiệu Trường Đại học Khoa học Tự Nhiên, ĐHQG-HCM do Trung tâm Hỗ trợ Sinh viên trường tổ chức thực hiện với sự tài trợ của các đơn vị: Ngân hàng Thương mại Cổ phần Á Châu (Tài trợ Vàng); Ngân hàng TNHH MTV CIMB Việt Nam (Tài trợ Bạc); Công ty TNHH Xây dựng và Môi trường Trí Việt (Đồng tài trợ); VNPT Thành phố Hồ Chí Minh (Đồng tài trợ).</p>\n','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/01.jpg',3,'Sảnh I - Cơ sở Nguyễn Văn Cừ','2023-10-15 07:30:00','2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf36','0ac25d55-1ee6-4794-8d46-58f82cde644c','Lễ Tốt nghiệp Tiến sĩ, Thạc sĩ 2023','<p>Trong hai ngày 21/6 và 23/6, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM đã long trọng tổ chức Lễ Tốt nghiệp Tiến sĩ, Thạc sĩ năm 2023. Đây là dịp để vinh danh hơn 300 Tân Khoa đã có những thành tích xuất sắc trong suốt quá trình học tập, nghiên cứu và công bố quốc tế.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_2160.jpg\" width=\"700\" /></p>\n<p>Tham dự buổi Lễ Tốt nghiệp, về phía lãnh đạo Trường có: PGS.TS. Trần Lê Quan &#8211; Hiệu trưởng; PGS.TS. Trần Minh Triết &#8211; Phó Hiệu trưởng; PGS.TS. Nguyễn Tuyết Phương &#8211; Trưởng phòng đào tạo Sau Đại học; Đại diện Ban Chủ nhiệm các khoa; Các Giáo sư, Phó Giáo sư, Giảng viên cùng các tân Tiến sĩ và tân Thạc sĩ.</p>\n<p>Về phía đối tác có sự hiện diện của TS. Đoàn Đức Chánh Tín – Viện trưởng Viện Công nghệ Nano, ĐHQG-HCM; GS. TS. Đặng Mậu Chiến – Nguyên Viện trưởng Viện Công nghệ Nano, ĐHQG-HCM; Ông Nguyễn Văn Thái – Nguyên Giám đốc Viễn thông Tiền Giang.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_2201.jpg\" width=\"700\" /></p>\n<p>Phát biểu khai mạc buổi Lễ, PGS.TS. Trần Lê Quan gửi lời chúc mừng các Tân Tiến sĩ, Thạc sĩ, đồng thời biểu dương nỗ lực bền bỉ và ý chí của các anh/chị trong suốt thời gian rèn luyện tại Trường. Đặc biệt trong bối cảnh phải đối mặt với nhiều thách thức do dịch Covid-19, các HVCH và NCS đã biến khó khăn trở thành động lực để vươn lên, trở nên mạnh mẽ và đạt đến thành công ngày hôm nay.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_1342.jpg\" width=\"700\" /></p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_2248.jpg\" width=\"700\" /></p>\n<p><em>Tri ân Giáo sư hướng dẫn NCS</em></p>\n<p>Để ghi nhận những nỗ lực và đóng góp trong học tập và nghiên cứu bậc sau đại học, Nhà trường cũng đặc biệt vinh danh và khen thưởng cho các NCS và HVCH có những thành tích học tâp xuất sắc, có hoạt động nghiên cứu khoa học nổi bật.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_1231.jpg\" width=\"700\" /></p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_2211.jpg\" width=\"700\" /></p>\n<p>Trong niềm vui ngày tốt nghiệp, Tân Tiến sĩ Mai Ngọc Xuân Đạt và Tân Thạc sĩ Nguyễn Thị Thanh đã thay mặt cho các tân Tiến sĩ, thạc sĩ phát biểu cảm nghĩ và bày tỏ lòng tri ân tới Quý Thầy Cô đã luôn tận tâm, trách nhiệm, giảng dạy, đồng hành và hỗ trợ học viên trong chặng đường học tập vừa qua.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_1352.jpg\" width=\"700\" /></p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_2263.jpg\" width=\"700\" /></p>\n<p>Buổi lễ Lễ tốt nghiệp và trao bằng khép lại bằng những bức hình đẹp, những khoảnh khắc đáng nhớ và đong đầy cảm xúc. Nhà trường kính chúc các tân Tiến sĩ, Thạc sĩ sẽ tiếp tục gặt hái những thành công trên bước đường sự nghiệp, góp phần vào việc nâng cao vị thế và uy tín của nhà trường đối với sự phát triển của cộng đồng xã hội.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/IMG_2069.jpg\" width=\"700\" /></p>\n','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/IMG_3011-2048x1291.jpg',1,'Hội trường I - Cơ sở Nguyễn Văn Cừ','2023-10-15 07:30:00','2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf37','0ac25d55-1ee6-4794-8d46-58f82cde644c','Ngày hội Chuyển đổi số – Không gian Khởi nghiệp Sáng tạo 2023','<div>\n<p>Thực hiện chủ đề năm 2023 “Nâng cao hiệu quả hoạt động công vụ, đẩy mạnh cải cách hành chính và cải thiện môi trường đầu tư; thúc đẩy phát triển kinh tế; đảm bảo an sinh xã hội” gắn với kỷ niệm ngày Chuyển đổi số quốc gia 10/10/2023, Ủy ban nhân dân Quận 7 tổ chức Ngày hội Chuyển đổi số &#8211; Không gian Khởi nghiệp sáng tạo năm 2023 diễn ra từ ngày 7, 8, 9 tháng 10 năm 2023. Đây là sự kiện trọng điểm nhằm biểu dương và thúc đẩy hoạt động chuyển đổi số trong cộng đồng doanh nghiệp trên địa bàn Quận 7, mà trong đó các doanh nghiệp Khu chế xuất Tân Thuận nói riêng và doanh nghiệp các khu chế xuất, khu công nghiệp nói chung có thể cùng hưởng ứng tham gia Ngày hội này.</p>\n<p>Sự kiện có sự tham dự của lãnh đạo UBND TP Hồ Chí Minh, đại diện các Sở, ban, ngành, các hiệp hội, trường, startup, các tập đoàn, doanh nghiệp trong lĩnh vực công nghệ, các chuyên gia công nghệ; các cơ quan báo chí, truyền thông cùng đông đảo các bạn học sinh, sinh viên trên địa bàn.</p>\n<p>Trong khuôn khổ Ngày hội Chuyển đổi số &#8211; Không gian khởi nghiệp sáng tạo năm 2023 gồm nhiều hoạt động sôi nổi như Triển lãm công nghệ; Tọa đàm; Cuộc thi Ý tưởng khởi nghiệp; Giải chạy “Kết sức mạnh – Nối thành công”; Đêm nhạc live concert bế mạc và trao giải các cuộc thi tại Ngày hội.</p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/385767830_287611407557163_8459335795033905121_n.jpg\" width=\"700\" /></p>\n<p><img decoding=\"async\" class=\"lazy-load aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://www.hcmus.edu.vn/images/386471108_287611677557136_3762209529945663163_n.jpg\" width=\"700\" /></p>\n<p>Trường Đại học Khoa học tự nhiên, ĐHQG-HCM cùng đồng hành với KDI Education trong buổi triển lãm. Khoa Khoa học Liên ngành kết hợp Phòng thí nghiệm Công nghệ Phần mềm (SELab), Khoa Công nghệ thông tin mang đến các sản phẩm ứng dụng trực tiếp trong giáo dục:</p>\n<ul>\n<li>Ứng dụng thực tại tăng cường AR-VR trong giảng dạy STEM: ứng dụng trực tiếp cho môn Thiên văn học và Vật lý, ứng dụng này không chỉ giúp các bạn hiểu hơn về vũ trụ mà còn hiểu hơn về luật hấp dẫn giữa các hành tinh.</li>\n<li>AR trong giáo dục (ý tưởng bài giảng): Một hình thức học tập sáng tạo và mang đến cho bạn một trải nghiệm học tập mới mẻ.</li>\n</ul>\n<p>Những sản phẩm này nhận được sự quan tâm của các cơ sở ban ngành và một số đơn vị. Hy vọng trong thời gian sắp tới, sản phẩm sẽ được phổ biến rộng rãi ở các lớp học.</p>\n</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/386081248_287611424223828_9082187445913318144_n.jpg',2,'Sảnh I - Cơ sở Nguyễn Văn Cừ','2023-10-15 07:30:00','2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf38','0ac25d55-1ee6-4794-8d46-58f82cde644c','Đại hội Cộng đồng Cựu sinh viên Khoa học – lần thứ I năm 2022','<div dir=\"auto\">\n<h2 class=\"detail-sapo\" data-role=\"sapo\">Ngày 19-11, Trường đại học Khoa học tự nhiên &#8211; Đại học Quốc gia TP.HCM cùng với Ban đại diện lâm thời Cựu sinh viên đã tổ chức &#8216;Đại hội Cộng đồng Cựu sinh viên Khoa học &#8211; lần thứ I&#8217;.</h2>\n<p style=\"text-align: center;\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-scaled.jpg\"><img fetchpriority=\"high\" decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1028\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20333%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-500x333.jpg\" alt=\"\" width=\"500\" height=\"333\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-500x333.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-1024x681.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-768x511.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-1536x1022.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-2048x1363.jpg 2048w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9330_1-600x399.jpg 600w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a></p>\n<p style=\"text-align: center;\">Anh Đinh Hà Duy Linh &#8211; báo cáo kết quả hoạt động</p>\n<div class=\"detail-cmain\">\n<div class=\"detail-content afcbc-body\" data-role=\"content\">\n<p class=\"\">Đại hội quy tụ hàng trăm cựu sinh viên từ nhiều thế hệ, bầu ra ban đại diện chính thức của Cộng đồng Cựu sinh viên Khoa học nhiệm kỳ 2022-2025 và quy chế tổ chức hoạt động của ban đại diện.</p>\n<p class=\"\">Trải qua hơn 80 năm hình thành và phát triển qua nhiều giai đoạn lịch sử của đất nước, Trường đại học Khoa học tự nhiên, Đại học Quốc gia TP.HCM đang hướng đến tầm nhìn trở thành một trường đại học hàng đầu tại Việt Nam và Đông Nam Á về đào tạo, nghiên cứu khoa học, công nghệ nền tảng của kinh tế tri thức và kinh tế số.</p>\n<p class=\"\">Danh tiếng và vị trí học thuật của trường đã được khẳng định bởi những uy tín đào tạo, thành tựu nghiên cứu khoa học và sự thành công của nhiều thế hệ cựu sinh viên trong đa dạng lĩnh vực.</p>\n<p class=\"\">Với ý tưởng tạo ra sự kết nối giao lưu và tiến đến hợp tác giữa Cộng đồng Cựu sinh viên với nhà trường và trong Cộng đồng Cựu sinh viên với nhau, ngày 14-8-2022, Ban đại diện lâm thời và Ban đại diện danh dự Cộng đồng Cựu sinh viên Khoa học đã chính thức được thành lập.</p>\n<div id=\"InreadPc\">\n<div id=\"zone-jnvk0c1v\">\n<div id=\"share-jnvk0cro\"></div>\n</div>\n</div>\n<p class=\"\">Trải qua 3 tháng hoạt động, với sự hỗ trợ kết nối từ các đơn vị trong nhà trường, Ban đại diện lâm thời đã có những bước đầu tiên lan tỏa và hành động hướng đến việc xây dựng cộng đồng cựu sinh viên lớn mạnh và đóng góp trực tiếp cho sự phát triển của nhà trường lẫn của cộng đồng.</p>\n<div class=\"VCSortableInPreviewMode\">\n<div style=\"text-align: center;\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-scaled.jpg\"><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1027\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20284%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-500x284.jpg\" alt=\"\" width=\"500\" height=\"284\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-500x284.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-1024x583.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-768x437.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-1536x874.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-2048x1165.jpg 2048w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-600x341.jpg 600w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a></div>\n<div style=\"text-align: center;\"><span style=\"color: #555555; text-align: center; font-size: 14.4px;\">Ban đại diện Cộng đồng Cựu sinh viên Khoa học</span></div>\n</div>\n<p class=\"\">Đại hội Cộng đồng Cựu sinh viên Khoa học &#8211; năm 2022 không chỉ là một ngày hội lớn cho các cựu sinh viên của trường mà còn là một viên gạch đặt nền móng vững chắc cho giai đoạn phát triển mới của Cộng đồng Cựu sinh viên Khoa học. Trong nhiệm kỳ đầu tiên, Ban đại diện Cựu sinh viên sẽ triển khai 5 chương trình hành động gồm: Kết nối &#8211; Đóng góp &#8211; Hỗ trợ &#8211; Hợp tác &#8211; Phát triển thương hiệu.</p>\n<p class=\"\">Mục tiêu hoạt động của Cộng đồng Cựu sinh viên Khoa học là góp phần xây dựng thương hiệu &#8220;Trường đại học Khoa học tự nhiên&#8221;, gắn kết và có những hoạt động thiết thực cho toàn thể cộng đồng cựu sinh viên, sinh viên và nhà trường, cùng nhau hỗ trợ cho chiến lược &#8220;tự chủ&#8221; của trường một cách dài hạn, bền vững và thúc đẩy hợp tác về đào tạo, nghiên cứu, chuyển giao khoa học &#8211; công nghệ, tạo ra nhiều giá trị có ích cho cộng đồng, xã hộị.</p>\n</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/DSC_9527_1_1-2048x1165.jpg',1,'Hội trường I - Cơ sở Nguyễn Văn Cừ','2023-10-15 07:30:00','2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf39','0ac25d55-1ee6-4794-8d46-58f82cde644c','Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM tổ chức nhiều hoạt động tri ân','<div dir=\"auto\">\n<div class=\"xdj266r x11i5rnm xat24cr x1mh8g0r x1vvkbs\">\n<div dir=\"auto\">Nhân Kỷ niệm 40 năm Ngày Nhà giáo Việt Nam, ngày 19.11.2022, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM đã diễn ra nhiều hoạt động tri ân ý nghĩa và bổ ích tại cơ sở Nguyễn Văn Cừ &#8211; Quận 5.</div>\n<div dir=\"auto\"></div>\n<div dir=\"auto\"><span style=\"font-size: 14.4px;\">Đây cũng là lần đầu tiên, nhà trường đón nhận sự quy tụ của đông đảo sinh viên các thế hệ và tạo nên thành công của Đại hội Cộng đồng Cựu sinh viên, đặt nền móng vững chắc cho giai đoạn phát triển mới của Cộng đồng Cựu sinh viên Khoa học.</span></div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s\">\n<div dir=\"auto\"></div>\n<div dir=\"auto\">Hãy cùng nhìn lại những giây phút xúc động trong “Ngày trở về” của giảng viên, cựu giáo chức cùng sinh viên, cựu sinh viên.</div>\n</div>\n<div dir=\"auto\"></div>\n<div style=\"width: 640px;\" class=\"wp-video\"><!--[if lt IE 9]><script>document.createElement(\'video\');</script><![endif]-->\n<video class=\"wp-video-shortcode\" id=\"video-1067-1\" width=\"640\" height=\"360\" preload=\"metadata\" controls=\"controls\"><source type=\"video/mp4\" src=\"https://alumni.hcmus.edu.vn/wp-content/video/10000000_2320706168133626_1182060330703763044_n.mp4?_=1\" /><a href=\"https://alumni.hcmus.edu.vn/wp-content/video/10000000_2320706168133626_1182060330703763044_n.mp4\">https://alumni.hcmus.edu.vn/wp-content/video/10000000_2320706168133626_1182060330703763044_n.mp4</a></video></div>\n</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/Screenshot-2023-10-24-135118.jpg',4,'Hội trường I - Cơ sở Nguyễn Văn Cừ','2023-10-15 07:30:00','2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0,42);
-
--- INSERT INTO `news`(id,creator,title,summary,content,thumbnail,faculty_id,create_at,update_at,published_at,status_id,views) VALUES ('2bc8fdb8-aa12-4402-9bd6-26ff061dcf63','0ac25d55-1ee6-4794-8d46-58f82cde644c','Lời mời tham gia Ngày truyền thống Cựu sinh viên Khoa học','❤️ ??/?/???? ❤️VỀ ĐÂY NHỮNG YÊU THƯƠNG – CHÀO MỪNG NGÀY TRUYỀN THỐNG CỰU SINH VIÊN KHOA HỌC ✨Hơn 80 năm xây dựng và trưởng thành qua nhiều','<p><img src=\"https://storage.googleapis.com/hcmus-alumverse/images/news/2bc8fdb8-aa12-4402-9bd6-26ff061dcf63/0\"></p><p><strong>❤️ ??/?/???? ❤️VỀ ĐÂY NHỮNG YÊU THƯƠNG – CHÀO MỪNG NGÀY TRUYỀN THỐNG CỰU SINH VIÊN KHOA HỌC</strong></p><p>✨Hơn 80 năm xây dựng và trưởng thành qua nhiều giai đoạn lịch sử của đất nước (tính từ mốc thành lập Cao đẳng Khoa học trực thuộc Viện Đại học Đông Dương năm 1941), danh tiếng và vị trí học thuật của Trường Đại học Khoa học tự nhiên, Đại học Quốc gia TP. HCM đã được khẳng định bởi những uy tín đào tạo, thành tựu nghiên cứu khoa học và sự thành công của nhiều thế hệ cựu sinh viên trong đa dạng lĩnh vực đời sống kinh tế – chính trị và xã hội.</p><p>✨Để biến sức mạnh truyền thống thành nguồn lực phát triển và nâng cao thêm sức mạnh liên kết giữa các thế hệ người học, ngày 19/11/2022, Đại hội Cộng đồng Cựu sinh viên Khoa học – lần thứ I” đã bầu ra Ban Đại diện chính thức nhằm phát huy thế mạnh trên mọi lĩnh vực của cựu sinh viên để kết nối tạo giá trị cho cộng đồng và sự phát triển của nhà trường.</p><p>✨Lấy ý nghĩa dấu mốc 30/03/1996, ngày Trường Đại học Khoa học tự nhiên chính thức được thành lập trên cơ sở tách ra từ Trường Đại học Tổng hợp TP. HCM và là thành viên của ĐHQG HCM, Ban đại diện Cộng đồng Cựu sinh viên Khoa học đã đề xuất ý tưởng chọn ngày 30/03 hàng năm trở thành Ngày truyền thống Cựu sinh viên Khoa học kể từ năm 2024. Sự kiện năm nay được diễn ra nhằm thông tin đến xã hội và cộng đồng cựu sinh viên một cách chính thức mốc thời gian ý nghĩa của trường, đồng thời lan tỏa tiếp đến các thế hệ sinh viên cùng hướng tình cảm tin yêu, tinh thần tự hào và ý niệm thuộc về nơi đã vun đắp cho hành trình phát triển của bản thân mình.</p><p>✨Để chương trình thành công tốt đẹp, Ban giám hiệu Nhà trường cùng Ban đại diện Cộng đồng Cựu sinh viên Khoa học rất mong nhận được sự tham gia của các thế hệ cựu sinh viên cùng trở về và đồng hành với các hoạt động chào mừng Ngày truyền thống Cựu sinh viên Khoa học đầy ý nghĩa.</p><p>?Link tham gia Talkshow: https://bit.ly/talkshowtruyencamhung</p><p>?Link tham gia Ngày Truyền thống Cựu sinh viên Khoa học: https://bit.ly/dkcsvkhoahoc30-3</p><p>——————————</p><p>Liên hệ hỗ trợ:</p><p>?0909804306 – Chị Nguyễn Thị Thẩm Thúy Hằng</p><p>?&nbsp;Email: alumni@hcmus.edu.vn.</p>','https://alumni.hcmus.edu.vn/wp-content/uploads/2024/03/Cover-2048x779.png',1,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf64','0ac25d55-1ee6-4794-8d46-58f82cde644c','Lịch sử phát triển nhà trường','Trường Cao đẳng Khoa học\nNgày 26/7/1941, Trường Cao đẳng Khoa học trực thuộc Viện Đại học Đông Dương được thành lập ở Hà Nội. Từ năm 1942, Trường bắt đầu tổ chức kỳ thi nhập học chứng chỉ Toán Đại cương (M.G);','<p><strong><em>Trường Cao đẳng Khoa học</em></strong></p>\n<p>Ngày 26/7/1941, Trường Cao đẳng Khoa học trực thuộc Viện Đại học Đông Dương được thành lập ở Hà Nội. Từ năm 1942, Trường bắt đầu tổ chức kỳ thi nhập học chứng chỉ Toán Đại cương (M.G); Toán, Lý Hóa (M.P.C); Lý, Hóa, Lịch sử tự nhiên (S.P.C.N) tại Hà Nội, Huế, Sài Gòn.</p>\n<p>Năm 1947, Trung tâm thứ hai được thiết lập tại Sài Gòn và tọa lạc trên phần đất của bệnh viện Policlinique Dejean de la Ba6tie (nay là Bệnh viện Đa khoa Sài gòn – Đường Lê Lợi), sau đó chuyển về phần đất trên đại lộ Nancy (sau này đổi tên thành Đại lộ Cộng Hòa, nay là 227 Nguyễn Văn Cừ). Năm 1947-1948, Trường tuyển sinh nhiều chứng chỉ như Toán Đại cương, Toán Vi phân và Tích phân, Thực vật Đại cương, Động vật, Sinh lý Đại cương, Vật lý, Hóa học.</p>\n<p>Ngày 23/11/1947 thành lập phân ban Vô tuyến điện trực thuộc phòng thí nghiệm Vật lý, đào tạo các cán sự Vô tuyến điện.</p>\n<p><strong><em>Khoa học Đại học đường – Trường Đại học Khoa học Sài Gòn</em></strong></p>\n<p><a href=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1.tif\" target=\"_blank\" rel=\"noopener\"><img decoding=\"async\" class=\"lazy-load alignnone size-full wp-image-37348\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1.tif\" alt=\"\" /></a><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-37349\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2.tif\" alt=\"\" width=\"1\" height=\"1\" /><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-37350\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3.tif\" alt=\"\" width=\"1\" height=\"1\" /><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-37351\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4.tif\" alt=\"\" width=\"1\" height=\"1\" /></p>\n<div id=\"gallery-1\" class=\"gallery galleryid-118 gallery-columns-3 gallery-size-cmsmasters-full-masonry-thumb\">\n<figure class=\"gallery-item\">\n<div class=\"gallery-icon landscape\"><a href=\"https://beta.hcmus.edu.vn/hinh-thanh-va-phat-trien/giangduong1/\" target=\"_blank\" rel=\"noopener\"><img decoding=\"async\" class=\"lazy-load attachment-cmsmasters-full-masonry-thumb size-cmsmasters-full-masonry-thumb\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201160%20773%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-1160x773.png\" sizes=\"(max-width: 1160px) 100vw, 1160px\" srcset=\"\" data-srcset=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-1160x773.png 1160w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-300x200.png 300w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-1024x682.png 1024w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-768x512.png 768w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-1536x1024.png 1536w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-2048x1365.png 2048w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-580x387.png 580w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Giangduong1-860x573.png 860w\" alt=\"\" width=\"1160\" height=\"773\" /></a></div>\n</figure>\n<figure class=\"gallery-item\">\n<div class=\"gallery-icon landscape\"><a href=\"https://beta.hcmus.edu.vn/hinh-thanh-va-phat-trien/canh1-2/\" target=\"_blank\" rel=\"noopener\"><img decoding=\"async\" class=\"lazy-load attachment-cmsmasters-full-masonry-thumb size-cmsmasters-full-masonry-thumb\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201160%20653%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-1160x653.png\" sizes=\"(max-width: 1160px) 100vw, 1160px\" srcset=\"\" data-srcset=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-1160x653.png 1160w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-300x169.png 300w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-1024x576.png 1024w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-768x432.png 768w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-1536x865.png 1536w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-580x327.png 580w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1-860x484.png 860w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh1.png 1890w\" alt=\"\" width=\"1160\" height=\"653\" /></a></div>\n</figure>\n<figure class=\"gallery-item\">\n<div class=\"gallery-icon landscape\"><a href=\"https://beta.hcmus.edu.vn/hinh-thanh-va-phat-trien/canh2-1/\" target=\"_blank\" rel=\"noopener\"><img decoding=\"async\" class=\"lazy-load attachment-cmsmasters-full-masonry-thumb size-cmsmasters-full-masonry-thumb\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201160%20652%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-1160x652.png\" sizes=\"(max-width: 1160px) 100vw, 1160px\" srcset=\"\" data-srcset=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-1160x652.png 1160w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-300x169.png 300w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-1024x576.png 1024w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-768x432.png 768w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-1536x863.png 1536w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-580x326.png 580w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1-860x483.png 860w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh2-1.png 1893w\" alt=\"\" width=\"1160\" height=\"652\" /></a></div>\n</figure>\n<figure class=\"gallery-item\">\n<div class=\"gallery-icon landscape\"><a href=\"https://beta.hcmus.edu.vn/hinh-thanh-va-phat-trien/canh3-2/\" target=\"_blank\" rel=\"noopener\"><img decoding=\"async\" class=\"lazy-load attachment-cmsmasters-full-masonry-thumb size-cmsmasters-full-masonry-thumb\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201160%20652%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-1160x652.png\" sizes=\"(max-width: 1160px) 100vw, 1160px\" srcset=\"\" data-srcset=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-1160x652.png 1160w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-300x169.png 300w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-1024x576.png 1024w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-768x432.png 768w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-1536x864.png 1536w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-580x326.png 580w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3-860x484.png 860w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh3.png 1890w\" alt=\"\" width=\"1160\" height=\"652\" /></a></div>\n</figure>\n<figure class=\"gallery-item\">\n<div class=\"gallery-icon landscape\"><a href=\"https://beta.hcmus.edu.vn/hinh-thanh-va-phat-trien/canh4-1/\" target=\"_blank\" rel=\"noopener\"><img decoding=\"async\" class=\"lazy-load attachment-cmsmasters-full-masonry-thumb size-cmsmasters-full-masonry-thumb\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201160%20651%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-1160x651.png\" sizes=\"(max-width: 1160px) 100vw, 1160px\" srcset=\"\" data-srcset=\"https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-1160x651.png 1160w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-300x168.png 300w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-1024x575.png 1024w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-768x431.png 768w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-1536x863.png 1536w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-580x326.png 580w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1-860x483.png 860w, https://beta.hcmus.edu.vn/wp-content/uploads/2023/01/Canh4-1.png 1893w\" alt=\"\" width=\"1160\" height=\"651\" /></a></div>\n</figure>\n</div>\n<p>Ngày 30/12/1949, theo ký kết  trong Bản Hiệp ước văn hóa Pháp – Việt, Viện Đại học Đông Dương chuyển đổi thành Viện Đại học hỗn hợp Pháp-Việt, lấy tên là Viện Đại học Hà Nội, gồm 2 trung tâm: một trung tâm ở Hà Nội và một trung tâm ở Sài Gòn. Viện bắt đầu hoạt động từ tháng 01/1951 dưới sự điều hành của Viện trưởng người Pháp và được trợ giúp bởi một Phó Viện trưởng người Việt</p>\n<p>Ngày 12/11/1953, một văn bản của hai Chính phủ Pháp và Việt Nam đổi tên trường Cao đẳng Khoa học thành Khoa học Đại học Đường.</p>\n<p>Tháng 11/1954, trung tâm ở Hà Nội di chuyển vào nam và sáp nhập với Trung tâm ở Sài Gòn. Ban đầu gồm có các trường: ĐH Luật khoa, ĐH hỗn hợp Y-Dược khoa, ĐH Khoa học, Cao đẳng Kiến trúc, Trường dự bị Văn khoa. Bản Hiệp ước Văn hóa Việt-Pháp (30/12/1949) và sau đó là thỏa thuận bổ sung (08/01/1951) đã quyết định sẽ chuyển giao điều hành từ chính phủ Pháp qua Việt Nam. Ngày 11/5/1955 Lễ chuyển giao từ chính phủ Pháp cho Việt Nam đã được tiến hành. Ngày này trở thành mốc đánh dấu ngày thành lập Viện Đại học Quốc gia Việt Nam. Viện Đại học Quốc gia Việt Nam được đặt dưới sự điều hành của một Viện Trưởng người Việt Nam. Theo Sắc lệnh số 247 ngày 28/4/1955, Ông Nguyễn Quang Trình, Giáo sư thực thụ, Tiến sĩ Khoa học, đã được cử làm Viện trưởng Viện Đại học Quốc gia. Đồng thời, GS Nguyễn Quang Trình được bổ nhiệm là Quyền Khoa Trưởng Khoa học Đại học Đường (tức Trường Đại học Khoa học).</p>\n<p>Ngày 22/12/1955 lễ khai giảng các trường Đại học diễn ra sau khi ký kết văn kiện chuyển giao. Sĩ số sinh viên của Trường Đại học Khoa học tính đến ngày 01/01/1956 là 743 sinh viên với 15 Giáo sư (có 7 người Pháp). Các kỳ thi cuối niên học 1955-1956, khóa thứ I (ngày nay gọi là thi lần 1), mở từ ngày 11/6/1956, kết quả số sinh viên thi đạt là 96 trên số sinh viên dự thi là 326. Kỳ thi khóa II, mở ngày 16/10/1956, kết quả số sinh viên thi đạt là 84 trên số sinh viên dự thi là 241.</p>\n<p>Tháng 3 năm 1957, sau khi Viện Đại học Huế được thành lập thì Viện Đại học Quốc gia Việt Nam đổi tên thành Viện Đại học Sài Gòn; cũng từ đó trường Đại học Khoa học được mang tên Trường Đại học Khoa học Sài Gòn.</p>\n<p>Ngày thứ ba, 13/10/1964, lúc 9g sáng đã diễn ra lễ đặt viên đá đầu tiên xây dựng tòa nhà thuộc Trường Đại học Khoa học Sài Gòn tại khu Đại học Thủ Đức (cơ sở Linh Trung hiện nay), theo chương trình Viện trợ Văn hóa cho Chính phủ Việt Nam của Tân Tây Lan (New Zealand).</p>\n<p>Trường Đại học Khoa học Sài Gòn được xem là trường khoa học cơ bản mạnh nhất lúc bấy giờ và là cái nôi nghiên cứu khoa học cơ bản. Trường đào tạo hệ đại học và sau đại học, tổ chức bảo vệ luận án “Tiến sĩ quốc gia” đầu tiên về Hóa học vào năm 1965, từ đó trường tổ chức đào tạo Bằng “Tiến sĩ quốc gia” và “Tiến sĩ Đệ tam cấp” trong các ngành khoa học.</p>\n<p>Các vị Khoa trưởng kế nhiệm: GS.TSKH. Lê Văn Thới (1958-1964); GS.TSKH. Lê Văn Thới (1958-1964); GS.TSKH Dương Thị Mai (Mai Trần Ngọc Tiếng) (1964-1965); GS.TSKH. Nguyễn Chung Tú (1966-1973); GS.TSKH. Phùng Trung Ngân (1973-1975)</p>\n<p>Tháng 4/1975, miền Nam hoàn toàn giải phóng, Khoa học Đại học Đường đổi tên thành Trường Đại học Khoa học, được điều hành bởi một “Ban phụ trách” do GS.TS Nguyễn Hữu Chí làm Trưởng ban cho đến năm 1977.</p>\n<p><strong><em>Trường Đại học Tổng hợp TP. Hồ Chí Minh</em></strong></p>\n<p>Năm 1977, Trường Đại học Tổng hợp TP. HCM được thành lập dựa trên cơ sở sáp nhật Trường Đại học Khoa học và Đại học Văn khoa. PGS.TS Lý Hòa được Thủ tướng Chính phủ bổ nhiệm giữ chức vụ Hiệu trưởng (1977-1990). Đến năm 1990, GS.TS Nguyễn Ngọc Giao được Bộ Giáo dục &amp; Đào tạo ban hành Quyết định bổ nhiệm Hiệu trưởng (nhiệm kỳ 1990-1994) và tiếp tục đến năm 1996.</p>\n<p>Trường gồm 16 khoa: Toán, Vật lý, Hóa, Sinh, Địa lý, Địa chất, Ngữ văn, Sử học, Triết, Kinh tế, Thư viện, Anh, Pháp, Nga, Luật và Đông Phương học. Ngoài ra còn có 7 trung tâm NCKH – dịch vụ và sản xuất.</p>\n<p>Ngày 27/1/1995, Đại học Quốc gia Thành phố Hồ Chí Minh (ĐHQG-HCM) được thành lập, Trường Đại học Tổng hợp là thành viên của ĐHQG-HCM.</p>\n<p>Trường đóng vai trò lớn trong việc đào tạo hàng ngàn nhà khoa học trẻ trên hai lãnh vực là khoa học tự nhiên và khoa học xã hội. Trường có mối quan hệ với hàng chục trường đại học, viện và tổ chức giáo dục trên thế giới. Từng tổ chức nhiều hội thảo khoa học và cử cán bộ tu nghiệp và trao đổi chuyên môn.</p>\n<p><strong><em>Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM</em></strong></p>\n<p>Trường Đại học Khoa học Tự nhiên được thành lập vào ngày 30/3/1996, trên cơ sở tách ra từ Trường Đại học Tổng hợp TP. HCM và là thành viên của ĐHQG-HCM. GS.TS Nguyễn Văn Đến được bổ nhiệm Hiệu trưởng của Trường (nhiệm kỳ 1996-2000). Từ năm 2001-2010, PGS.TS Dương Ái Phương giữ chức vụ Hiệu trưởng trường. Sau đó, GS. TS Trần Linh Thước là Hiệu trưởng trường trong khoảng thời gian từ 2011-2020</p>\n<p>Kể từ 2021 đến nay, PGS.TS Trần Lê Quan giữ chức vụ Hiệu trưởng.</p>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/2.-KHTN-Canh-quan-don-vi-2048x1365.jpg',2,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf65','0ac25d55-1ee6-4794-8d46-58f82cde644c','Giới thiệu cộng đồng sinh viên khoa học','Trong suốt chiều dài lịch sử hình thành và phát triển của Trường Đại học Khoa học Tự nhiên, Đại học Quốc gia TP. Hồ Chí Minh (ĐHQG-HCM) hơn 80 năm qua, có rất nhiều thế hệ cựu sinh viên đã và đang hợp tác, đồng hành cùng tập thể giảng','<p><strong>Cộng đồng Cựu sinh viên Khoa học</strong></p>\n<p>Trải qua hơn 80 năm hình thành và phát triển qua nhiều giai đoạn lịch sử của đất nước, Trường Đại học Khoa học tự nhiên, ĐHQG-HCM đang hướng đến tầm nhìn trở thành một trường đại học hàng đầu tại Việt Nam và Đông Nam Á về đào tạo, nghiên cứu khoa học, công nghệ nền tảng của kinh tế tri thức và kinh tế số. Danh tiếng và vị trí học thuật của trường đã được khẳng định bởi những uy tín đào tạo, thành tựu nghiên cứu khoa học và sự thành công của nhiều thế hệ cựu sinh viên trong đa dạng lĩnh vực.</p>\n<p>Với ý tưởng tạo ra sự kết nối giao lưu và tiến đến hợp tác giữa Cộng đồng Cựu sinh viên với nhà trường và trong Cộng đồng Cựu sinh viên với nhau, ngày 14-8-2022, Ban đại diện lâm thời và Ban đại diện danh dự Cộng đồng Cựu sinh viên Khoa học đã chính thức được thành lập. Ngày 19-11-2022, Trường Đại học Khoa học tự nhiên, ĐHQG-HCM cùng với Ban đại diện lâm thời Cựu sinh viên đã tổ chức “Đại hội Cộng đồng Cựu sinh viên Khoa học &#8211; lần thứ I” và bầu ra Ban Đại diện chính thức của Cộng đồng Cựu sinh viên gồm 24 thành viên.</p>\n<p>Mục tiêu hoạt động của Cộng đồng Cựu sinh viên Khoa học là góp phần xây dựng thương hiệu &#8220;Trường đại học Khoa học tự nhiên&#8221;, gắn kết và có những hoạt động thiết thực cho toàn thể cộng đồng cựu sinh viên, sinh viên và nhà trường, cùng nhau hỗ trợ cho chiến lược &#8220;tự chủ&#8221; của trường một cách dài hạn, bền vững và thúc đẩy hợp tác về đào tạo, nghiên cứu, chuyển giao khoa học &#8211; công nghệ, tạo ra nhiều giá trị có ích cho cộng đồng, xã hộị.</p>\n<p><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-scaled.jpg\"><img fetchpriority=\"high\" decoding=\"async\" class=\"lazy-load alignnone wp-image-765 size-full\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%202560%201707%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-scaled.jpg\" alt=\"\" width=\"2560\" height=\"1707\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-scaled.jpg 2560w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-500x333.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-1024x683.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-768x512.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-1536x1024.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-2048x1365.jpg 2048w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/TSON0407-600x400.jpg 600w\" sizes=\"(max-width: 2560px) 100vw, 2560px\" /></a></p>\n','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/357766814_247310834747101_4976807317240972426_n.jpg',3,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf66','0ac25d55-1ee6-4794-8d46-58f82cde644c','Thư mời tham gia diễn đàn Khoa học – Doanh nghiệp và Đổi mới Sáng tạo','Trải qua hơn 80 năm hình thành và phát triển qua nhiều giai đoạn lịch sử của đất nước, Trường Đại học Khoa học tự nhiên, Đại học Quốc gia Thành phố Hồ Chí Minh (trường ĐH KHTN, ĐHQG-HCM) đang hướng đến tầm nhìn trở thành một trường đại học hàng đầu tại Việt Nam và Đông Nam Á về đào tạo, nghiên cứu khoa học, công nghệ nền tảng của kinh tế tri thức và kinh tế số. Danh tiếng và vị trí học thuật của Trường đã được khẳng định bởi những uy tín đào tạo, thành tựu nghiên cứu khoa học và sự thành công của nhiều thế hệ cựu sinh viên trong đa dạng lĩnh vực.','	<p>Trải qua hơn 80 năm hình thành và phát triển qua nhiều giai đoạn lịch sử của đất nước, Trường Đại học Khoa học tự nhiên, Đại học Quốc gia Thành phố Hồ Chí Minh (trường ĐH KHTN, ĐHQG-HCM) đang hướng đến tầm nhìn trở thành một trường đại học hàng đầu tại Việt Nam và Đông Nam Á về đào tạo, nghiên cứu khoa học, công nghệ nền tảng của kinh tế tri thức và kinh tế số. Danh tiếng và vị trí học thuật của Trường đã được khẳng định bởi những uy tín đào tạo, thành tựu nghiên cứu khoa học và sự thành công của nhiều thế hệ cựu sinh viên trong đa dạng lĩnh vực.</p>\n<p>Với mong muốn tạo kết nối mạnh mẽ giữa cộng đồng cựu sinh viên, nhà khoa học, sinh viên và doanh nghiệp, Trường ĐH KHTN phối hợp cùng với Ban đại diện Cộng đồng Cựu sinh viên Khoa học tổ chức Diễn đàn Khoa học &#8211; Doanh nghiệp và Đổi mới Sáng tạo lần I &#8211; 2023, trong khuôn khổ Ngày kết nối Cộng đồng Cựu sinh viên Khoa học (HCMUS Alumni Day).</p>\n<p>Chương trình không chỉ hiện thực hóa và cụ thể hơn quan hệ hợp tác giữa Nhà trường và Doanh nghiệp mà còn mở ra những cơ hội quảng bá thương hiệu, tiếp cận các hướng nghiên cứu, sản phẩm khoa học – công nghệ mới và mở rộng mạng lưới đối tác tiềm năng.</p>\n<p>Trên tinh thần một diễn đàn cởi mở, chân thành, chúng tôi kỳ vọng Diễn đàn Khoa học &#8211; Doanh nghiệp và Đổi mới Sáng tạo lần I &#8211; 2023 sẽ là nơi Nhà trường và Doanh nghiệp tìm kiếm tiếng nói chung trong các giải pháp cùng hành động, kết nối và lan tỏa tinh thần đổi mới sáng tạo, hướng tới sự phát triển lâu dài và bền vững của các bên cũng như mang lại nhiều giá trị cho cộng đồng &#8211; xã hội.</p>\n<p>Nhà trường rất mong được chào đón Quý vị tham gia và đóng góp vào sự thành công của sự kiện này.</p>\n<p><strong>FIIS &amp; HCMUS ALUMNI DAY 2023: </strong></p>\n<p><strong>KHỞI NGUỒN SÁNG TẠO &#8211; KẾT NỐI VƯƠN XA</strong></p>\n<ul>\n<li style=\"list-style-type: none;\">\n<ul>\n<li><strong>Thời gian: 7g30 đến 21g00, ngày 28/10/2023</strong> (Thứ Bảy)</li>\n<li><strong>Địa điểm:</strong> Trường Đại học Khoa học Tự nhiên, cơ sở 1 (227 Nguyễn Văn Cừ, P.4, Q.5, Tp.HCM)</li>\n<li><strong>Thành phần tham gia:</strong> Các thế hệ sinh viên, giảng viên, các nhà khoa học của Trường Đại học Khoa học tự nhiên, ĐHQG-HCM; các doanh nghiệp, công ty có nhu cầu kết nối ý tưởng, giới thiệu sản phẩm, giới thiệu doanh nghiệp tới sinh viên, giảng viên và các nhà khoa học</li>\n<li><strong>Đơn vị truyền thông:</strong> Đài truyền hình, Đài phát thanh và Báo chí</li>\n</ul>\n</li>\n</ul>\n<p><strong>CHƯƠNG TRÌNH CHI TIẾT</strong></p>\n<p><strong>Phần 1: Phiên chợ khoa học công nghệ (Sci-Tech Marketplace)</strong></p>\n<p><strong>1.1. Các sản phẩm thương mại của Doanh nghiệp, các nhà khoa học</strong></p>\n<ul>\n<li>Thời gian: <strong>08g00 – 16g00</strong></li>\n<li>Địa điểm: Khu vực sân trường</li>\n<li>Nội dung:</li>\n</ul>\n<p>&#8211; Triển lãm sản phẩm đổi mới sáng tạo của đội ngũ nhà khoa học, giảng viên của Trường Đại học Khoa học Tự nhiên;</p>\n<p>&#8211; Trưng bày, giới thiệu sản phẩm, dịch vụ khoa học, công nghệ của các Doanh nghiệp của cựu sinh viên và doanh nghiệp có mong muốn hợp tác với các bên liên quan của Trường Đại học Khoa học Tự nhiên</p>\n<p><strong>1.2. Khu vực trưng bày, triển lãm ý tưởng, dự án nghiên cứu khoa học của sinh viên, Nhà khoa học, Doanh nghiệp</strong></p>\n<ul>\n<li>Thời gian: <strong>08g00 – 16g00</strong></li>\n<li>Địa điểm: Khu vực sân trường giáp Giảng đường 1 và tòa nhà I</li>\n<li>Nội dung:</li>\n</ul>\n<p>&#8211; Giới thiệu các ý tưởng, sản phẩm sáng tạo của sinh viên, Nhà khoa học, Doanh nghiệp: ý tưởng nghiên cứu khoa học, sản phẩm ứng dụng thực tiễn,…</p>\n<p>&#8211; Các dự án doanh nghiệp đang có nhu cầu và mong muốn đặt hàng.</p>\n<p><strong>Phần 2: Diễn đàn Khoa học &#8211; Doanh nghiệp và Đổi mới Sáng tạo lần I &#8211; 2023 (FIIS)</strong></p>\n<p><strong>2.1. Lễ khai mạc và giới thiệu định hướng kết quả nghiên cứu nổi bật của Trường Đại học Khoa học tự nhiên, ĐHQG-HCM</strong></p>\n<ul>\n<li>Thời gian: <strong>13g30 – 15g00</strong></li>\n<li>Địa điểm: Giảng đường 1</li>\n<li>Nội dung:</li>\n</ul>\n<p>&#8211; Phát biểu của lãnh đạo nhà trường và đơn vị tài trợ;</p>\n<p>&#8211; Công bố danh sách các đơn vị tham gia tài trợ cho Ngày hội;</p>\n<p>&#8211; Tôn vinh các đơn vị doanh nghiệp tham gia (trao thư cảm ơn);</p>\n<p>&#8211; Lễ ký kết thỏa thuận hợp tác (MOU) giữa Nhà trường và Doanh nghiệp;</p>\n<p>&#8211; Bài nói chuyện số 1: “Vai trò quan trọng của Nhà trường trong hoạt động nghiên cứu và phát triển sản phẩm”;</p>\n<p>&#8211; Bài nói chuyện số 2: “Chia sẻ bài học kinh nghiệm thực tế hợp tác giữa doanh nghiệp và nhà trường”.</p>\n<p>&#8211; Sáng kiến hợp tác cùng hành động vì cộng đồng Doanh nghiệp và Nhà khoa học phát triển bền vững</p>\n<p><strong>2.2. Diễn đàn FIIS – 2023 chia theo các lĩnh vực</strong></p>\n<ul>\n<li>Thời gian: <strong>15g00 – 17g30</strong></li>\n<li>Địa điểm: Các phòng học tại tòa nhà I</li>\n<li>Hình thức: Tổ chức các báo cáo giữa doanh nghiệp và nhà khoa học về các chủ đề tại các phòng, tạo cơ hội kết nối giữa các bên, bao gồm 04 lĩnh vực: (1) Điện – Điện tử và Vật lý ứng dụng, (2) Công nghệ thông tin – Trí tuệ nhân tạo và Khoa học Dữ liệu, (3) Hoá học và Vật liệu mới, (4) Công nghệ Sinh học</li>\n</ul>\n<p><strong>Phần 3: Gala Kết nối Cộng đồng Cựu sinh viên Khoa học và Tổng kết Diễn đàn</strong></p>\n<ul>\n<li>Thời gian: từ <strong>18g00 – 21h30</strong></li>\n<li>Địa điểm: Khách sạn Equatorial (Quận 5)</li>\n</ul>\n<p><strong>CÁCH THỨC ĐĂNG KÝ</strong></p>\n<p>Các cá nhân, tổ chức đăng ký trực tuyến và nộp lệ phí tham gia một số nội dung theo thông tin tại Website sự kiện: <a href=\"https://fiis2023.hcmus.edu.vn/\" target=\"_blank\" rel=\"noopener\">https://fiis2023.hcmus.edu.vn</a></p>\n<p>Mọi thông tin xin liên hệ:</p>\n<p><strong>CHỊ NGUYỄN THỊ THẨM THÚY HẰNG </strong></p>\n<p><strong>TRƯỞNG BAN HẠ TẦNG VÀ LOGISTIC</strong></p>\n<ul>\n<li>Điện thoại: 090.980.4306</li>\n<li>Fanpage Trung tâm Phát triển Thương hiệu &amp; Kết nối Cộng đồng U-sci, Trường Đại học Khoa học tự nhiên, ĐHQG-HCM: https://www.facebook.com/USciHub.KHTN</li>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/CSV.jpg',4,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf67','0ac25d55-1ee6-4794-8d46-58f82cde644c','30 tài năng trẻ nhận Giải thưởng KHCN Quả Cầu Vàng và Giải thưởng Nữ sinh KHCN Việt Nam năm 2022','Sáng 27/11, tại Phủ Chủ tịch, Phó Chủ tịch nước Võ Thị Ánh Xuân gặp mặt 30 tài năng trẻ nhận Giải thưởng KHCN Quả Cầu Vàng và Giải thưởng Nữ sinh KHCN Việt Nam năm 2022','<div dir=\"auto\">Sáng 27/11, tại Phủ Chủ tịch, Phó Chủ tịch nước Võ Thị Ánh Xuân gặp mặt 30 tài năng trẻ nhận Giải thưởng KHCN Quả Cầu Vàng và Giải thưởng Nữ sinh KHCN Việt Nam năm 2022</div>\n<div dir=\"auto\" style=\"text-align: center;\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n.jpg\"><img fetchpriority=\"high\" decoding=\"async\" class=\"lazy-load alignnone  wp-image-1058\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20608%20405%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n-500x333.jpg\" alt=\"\" width=\"608\" height=\"405\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n-500x333.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n-1024x681.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n-768x511.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n-1536x1022.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n-600x399.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n.jpg 2048w\" sizes=\"(max-width: 608px) 100vw, 608px\" /></a></div>\n<div dir=\"auto\"><span style=\"font-size: 14.4px;\">Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM rất vinh dự khi có 04 cá nhân là giảng viên, sinh viên đạt được giải thưởng cao quý này</span></div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<ul>\n<li dir=\"auto\">TS. Trần Thị Như Hoa &#8211; đạt Giải thưởng Khoa học Công nghệ Thanh niên Quả cầu vàng năm 2022.</li>\n<li dir=\"auto\">TS. Trương Lâm Sơn Hải &#8211; đạt Giải thưởng Khoa học Công nghệ Thanh niên Quả cầu vàng năm 2022</li>\n<li dir=\"auto\">Bạn Lê Đoàn Phương Uyên &#8211; đạt Giải thưởng Nữ sinh Khoa học Công nghệ Việt Nam năm 2022</li>\n<li dir=\"auto\">Bạn Phạm Lê Thùy Dung &#8211; đạt Giải thưởng Nữ sinh Khoa học Công nghệ Việt Nam năm 2022</li>\n</ul>\n<p style=\"text-align: center;\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n.jpg\"><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1057\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20333%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n-500x333.jpg\" alt=\"\" width=\"500\" height=\"333\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n-500x333.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n-1024x681.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n-768x511.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n-1536x1022.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n-600x399.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316671022_144916151653237_6274329200248086362_n.jpg 2048w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a> <a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n.jpg\"><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1056\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20333%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n-500x333.jpg\" alt=\"\" width=\"500\" height=\"333\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n-500x333.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n-1024x681.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n-768x511.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n-1536x1022.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n-600x399.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317366960_144916114986574_57722096280417006_n.jpg 2048w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a> <a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n.jpg\"><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1055\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20333%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n-500x333.jpg\" alt=\"\" width=\"500\" height=\"333\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n-500x333.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n-1024x681.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n-768x511.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n-1536x1022.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n-600x399.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316831161_144916134986572_5803983760636185778_n.jpg 2048w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a> <a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n.jpg\"><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1054\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20375%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n-500x375.jpg\" alt=\"\" width=\"500\" height=\"375\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n-500x375.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n-1024x768.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n-768x576.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n-1536x1152.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n-600x450.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/317080598_144916111653241_3820131016850199985_n.jpg 2048w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a></p>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\">Phát biểu tại buổi gặp mặt, Phó chủ tịch nước Võ Thị Ánh Xuân cho rằng 30 tài năng trẻ tại buổi gặp mặt là 30 câu chuyện sinh động, 30 thành công ở các lĩnh vực khác nhau. Phó chủ tịch nước mong rằng, những tấm gương tài năng trẻ này sẽ lan tỏa nhiều hơn trong cộng đồng, xã hội nhằm tạo niềm tin, sự hứng khởi cho các bạn trẻ hiện nay, đặc biệt trong lĩnh vực nghiên cứu khoa học công nghệ của Việt Nam.</div>\n</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316823973_144916128319906_2638805504944690375_n.jpg',5,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf68','0ac25d55-1ee6-4794-8d46-58f82cde644c','Lễ khai mạc Hội nghị Khoa học lần XIII năm 2022','Sáng ngày 21/11, Lễ khai mạc Hội nghị Khoa học lần XIII năm 2022 của Trường Đại học Khoa học Tự nhiên, Đại học Quốc gia TP. Hồ Chí Minh đã diễn ra tại Giảng đường 1. Trong khuôn khổ buổi lễ có sự tham gia báo cáo của Đại','<div dir=\"auto\">Sáng ngày 21/11, Lễ khai mạc Hội nghị Khoa học lần XIII năm 2022 của Trường Đại học Khoa học Tự nhiên, Đại học Quốc gia TP. Hồ Chí Minh đã diễn ra tại Giảng đường 1.</div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\" style=\"text-align: center;\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316950680_143909945087191_3646610255533568377_n.jpg\"><img fetchpriority=\"high\" decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1035\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20319%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316950680_143909945087191_3646610255533568377_n-500x319.jpg\" alt=\"\" width=\"500\" height=\"319\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316950680_143909945087191_3646610255533568377_n-500x319.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316950680_143909945087191_3646610255533568377_n-1024x653.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316950680_143909945087191_3646610255533568377_n-768x490.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316950680_143909945087191_3646610255533568377_n-600x383.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316950680_143909945087191_3646610255533568377_n.jpg 1384w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a></div>\n<div dir=\"auto\">Trong khuôn khổ buổi lễ có sự tham gia báo cáo của Đại tá GS. TS. Nguyễn Việt Bắc, GS.TS. Yu-Chen Hu (ĐH Thanh Hoa – Đài Loan, Trung Quốc) và PGS. TS. Đào Nguyên Khôi. Đồng thời, Trường ĐH KHTN cũng long trọng tổ chức vinh danh 03 nhà khoa học đạt Giải thưởng KHCN năm 2022 và trao giải thưởng Lê Văn Thới năm 2022 dành cho đề tài tốt nghiệp xuất sắc.</div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\" style=\"text-align: center;\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316677882_143909961753856_4853488178692115908_n.jpg\"><img decoding=\"async\" class=\"lazy-load alignnone size-medium wp-image-1036\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20282%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316677882_143909961753856_4853488178692115908_n-500x282.jpg\" alt=\"\" width=\"500\" height=\"282\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316677882_143909961753856_4853488178692115908_n-500x282.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316677882_143909961753856_4853488178692115908_n-1024x577.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316677882_143909961753856_4853488178692115908_n-768x433.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316677882_143909961753856_4853488178692115908_n-600x338.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316677882_143909961753856_4853488178692115908_n.jpg 1384w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a></div>\n<div dir=\"auto\">Xác định nghiên cứu khoa học – chuyển giao công nghệ và hợp tác quốc tế luôn luôn song hành và hỗ trợ cho hoạt động chuyên môn của nhà trường, Hội nghị Khoa học Trường Đại học Khoa học Tự nhiên là hoạt động diễn ra 02 năm một lần. Đây là diễn đàn để các nhà khoa học trong và ngoài nước trình bày kết quả nghiên cứu cho tất cả các ngành khoa học, các lĩnh vực nghiên cứu, đào tạo của trường; nơi giao lưu, trao đổi tìm ý tưởng, giải pháp cho các vấn đề khoa học và công nghệ; kích thích sự hợp tác, hình thành các nghiên cứu liên ngành, liên lĩnh vực. Hội nghị cũng là cơ hội cho các nhà khoa học trẻ, nghiên cứu sinh, học viên cao học, sinh viên chia sẻ các các kết quả của mình.</div>\n<div dir=\"auto\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n.jpg\"><img decoding=\"async\" class=\"lazy-load size-medium wp-image-1042 aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20375%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n-500x375.jpg\" alt=\"\" width=\"500\" height=\"375\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n-500x375.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n-1024x768.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n-768x576.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n-1536x1152.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n-600x450.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316804070_143910151753837_8380101153049598809_n.jpg 2048w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n.jpg\"><img decoding=\"async\" class=\"lazy-load size-medium wp-image-1041 aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20375%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n-500x375.jpg\" alt=\"\" width=\"500\" height=\"375\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n-500x375.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n-1024x768.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n-768x576.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n-1536x1152.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n-600x450.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316529165_143910121753840_9204003033449266809_n.jpg 2048w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n.jpg\"><img decoding=\"async\" class=\"lazy-load size-medium wp-image-1037 aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20281%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n-500x281.jpg\" alt=\"\" width=\"500\" height=\"281\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n-500x281.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n-1024x576.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n-768x432.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n-1536x864.jpg 1536w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n-600x338.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316807176_143910015087184_2216311864356564609_n.jpg 2048w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a></div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\">Hội nghị năm nay diễn ra từ ngày 21/11 đến 26/11/2022, được tổ chức với sự phối hợp giữa Đại học Quốc gia thành phố Hồ Chí Minh và Viện Khoa học và Công nghệ Quân sự, đơn vị nghiên cứu hàng đầu Việt Nam trong lĩnh vực khoa học cơ bản, khoa học công nghệ quân sự phục vụ an ninh quốc phòng.</div>\n<div dir=\"auto\"><a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316942834_143909865087199_105617406081953814_n.jpg\"><img decoding=\"async\" class=\"lazy-load size-medium wp-image-1032 aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20375%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316942834_143909865087199_105617406081953814_n-500x375.jpg\" alt=\"\" width=\"500\" height=\"375\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316942834_143909865087199_105617406081953814_n-500x375.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316942834_143909865087199_105617406081953814_n-1024x768.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316942834_143909865087199_105617406081953814_n-768x576.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316942834_143909865087199_105617406081953814_n-600x450.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316942834_143909865087199_105617406081953814_n.jpg 1384w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a> <a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316688385_143909881753864_4926582970379274425_n.jpg\"><img decoding=\"async\" class=\"lazy-load size-medium wp-image-1033 aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20417%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316688385_143909881753864_4926582970379274425_n-500x417.jpg\" alt=\"\" width=\"500\" height=\"417\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316688385_143909881753864_4926582970379274425_n-500x417.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316688385_143909881753864_4926582970379274425_n-1024x854.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316688385_143909881753864_4926582970379274425_n-768x641.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316688385_143909881753864_4926582970379274425_n-600x501.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316688385_143909881753864_4926582970379274425_n.jpg 1176w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a> <a href=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316538321_143909885087197_2988963648843370465_n.jpg\"><img decoding=\"async\" class=\"lazy-load size-medium wp-image-1034 aligncenter\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20500%20417%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316538321_143909885087197_2988963648843370465_n-500x417.jpg\" alt=\"\" width=\"500\" height=\"417\" srcset=\"\" data-srcset=\"https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316538321_143909885087197_2988963648843370465_n-500x417.jpg 500w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316538321_143909885087197_2988963648843370465_n-1024x853.jpg 1024w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316538321_143909885087197_2988963648843370465_n-768x640.jpg 768w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316538321_143909885087197_2988963648843370465_n-600x500.jpg 600w, https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316538321_143909885087197_2988963648843370465_n.jpg 1201w\" sizes=\"(max-width: 500px) 100vw, 500px\" /></a></div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s x126k92a\">\n<div dir=\"auto\"></div>\n<div dir=\"auto\">Ban tổ chức Hội nghị Khoa học lần XIII năm 2022 rất vui mừng nhận được sự đăng ký tham dự của 572 bài báo cáo đến từ nhiều cơ sở đào tạo, viện nghiên cứu trong và ngoài nước liên quan nhiều ngành khoa học tự nhiên và công nghệ khác nhau như: Công nghệ Thông tin &#8211; Truyền thông, Địa chất và Tài nguyên Trái đất, Điện tử &#8211; Viễn thông, Hóa học, Khoa học và Công nghệ Vật liệu, Kỹ thuật Hạt nhân và Vật lý Y khoa, Môi trường, Sinh học &#8211; Công nghệ Sinh học, Toán &#8211; Tin học.</div>\n</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/316800625_143910025087183_6881014740028701643_n.jpg',6,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf69','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nhìn lại hội nghị Liên ban Cộng đồng Cựu sinh viên Khoa học lần 1 – Nhiệm kỳ 2022 – 2025','Hội nghị liên ban cộng đồng cựu sinh viên Khoa học được lần đầu tiên tổ chức ngày 07/7/2023. Hội nghị đã báo cáo 9 tham luận cho 3 chủ đề với sự góp mặt của gần 90 thành viên tham gia là Ban đại diện Trường, các Khoa, Ban','<div dir=\"auto\"><span style=\"font-size: 14.4px;\">Hội nghị liên ban cộng đồng cựu sinh viên Khoa học được lần đầu tiên tổ chức ngày 07/7/2023. Hội nghị đã báo cáo 9 tham luận cho 3 chủ đề với sự góp mặt của gần 90 thành viên tham gia là Ban đại diện Trường, các Khoa, Ban chủ nhiệm câu lạc bộ doanh nghiệp CSV (C-100), lãnh đạo nhà trường và các phòng ban liên quan.</span></div>\n<div dir=\"auto\"></div>\n<div dir=\"auto\"><span style=\"font-size: 14.4px;\">Hội nghị đã diễn ra thành công tốt đẹp với rất nhiều hình ảnh ấn tượng, những trao đổi, đóng góp ý kiến thiết thực đến sự phát triển của cộng đồng Cựu sinh viên Khoa học, và đặc biệt là đề xuất cụ thể để đẩy mạnh hoạt động khởi nghiệp đổi mới sáng tạo trong trường ĐH KHTN cũng như chia sẻ những bài học kinh nghiệm có liên quan.</span></div>\n</div>\n<div class=\"x11i5rnm xat24cr x1mh8g0r x1vvkbs xtlvy1s\">\n<div dir=\"auto\">Chúng ta hãy cùng nhau nhìn lại những hình ảnh thực tế tại Hội nghị ở video bên dưới nhé.</div>\n</div>\n<div dir=\"auto\">\n<div style=\"width: 640px;\" class=\"wp-video\"><!--[if lt IE 9]><script>document.createElement(\'video\');</script><![endif]-->\n<video class=\"wp-video-shortcode\" id=\"video-989-1\" width=\"640\" height=\"360\" preload=\"metadata\" controls=\"controls\"><source type=\"video/mp4\" src=\"https://alumni.hcmus.edu.vn/wp-content/video/392953945_848716010033721_1949221312348291350_n.mp4?_=1\" /><a href=\"https://alumni.hcmus.edu.vn/wp-content/video/392953945_848716010033721_1949221312348291350_n.mp4\">https://alumni.hcmus.edu.vn/wp-content/video/392953945_848716010033721_1949221312348291350_n.mp4</a></video></div>\n</div>\n<div dir=\"auto\"></div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/10/Screenshot-2023-10-24-135118.jpg',1,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-22 20:29:15',2,0);
-
--- INSERT INTO `tag_event` VALUES ('2bc8fdb8-aa12-4402-9bd6-26ff061dcf34',1),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf38',1),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf33',2),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf35',2),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf39',2),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf36',3),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf37',4);
-
--- INSERT INTO `tag_news` VALUES ('2bc8fdb8-aa12-4402-9bd6-26ff061dcf63',1),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf65',1),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf69',1),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf66',2),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf69',2),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf64',3),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf67',3),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf68',4),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf64',5);
-
--- INSERT INTO `hall_of_fame`(id,creator,title,summary,content,thumbnail,user_id,faculty_id,beginning_year,create_at,update_at,published_at,status_id,views) VALUES 
--- ('2bc8fdb8-aa12-4402-9bd6-26ff061dcf23','0ac25d55-1ee6-4794-8d46-58f82cde644c','LÊ YẾN THANH','Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup, sau đó khởi nghiệp với BusMap. CEO sinh năm 1994 là một trong 6 đại diện của Việt Nam vừa được vinh danh trong Forbes 30 under 30 châu Á năm 2022.','<h2><span style=\"font-family: arial, helvetica, sans-serif;\"><strong><em><span style=\"font-size: 75%;\">Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup, sau đó khởi nghiệp với BusMap. CEO sinh năm 1994 là một trong 6 đại diện của Việt Nam vừa được vinh danh trong Forbes 30 under 30 châu Á năm 2022.</span></em></strong></span></h2>\n<p>Sở hữu bảng thành tích &#8220;khủng&#8221;, được truyền thông ưu ái gọi là &#8220;chàng trai vàng tin học&#8221; của Việt Nam nhưng Lê Yên Thanh thú nhận &#8220;vì tham gia quá nhiều cuộc thi nên tôi cũng không nhớ chính xác mình đã đạt tất cả bao nhiêu giải thưởng&#8221;.</p>\n<p>Bắt đầu làm quen và yêu thích tin học từ những năm cấp 2, chàng trai quê An Giang này từng đoạt giải nhất kỳ thi học sinh giỏi tin học quốc gia và được tuyển thẳng vào đại học. Năm 2015, anh giành giải nhì cuộc thi Nhân tài Đất Việt. Cùng năm đó, Lê Yên Thanh được vinh danh là Gương mặt trẻ tiêu biểu của Việt Nam khi mới 21 tuổi.</p>\n<p>Với vai trò là nhà sáng lập và CEO Phenikaa Mass &#8211; công ty cung cấp các giải pháp công nghệ giao thông, Lê Yên Thanh vừa lọt Top 30 under 30 châu Á của tạp chí <i>Forbes</i>. Startup của Thanh trước đây mang tên BusMap nhưng đã đổi thành Phenikaa Mass sau khi nhận đầu tư 1,5 triệu USD từ Phenikaa, tập đoàn do doanh nhân Hồ Xuân Năng sáng lập.</p>\n<h3><b>&#8220;Tôi mơ làm tiến sĩ để tạo ra nhiều sản phẩm tốt&#8221;</b></h3>\n<p><b><i>&#8211; Thời sinh viên khi đạt rất nhiều giải thưởng về tin học, anh từng chia sẻ với truyền thông rằng mơ ước của mình là trở thành tiến sĩ ở tuổi 25. Giấc mơ đó giờ đây đã thay đổi?</i></b></p>\n<p>&#8211; Thực tế nó chỉ thay đổi về cách thực hiện còn mục tiêu của tôi vẫn vậy. Ngày xưa tôi mong thành tiến sĩ vì tôi nghĩ rằng khi trở thành tiến sĩ sẽ có chuyên môn tốt hơn. Từ đó tôi có thể nghiên cứu và tạo ra nhiều sản phẩm tốt, giúp giải quyết các vấn đề trong cuộc sống.</p>\n<p>Hiện nay, mục tiêu của tôi vẫn là mang đến các giải pháp giúp cuộc sống của con người tốt đẹp hơn, chỉ có điều tôi không theo con đường học thuật mà tiếp cận bằng cách tạo ra các sản phẩm thông qua startup của mình.</p>\n<p><b><i>&#8211; Học đại học tại Việt Nam, cơ hội sang Mỹ thực tập ở &#8220;gã khổng lồ&#8221; công nghệ Google đến với anh như thế nào?</i></b></p>\n<p>&#8211; Công nghệ thông tin là ngành đặc biệt vì mình có thể làm việc ở bất kỳ đâu, miễn là có thể khẳng định được năng lực. Mọi quy trình đều diễn ra online.</p>\n<div class=\"VCSortableInPreviewMode\">\n<div><img class=\"lazy-load\" decoding=\"async\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://forbes.vn/wp-content/uploads/2021/09/under30_2022_Le-Yen-Thanh.jpg\" /></div>\n<div class=\"PhotoCMS_Caption\">\n<p data-placeholder=\"[nhập chú thích]\">Lê Yên Thanh từng mơ ước trở thành tiến sĩ</p>\n</div>\n</div>\n<p>Khi là sinh viên năm thứ hai tôi đã đi thực tập ở Misfit, đến năm thứ ba tôi thực tập tại VNG. Thật ra vào năm thứ ba, tôi đã được &#8220;offer&#8221; làm thực tập sinh ở Google nhưng do họ chỉ có chương trình kéo dài 6 tháng nên tôi quyết định không đi. Sang đến năm thứ tư, sau khi hoàn thành hết các kỳ thi và lo xong đề án tốt nghiệp, tôi mới quyết định sang Mỹ.</p>\n<p><b><i>&#8211; Sau thời gian thực tập, anh nhận được &#8220;offer&#8221; làm việc tại Google Singapore, tại sao anh lại từ chối?</i></b></p>\n<p>&#8211; Lúc đó tôi suy nghĩ xem mình nên chọn con đường nào. Với profile của mình, tôi cũng có thể làm việc tại các công ty lớn khác hoặc xin học bổng đi du học. Tuy nhiên, tôi lại nhận thấy đam mê là làm các sản phẩm công nghệ giúp ích cho đời sống.</p>\n<p>Tôi nghĩ rằng nếu khởi nghiệp ở Việt Nam thì sẽ học được các kỹ năng để làm sản phẩm tốt hơn. Còn khi đi làm ở các công ty lớn thường mình sẽ làm sản phẩm của người khác và có thể không học được nhiều thứ như những vấn đề Việt Nam đang gặp phải. Vì vậy, tôi quyết định không khởi nghiệp ngay mà đi làm cho các startup trước để học hỏi cách một công ty bắt đầu ra sao.</p>\n<p>Sau khi thực tập ở Google, trong 3 năm 2017-2019, mỗi năm tôi tham gia một startup để học hỏi kinh nghiệm ở các vị trí khác nhau, từ một lập trình viên đến Tech Lead, Trưởng phòng kỹ thuật rồi đến CTO. Sau khi có được những kỹ năng cần thiết, tôi mới quyết định tự khởi nghiệp.</p>\n<h3><b>Từng định đóng cửa công ty và những &#8220;drama&#8221; khi làm startup</b></h3>\n<p><i><b>&#8211; BusMap đã ra đời như thế nào?</b></i></p>\n<p>&#8211; Tôi thành lập công ty vào tháng 9/2019. Thực tế, BusMap là sản phẩm tôi làm từ thời sinh viên, nó cũng là sản phẩm giúp tôi có nhiều giải thưởng ở các cuộc thi. Thường thời sinh viên khi làm xong cái gì đó thì các bạn sẽ dừng lại khi đi làm. Còn tôi thì dù ra trường, đi làm ở các công ty khác tôi vẫn bỏ thời gian và tiền bạc duy trì nó.</p>\n<p>Từ lúc đi học tôi đã đi xe bus, thời đó chưa có bản đồ công nghệ về xe bus, Google Map còn khá mới và chưa đầy đủ thông tin. Lúc đó tôi nghĩ mình có thể làm một ứng dụng trên di động để mọi người có thể tra cứu lộ trình xe bus hoặc tìm đường đi, giá xe, những điều cần chú ý&#8230;</p>\n<p>Hiện tại ứng dụng có hơn 2 triệu lượt tải ở Việt Nam, hoạt động tại 4 tỉnh thành phố lớn là TP HCM, Hà Nội, Đà Nẵng và Bình Dương. BusMap cũng đã được triển khai thử nghiệm tại thành phố Bangkok và Chiangmai ở Thái Lan.</p>\n<div class=\"VCSortableInPreviewMode\">\n<div><a class=\"detail-img-lightbox\" title=\"CEO sinh năm 1994 vừa lọt Top 30 under 30 châu Á năm 2022\" href=\"https://kenh14cdn.com/203336854389633024/2022/6/4/photo-2-16543508787432046587732.jpg\" target=\"_blank\" rel=\"noopener\" data-fancybox-group=\"img-lightbox\"><img decoding=\"async\" id=\"img_457543564920619008\" class=\"lazy-load lightbox-content aligncenter\" title=\"Chàng trai vàng tin học Lê Yên Thanh: Giấc mơ làm tiến sĩ ở tuổi 25, từ chối Google đến Top 30 under 30 châu Á - Ảnh 3.\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%200%200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://kenh14cdn.com/thumb_w/620/203336854389633024/2022/6/4/photo-2-16543508787432046587732.jpg\" alt=\"Chàng trai vàng tin học Lê Yên Thanh: Giấc mơ làm tiến sĩ ở tuổi 25, từ chối Google đến Top 30 under 30 châu Á - Ảnh 3.\" width=\"\" height=\"\" data-original=\"https://kenh14cdn.com/203336854389633024/2022/6/4/photo-2-16543508787432046587732.jpg\" /></a></div>\n<div class=\"PhotoCMS_Caption\">\n<p style=\"text-align: center;\" data-placeholder=\"[nhập chú thích]\">CEO sinh năm 1994 vừa lọt Top 30 under 30 châu Á năm 2022</p>\n</div>\n</div>\n<p><b><i>&#8211; Bỏ rất nhiều thời gian và tiền bạc cho BusMap, nhưng đến nay đó vẫn là một ứng dụng miễn phí?</i></b></p>\n<p>&#8211; BusMap hiện là một trong những sản phẩm cốt lõi của công ty, công nghệ của nó có thể áp dụng cho các ứng dụng khác. Sau vòng gọi vốn năm 2020, chúng tôi cũng phát triển rất nhiều sản phẩm mới.</p>\n<p>Với BusMap, chúng tôi chưa đặt mục tiêu có doanh thu, vì nhiều người đi xe bus không có thu nhập cao. Chúng tôi xây dựng sản phẩm chủ yếu để chứng minh năng lực của công ty, từ đó với những khách hàng khác sẽ thu tiền dựa trên các đối tượng quản lý. Ví dụ như công ty của tôi xây dựng hệ thống quản lý cho Vinbus và họ trả tiền cho sản phẩm này.</p>\n<p><i><b>&#8211; Cụ thể thì Phenikaa Mass hiện có những sản phẩm nào?</b></i></p>\n<p>&#8211; Hiện tại chúng tôi có 3 dòng sản phẩm chính. Thứ nhất là sản phẩm quản lý hệ thống xe, phát triển từ hệ thống quản lý của BusMap lên. Đối tượng khách hàng là các ban ngành để họ triển khai các biện pháp giao thông công cộng. Giải pháp đó có thể giúp từng tỉnh thành số hóa nhanh chóng các số liệu giao thông và cung cấp ứng dụng cho người dân. Ngoài ra với các doanh nghiệp như Vinbus cũng có thể sử dụng sản phẩm này. Chúng tôi cũng đang phát triển giải pháp cho các doanh nghiệp như đưa đón học sinh hay cán bộ công nhân viên.</p>\n<p>Dòng sản phẩm thứ hai là ứng dụng kết hợp các giải pháp chấm công bằng khuôn mặt, QR code thay cho cách truyền thống.</p>\n<p>Ngoài ra có một sản phẩm về AI được chúng tôi phát triển năm ngoái. Đây là giải pháp quản lý hệ thống bằng AI, dùng camera để nhận dạng, xem xe có chạy đúng tốc độ không&#8230; Trong thời gian diễn ra Covid-19, Phenikaa Mass đã phát triển sản phẩm AI ứng dụng cho các cảng, giúp họ quản lý cointainer ra vào. Trước đó thường mất 5-10 phút cho một cointainer, dẫn đến tình trạng kẹt xe vào giờ cao điểm. Nhưng với giải pháp này, thời gian giảm xuống chỉ còn 15-30 giây cho mỗi xe. Đó cũng đúng là những điều mà trước đây tôi mong muốn làm – tìm ra giải pháp giải quyết các vấn đề của con người.</p>\n<p><b><i>&#8211; Anh từng chia sẻ rằng cuộc đời mình đã gặp rất nhiều &#8220;drama&#8221; từ khi bước chân vào thế giới startup. Những &#8220;drama&#8221; đó là gì?</i></b></p>\n<p>&#8211; Nói chính xác thì đó là những bài học để mình phát triển hơn. 3 năm làm việc tại 3 startup, có công ty sau đó tiếp tục phát triển, có công ty không. Tuy nhiên, với riêng cá nhân, tôi thấy cả 3 lần đó tôi đều thất bại với mục tiêu mà mình đặt ra. Dù vậy, những bài học đó giúp tôi hoàn thiện bản thân và có thể tiến nhanh hơn đến vai trò CEO như hiện tại.</p>\n<div class=\"VCSortableInPreviewMode\">\n<div><a class=\"detail-img-lightbox\" title=\"Lê Yên Thanh từng nghĩ đến việc dừng hoạt động BusMap vì thiếu vốn\" href=\"https://kenh14cdn.com/203336854389633024/2022/6/4/photo-3-1654350878654296223124.jpg\" target=\"_blank\" rel=\"noopener\" data-fancybox-group=\"img-lightbox\"><img decoding=\"async\" id=\"img_457543556986843136\" class=\"lazy-load lightbox-content aligncenter\" title=\"Chàng trai vàng tin học Lê Yên Thanh: Giấc mơ làm tiến sĩ ở tuổi 25, từ chối Google đến Top 30 under 30 châu Á - Ảnh 4.\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%200%200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://kenh14cdn.com/thumb_w/620/203336854389633024/2022/6/4/photo-3-1654350878654296223124.jpg\" alt=\"Chàng trai vàng tin học Lê Yên Thanh: Giấc mơ làm tiến sĩ ở tuổi 25, từ chối Google đến Top 30 under 30 châu Á - Ảnh 4.\" width=\"\" height=\"\" data-original=\"https://kenh14cdn.com/203336854389633024/2022/6/4/photo-3-1654350878654296223124.jpg\" /></a></div>\n<div class=\"PhotoCMS_Caption\">\n<p style=\"text-align: center;\" data-placeholder=\"[nhập chú thích]\">Lê Yên Thanh từng nghĩ đến việc dừng hoạt động BusMap vì thiếu vốn</p>\n</div>\n</div>\n<p>Mỗi startup cho tôi những bài học riêng. Startup đầu tiên liên quan đến vấn đề nhân sự, thứ hai là làm sản phẩm và thứ 3 liên quan đến tài chính. Đó cũng thường là các vấn đề khiến các startup thất bại. Mỗi năm tôi đã gặp một vấn đề khác nhau và may mắn là thất bại thì thất bại rất nhanh. Đến khi bắt đầu công ty riêng, tôi đã rút ra được khá nhiều kinh nghiệm.</p>\n<p><i><b>&#8211; Trong quá trình khởi nghiệp, có khi nào công ty của anh rơi vào cảnh hết tiền và phải dừng hoạt động?</b></i></p>\n<p>&#8211; Khi bắt đầu khởi nghiệp, công ty cũng rất khó khăn. Trước khi startup, để duy trì BusMap tôi cần 10-20 triệu đồng/tháng để duy trì máy chủ trong khi sản phẩm là hoàn toàn miễn phí. Trong thời gian đó, tôi đi làm ở các startup khác, lương cũng không quá cao mà vẫn phải duy trì sản phẩm nên tôi thấy khá vất vả.</p>\n<p>Lúc đó, dù người dùng mới chỉ 100.000 – 200.000 nhưng động lực để tôi tiếp tục là mỗi ngày đều có những ý kiến đóng góp và cám ơn. Điều tự hào nhất của tôi là giúp được những người đi xe bus, nhiều người trong số họ là sinh viên có hoàn cảnh khó khăn. Có những bạn sinh viên sau khi ra trường và đã đóng góp được cho xã hội lại quay lại cám ơn BusMap, vì vậy tôi vẫn muốn duy trì.</p>\n<p>Cũng có những tháng tiền lương của tôi không đủ cho các khoản chi tiêu và duy trì BusMap, nhưng rất may thời thực tập ở Google tôi có một khoản tích lũy. Đến năm 2019, lượng người dùng tăng lên 500.000, mỗi tháng tốn 30-40 triệu tiền máy chủ, tôi không lo đủ nữa nên tính đến chuyện startup.</p>\n<p>Ý tưởng khởi nghiệp rất nhiều, tôi có thể làm về Blockchain hay những sản phẩm tài chính thì cơ hội gọi vốn tốt hơn. Tuy nhiên, nếu như vậy tôi không thể duy trì BusMap vì không đủ kinh phí. Cuối cùng tôi quyết định chọn luôn BusMap là sản phẩm để startup. Có nhiều người dùng là một xuất phát điểm tốt. Tuy nhiên tôi cũng hiểu rằng khởi nghiệp với BusMap sẽ rất khó bởi khi gặp nhà đầu tư và nói rằng người dùng của mình là những người đi xe bus, họ sẽ không mặn mà chuyện rót vốn.</p>\n<p>Khi làm sản phẩm, tôi cũng phải tuyển một vài người bạn về làm và phải trả lương cho họ. Không có tiền, tôi phải dùng đến quỹ tiết kiệm thời đi làm ở Google và thật sự cũng khá stress. Lúc đó, tôi dự định đến tháng 6/2020, nếu không gọi được vốn có thể sẽ từ bỏ BusMap để bắt đầu một startup mới.</p>\n<p>Sau này, khi tham gia các cuộc thi, tôi gặp được nhiều nhà đầu tư khác nhau. Họ góp ý cho tôi cách xây dựng mô hình kinh doanh và kiếm tiền từ công nghệ của BusMap. Tập đoàn Phenikaa và một số quỹ khác ngỏ ý muốn đầu tư. Cuối cùng đến tháng 3/2020, chúng tôi quyết định nhận vốn đầu tư từ Phenikaa.</p>\n<h3><b>Muốn đưa Phenikaa Mass thành kỳ lân hoặc cận kỳ lân</b></h3>\n<p><i><b>&#8211; Hơn 5 năm bước chân vào thế giới startup trong đó có gần 3 năm tự khởi nghiệp, có khi nào anh thấy hối tiếc?</b></i></p>\n<p>&#8211; Tôi không thấy hối tiếc vì khi nhìn lại thì thấy mình đã học được rất nhiều thứ. Ngày xưa tôi không thể nào nói chuyện một cách lưu loát hay phát biểu trước đám đông, trả lời truyền thông. Các bạn học cùng lớp tôi nhiều người đã thành tiến sĩ, nhiều người ra nước ngoài làm việc&#8230; Còn tôi thấy mình rất vui khi có một đội ngũ nhân sự tin tưởng mình, có những sản phẩm tác động tích cực đến xã hội và được người dùng quan tâm.</p>\n<p>Nếu có điều gì hối tiếc thì đó là những năm đại học, tôi chưa xác định sẽ theo con đường khởi nghiệp nên không học các kỹ năng liên quan. Mãi đến khi startup mới bắt tay vào vừa học vừa làm, do đó mình tốn nhiều thời gian và áp lực hơn trong quá trình khởi nghiệp.</p>\n<p>Sau khi gọi vốn xong thì quá trình phát triển đòi hỏi thêm nhiều kỹ năng nữa. Trước làm CTO, tôi chỉ lo về kỹ thuật và quản lý, giờ phải học thêm nhiều về quản trị nhân sự, kế toán, tài chính, luật&#8230;. Những vấn đề đó nhiều khi còn khó hơn cả làm về công nghệ.</p>\n<div class=\"VCSortableInPreviewMode active\">\n<div><a class=\"detail-img-lightbox\" title=\"CEO Phenikaa Mass muốn đưa công ty đến gần định giá tỷ USD\" href=\"https://kenh14cdn.com/203336854389633024/2022/6/4/photo-4-16543508788131048796642.png\" target=\"_blank\" rel=\"noopener\" data-fancybox-group=\"img-lightbox\"><img decoding=\"async\" id=\"img_457543568515280896\" class=\"lazy-load lightbox-content aligncenter\" title=\"Chàng trai vàng tin học Lê Yên Thanh: Giấc mơ làm tiến sĩ ở tuổi 25, từ chối Google đến Top 30 under 30 châu Á - Ảnh 5.\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%200%200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://kenh14cdn.com/thumb_w/620/203336854389633024/2022/6/4/photo-4-16543508788131048796642.png\" alt=\"Chàng trai vàng tin học Lê Yên Thanh: Giấc mơ làm tiến sĩ ở tuổi 25, từ chối Google đến Top 30 under 30 châu Á - Ảnh 5.\" width=\"\" height=\"\" data-original=\"https://kenh14cdn.com/203336854389633024/2022/6/4/photo-4-16543508788131048796642.png\" /></a></div>\n<div class=\"PhotoCMS_Caption\">\n<p data-placeholder=\"[nhập chú thích]\">CEO Phenikaa Mass muốn đưa công ty đến gần định giá tỷ USD</p>\n</div>\n</div>\n<p><i><b>&#8211; Blockchain là từ khóa rất &#8220;hot&#8221; hiện nay. Một startup game Blockchain Việt cũng vừa trở thành kỳ lân. Anh từng được biết đến với việc tạo ra một ứng dụng chống gian lận thi cử sử dụng công nghệ này. Vậy tại sao khi khởi nghiệp anh không lựa chọn Blockchain?</b></i></p>\n<p>&#8211; Blockchain cũng là một trong những điều tôi nghiên cứu từ khi còn làm việc cho các startup khác. Đó là một trong những lĩnh vực tiềm năng nhưng cũng còn khá mới. Từ lúc khái niệm AI ra đời đến nay đã 70-80 năm, còn Blockchain mới chỉ khoảng 20 năm. Việc ứng dụng Blockchain còn hạn chế, đó là lý do tôi nghiêng về AI để giải quyết các bài toán thực tế nhiều hơn.</p>\n<p>Trong tương lai, nếu có cơ hội tôi sẽ làm về Blockchain với một startup khác. Còn hiện tại, tôi muốn Phenikaa Mass tập trung vào giải quyết các bài toán về giao thông, sức khỏe.</p>\n<p><i><b>&#8211; Mục tiêu ngắn hạn và dài hạn của anh với Phenikaa Mass?</b></i></p>\n<p>&#8211; Giai đoạn Covid-19 diễn biến phức tạp đã qua nên mục tiêu ngắn hạn của chúng tôi là phát triển công ty càng nhanh càng tốt, chứng minh được tiềm năng của mình và tăng doanh thu.</p>\n<p>Về dài hạn, Phenikaa Mass muốn phát triển lên tầm cao hơn nữa. Hiện công ty mới chỉ có 40 nhân sự, để có thể lên đến 500 hay 1.000 người chắc chắn sẽ còn rất nhiều vấn đề. Mục tiêu trở thành kỳ lân có thể rất khó và xa nhưng chúng tôi vẫn hy vọng có thể đạt đến mức cận kỳ lân. Tôi nghĩ đó là mục tiêu mà rất nhiều founder mong muốn.</p>\n<p>Về mục tiêu mở rộng sản phẩm, trước mắt chúng tôi sẽ tập trung ở thị trường Việt Nam, khi đủ tính cạnh tranh mới bắt đầu tiến ra nước ngoài.</p>\n<p><i><b>&#8211; Anh từng có một bài viết trên LinkedIn với tựa đề &#8220;Tôi – Lê Yên Thanh đã kiếm được 100 triệu USD như thế nào?&#8221;. Dù đây chỉ là một trò đùa ngày &#8220;Cá tháng tư&#8221;, con số 100 triệu USD có phải là mục tiêu về tài chính mà anh đặt ra?</b></i></p>\n<p>&#8211; Tôi không đưa ra một con số cụ thể nhưng mục tiêu của tôi là không phải lo về vấn đề tài chính, từ đó có thể giúp được gia đình và người thân cũng như tập trung hơn cho những đam mê của mình. Khi không phải lo về tài chính nữa, đầu óc sẽ thoải mái hơn để đưa ra nhiều sản phẩm sáng tạo, phát triển những sản phẩm tốt hơn.</p>\n<p>&nbsp;</p>\n<p>(bài viết trích từ https://kenh14.vn/chang-trai-vang-tin-hoc-le-yen-thanh-giac-mo-lam-tien-si-o-tuoi-25-tu-choi-google-den-top-30-under-30-chau-a-20220604205911614.chn)</p>','https://forbes.vn/wp-content/uploads/2021/09/under30_2022_Le-Yen-Thanh.jpg',NULL,1,2020,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,12),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf24','0ac25d55-1ee6-4794-8d46-58f82cde644c','NGUYỄN THỊ THANH MAI','Là một trong hai nhà khoa học nữ xuất sắc nhận Giải thưởng Kovalevskaia năm 2021, GS.TS. Nguyễn Thị Thanh Mai được biết đến như một nhà giáo, nhà khoa học say mê nghiên cứu, luôn dấn thân tìm kiếm những điều mới mẻ và có nhiều sáng kiến khoa học mang tính đột phá.','<p class=\"des\"><i><b>Là một trong hai nhà khoa học nữ xuất sắc nhận Giải thưởng Kovalevskaia năm 2021, GS.TS. Nguyễn Thị Thanh Mai được biết đến như một nhà giáo, nhà khoa học say mê nghiên cứu, luôn dấn thân tìm kiếm những điều mới mẻ và có nhiều sáng kiến khoa học mang tính đột phá.</b></i></p>\n</div>\n<div class=\"content-News\">\n<div class=\"article__body cms-body \">\n<p><strong>Người đưa bộ môn Hóa dược về Đại học Quốc gia TPHCM</strong></p>\n<p>Ngày 16/5/2022, tại Hà Nội, Hội Liên hiệp Phụ nữ Việt Nam tổ chức lễ trao Giải thưởng Kovalevskaia năm 2021 nhân dịp kỷ niệm Ngày Khoa học và Công nghệ Việt Nam. Một trong hai nhà khoa học nữ được trao giải là GS.TS Nguyễn Thị Thanh Mai Phó hiệu trưởng Đại học Khoa học tự nhiên (Đại học Quốc gia TP.HCM), hiệu trưởng trường Phổ Thông năng khiếu TPHCM. Ẩn sau gương mặt cô giáo hiền hậu khả ái, là một nhà khoa học say mê với nghề, cực kì bền bỉ, quyết tâm trên con đường đã chọn.</p>\n<p>GS.TS Nguyễn Thị Thanh Mai từng tốt nghiệp ngành hóa học Đại học Tổng hợp (nay là Đại học Khoa học tự nhiên), sau đó, lấy bằng tiến sĩ chuyên ngành hóa dược tại trường Đại học Y dược Toyama (Nhật Bản), được công nhận Phó Giáo sư năm 2014 và sau đó là Giáo sư vào năm 2021.</p>\n<p>GS.TS Nguyễn Thị Thanh Mai đã chủ trì và hoàn thành 14 đề tài nghiên cứu khoa học các cấp, gồm: 10 đề tài cấp bộ, 4 đề tài cấp tỉnh. Với những thành tích nổi bật, Giáo sư, Tiến sĩ Nguyễn Thị Thanh Mai đã đạt được Giải thưởng Sáng tạo Thành phố Hồ Chí Minh năm 2019.</p>\n<p>Trong 10 năm đầu sau tiến sĩ, cô giáo Nguyễn Thị Thanh Mai chủ yếu tập trung nghiên cứu lĩnh vực phát hiện thuốc từ dược liệu Việt Nam. Gần đây, nữ giáo sư tiếp tục triển khai một số nghiên cứu ứng dụng, hoàn thành 2 sản phẩm hỗ trợ ung thư đường tiêu hóa và viêm khớp từ dược liệu trong nước.</p>\n<p>Với những nghiên cứu này, GS Mai sở hữu hơn 60 bài báo được đăng tải trên các tạp chí khoa học quốc tế uy tín. Với nghiên cứu về các sản phẩm từ loài ong nuôi ở Việt Nam, nhóm nghiên cứu của GS Mai đạt được giải thưởng Quả cầu vàng năm 2017 và Giải thưởng sáng tạo TP.HCM năm 2019.</p>\n<p>Từng tốt nghiệp Hóa học, nhưng phát triển sự nghiệp khoa học theo con đường Hóa dược, GS.TS Nguyễn Thị Thanh Mai chính là một trong những người đặt “viên gạch” đầu tiên cho ngành Hóa dược trong nước.</p>\n<p>Ngày ấy, cô giáo Thanh Mai được cử đi học Tiến sĩ về Hóa ở Nhật Bản. Ở Nhật, thầy giáo của cô lại là một chuyên gia rất giỏi trong lĩnh vực hóa dược. Và trong phòng thí nghiệm nghiên cứu cũng toàn nghiên cứu về hóa dược. Cô giáo Thanh Mai lúc ấy đã cảm thấy tò mò và thích thú với ngành học này nên bắt đầu tìm hiểu, theo đuổi. Trở về Việt Nam, cô Thanh Mai nhận thấy thời điểm này Việt Nam chưa quan tâm lắm về lĩnh vực hóa dược nên muốn phát triển ngành học này trong nước.</p>\n<p>Đó là chuỗi ngày TS Thanh Mai vừa mang thai con nhỏ, vừa hoàn thành sự nghiệp giảng dạy và dấn thân làm khoa học. Cô liên hệ nhờ thầy ở Nhật hỗ trợ, mua sắm trang bị từ từ bằng sự hỗ trợ một phần của trường Đại học Quốc gia. Sau đó cô gầy dựng được một phòng thí nghiệm nhỏ. Cứ hễ có ý tưởng nghiên cứu nào, cô Thanh Mai lại viết kế hoạch thuyết minh gửi đi các nơi xin tài trợ.</p>\n<p>Để rồi, từ con số không, đến nay Khoa Hóa dược của Đại học Quốc gia TPHCM đã có tiếng, nhóm của cô đã trở thành nhóm nghiên cứu mạnh của Đại học Quốc gia về lĩnh vực Hóa dược.</p>\n<p>Mỗi năm, chuyên ngành Hóa dược của Đại học Quốc gia TPHCM có khoảng tầm 30-50 sinh viên đại học, chưa kể thạc sĩ. Cô Thanh Mai đánh giá, trong số đó có không ít người giỏi, nhiều trường hợp du học trở về đã có nhiều thành tựu đối với lĩnh vực Hóa dược trong nước.</p>\n<p>Với GS.TS Nguyễn Thị Thanh Mai, Hóa dược là một ngành học, ngành nghiên cứu tuyệt vời và cần thiết, là lĩnh vực có tiềm năng phát triển cao trong nước. Về thực trạng, tại Việt Nam hiện nay lĩnh vực này vẫn chưa được quan tâm đúng mức, hầu hết các công ty dược nhập khẩu nguyên liệu từ nước ngoài. Trong khi đó, Việt Nam là đất nước nhiệt đới, nguồn dược liệu phong phú, có khả năng phát triển những thuốc mới mà trên thế giới chưa có. Chính vì vậy, hiện Chính phủ có rất nhiều chương trình làm sao để phát triển được nguyên liệu hóa dược ở Việt Nam.</p>\n<p>Trong giảng dạy, GS.TS Nguyễn Thị Thanh Mai cũng luôn đem tình yêu đối với Hóa dược, với khoa học đến sinh viên, học viên của mình. Là một giảng viên, một nhà khoa học, GS.TS Nguyễn Thị Thanh Mai luôn ở một tâm thế cân bằng để duy trì hai vai trò ấy. Với cô, nhiệm vụ của nhà khoa học là đào tạo những thế hệ giỏi kế cận để phục vụ sự nghiệp khoa học, phục vụ đất nước.</p>\n<p>Ngược lại, nhiệm vụ của một giảng viên đại học phải là vừa giảng dạy vừa nghiên cứu khoa học. Phải nghiên cứu thì mới có chất liệu thực tế, tính ứng dụng cao. Không chỉ tận tâm truyền dạy kiến thức, kĩ năng, GS.TS Nguyễn Thị Thanh Mai còn luôn động viên các em đào sâu về khoa học thực nghiệm. Cô cũng thường đem đến những cơ hội du học giúp sinh viên được đào tạo sâu hơn, phát triển năng lực, cống hiến cho khoa học, cho đất nước.</p>\n<p><strong>Thành quả nghiên cứu đến từ chất liệu cuộc sống</strong></p>\n<p>Với các sáng chế khoa học của mình, GS.TS Nguyễn Thị Thanh Mai luôn nhắc đến từ “tình cờ”. Một lần, vì “cạn” ý tưởng, cô đã tổ chức một chuyến công tác nhóm, đi Tây Nguyên tìm nguồn dược liệu mới.</p>\n<p>Tình cờ trong chuyến đi, cô và đồng đội gặp một số người nuôi ong mật và được biết nọc ong có khả năng điều trị viêm khớp. Nghe điều này, ánh mắt cô lấp lánh, lập tức tìm hiểu sâu hơn. Bởi, viêm khớp là bệnh phổ biến và hiện Việt Nam đang nhập rất nhiều thuốc viêm khớp từ nước ngoài.</p>\n<p>Trở về, cô cùng nhóm nghiên cứu tự mày mò tìm cách chế ra bộ lấy nọc ong nhưng hiệu quả không cao, rồi đặt mua lần lượt từ nhiều nước để tìm ra bộ chiết nọc ong hiệu quả nhất. Nhóm đã làm đề tài về tác dụng của nọc ong trong điều trị viêm khớp và xin được tài trợ của Sở Khoa học Công nghệ TP, ra được kết quả nghiên cứu rất giá trị trong thời điểm đó trong định hướng thuốc điều trị viêm khớp. Từ nghiên cứu này, GS.TS Nguyễn Thị Thanh Mai đã nhận được Giải thưởng sáng tạo TP.HCM năm 2019.</p>\n<p>Một nghiên cứu khác nổi tiếng của GS.TS Nguyễn Thị Thanh Mai là ứng dụng trị viêm loét dạ dày từ chiết xuất củ ngải bún, mà với cô, cũng bắt nguồn từ một sự “tình cờ”. Người thầy của GS.TS Nguyễn Thị Thanh Mai ở Nhật Bản chuyên nghiên cứu về ung thư tụy.</p>\n<p>Khi về về Việt Nam, GS.TS Nguyễn Thị Thanh Mai thường tìm những dược liệu của Việt Nam liên quan đến hỗ trợ điều trị ung thư tụy gửi sang Nhật để thầy kiểm tra. Trong quá trình tìm kiếm dược liệu, GS.TS Nguyễn Thị Thanh Mai cùng nhóm đã phát hiện ra củ ngải bún có tác dụng kháng ung thư tụy mạnh. Sau đó nhóm tiếp tục phát hiện ra trong củ ngải bún 12 hợp chất có cấu trúc mới mà trên thế giới chưa có có hoạt tính kháng ung thư tụy.</p>\n<p>GS.TS Nguyễn Thị Thanh Mai nói, dường như trong khoa học luôn có sự dẫn đường cho những người đam mê. Từ việc phát hiện thuốc ung thư tụy từ củ ngải bún, cô tiếp tục phát hiện củ ngải bún có một chất có tác dụng bảo vệ viêm loét dạ dày rất tốt.</p>\n<p>GS.TS Nguyễn Thị Thanh Mai đã phối hợp với Sở Khoa học Công nghệ An Giang nghiên cứu ra một sản phẩm bột nano từ củ ngải bún để hỗ trợ điều trị ung thư đường tiêu hóa trong đó đặc biệt là ung thư tụy. Đồng thời phối hợp với Sở Khoa học công nghệ thành phố tiếp tục nghiên cứu sâu và cho ra đời một sản phẩm là cao chiết từ củ ngải bún chứa hàm lượng hoạt chất cao, đã thử nghiệm trên động vật cho thấy an toàn và có tác dụng điều trị viêm loét dạ dày rất tốt.</p>\n<p>Theo GS.TS Nguyễn Thị Thanh Mai, hai sản phẩm này đều hoàn toàn từ dược liệu trong nước. Nếu phát triển được sản phẩm thì trên thế giới hoàn toàn chưa có mang những hoạt chất từ cây ngải bún thế này.</p>\n<p>Cạnh đó, ngải bún là một loại cây ngắn ngày, nếu phát triển được sản phẩm dược hiệu quả sẽ giúp ích cho nông dân rất nhiều. GS.TS Nguyễn Thị Thanh Mai đánh giá, sản phẩm hỗ trợ viêm loét đường tiêu hóa nếu so sánh với một loại thuốc được đánh giá cao trên thị trường tác dụng sẽ tương đương nhau nhưng sản phẩm từ củ ngải bún có nguồn gốc từ thiên nhiên, có giá thành rẻ hơn, giảm các tác dụng phụ không mong muốn của thuốc.</p>\n<p>Dẫu GS.TS Nguyễn Thị Thanh Mai luôn nói về sự “tình cờ”, nhưng nhìn vào sự nghiệp nghiên cứu khoa học của cô, có thể thấy rằng, “tình cờ” chỉ là một yếu tố rất nhỏ. Nếu không có sự kiên trì, tìm tòi nghiên cứu, không có sự say mê và dấn thân thì làm sao có cơ hội cho “tình cờ” đến.</p>\n<p>GS.TS Nguyễn Thị Thanh Mai có quan điểm làm khoa học rất nghiêm túc: “Để làm một nhà khoa học thì đầu tiên phải ham học hỏi, phải có đam mê, thường xuyên nâng cấp kiến thức của mình, đọc và học nhiều. Phải có một sự nhạy cảm nhất định của một nhà khoa học. Nhà khoa học cũng rất cần đến sự quyết tâm và kiên trì, dám dấn thân vào những điều mới mẻ.</p>\n<p>Đặc biệt hiện nay nghiên cứu khoa học không nên nhìn nhận là một ngành riêng lẻ mà là liên ngành. Như hóa học phải liên kết với y, sinh, môi trường thì mới ra được nghiên cứu sâu sắc, toàn diện. Chính vì vậy người làm khoa học cần có tinh thần hợp tác, biết kết nối, giao lưu thì mới có những công trình giá trị”.</p>\n<p>Giờ đây, sau một số thành tựu nhất định trong nghiên cứu ứng dụng, GS.TS Nguyễn Thị Thanh Mai vẫn tiếp tục miệt mài trong sự nghiệp quản lý, giảng dạy và nghiên cứu khoa học. Cô đang đeo đuổi các các đề tài về đái tháo đường, bệnh alzheimer, dược mỹ phẩm&#8230; Cô cũng thường xuyên thực hiện những chuyến đi đến mọi miền đất nước để tìm sự sáng tạo, tìm ra nguồn nguyên liệu mới cho ngành nghiên cứu của mình. Với GS.TS Nguyễn Thị Thanh Mai, nhà khoa học là phải dấn thân, phải tiến lên phía trước, liên tục mở rộng “vùng an toàn” của mình ra để tương tác trực tiếp với đời sống. Trải nghiệm và sáng tạo, phát hiện và thành tựu cũng từ đó mà ra đời&#8230;</p>\n</div>\n<p>(Bài viết trích từ: https://moj.gov.vn/phongtruyenthong/Pages/guong-sang-tu-phap.aspx?ItemID=212)</p>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/09/1.jpg',NULL,2,2018,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,4),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf25','0ac25d55-1ee6-4794-8d46-58f82cde644c','TRẦN THỊ NHƯ HOA','TS. Trần Thị Như Hoa, cựu sinh viên khoá tuyển 2006 ngành Khoa học Vật liệu là một trong 10 nhà giáo trẻ vừa đạt danh hiệu Quả Cầu vàng năm 2022, lĩnh vực Công nghệ vật liệu mới, hiện Trần Thị Như Hoa là Giảng viên khoa Khoa học','<div class=\"text-content\">\n<p>Nhận học bổng nghiên cứu sinh tại Đại học Gachon, Hàn Quốc, sau khi lấy bằng tiến sĩ, Như Hoa ở lại làm việc một thời gian, nhưng sau đó nữ tiến sĩ trẻ quyết định trở về nước, với kỳ vọng có thể đem những hướng nghiên cứu sâu hơn về lĩnh vực công nghệ vật liệu mới về ứng dụng tại Việt Nam. Điểm lại hành trình nghiên cứu khoa học, Tiến sĩ Hoa có 22 bài báo khoa học đã công bố trên tạp chí khoa học quốc tế, trong đó, 13 bài báo thuộc danh mục Q1 (11 bài là tác giả chính); 5 bài báo khoa học đã công bố trên tạp chí khoa học trong nước (4 bài là tác giả chính); 18 bài báo khoa học đã công bố trên hội thảo khoa học quốc gia và quốc tế. Song song đó, Tiến sĩ Hoa chủ trì, đồng chủ trì 4 chương trình, dự án, đề tài nghiên cứu khoa học.</p>\n<p><em>*VOH: Trước tiên, cám ơn Tiến sĩ Như Hoa đã dành thời gian cho VOH. Là một trong 10 giảng viên trẻ đạt Giải thưởng Khoa học Công nghệ Quả Cầu Vàng năm 2022, Hoa có thể chia sẻ về hành trình giảng dạy và nghiên cứu khoa học của mình?</em></p>\n<p><strong>Tiến sĩ Trần Thị Như Hoa:</strong> Với Giải thưởng Khoa học Công nghệ Quả Cầu Vàng, Hoa rất biết ơn ban tổ chức đã có một giải thưởng dành cho các nhà khoa học trẻ trong nước, nhà khoa học trẻ Việt Nam ở nước ngoài có môi trường cho mình phấn đấu trong quá trình nghiên cứu khoa học và giảng dạy. Có được thành quả ngày hôm nay, mình cũng đã trải qua nhiều thử thách khó khăn. Nhớ lại, khi mình đến môi trường học tập mới tại Hàn Quốc (Đại học Gachon, Hàn Quốc), nhiều khó khăn đến với mình, đặc biệt về ngôn ngữ giao tiếp hoàn toàn bằng tiếng Anh. Thứ hai, lĩnh vực mình nghiên cứu cũng mới. Nhờ sự giúp đỡ của thầy cô, gia đình và động lực của bản thân, mình học xong ở Hàn Quốc và trở về Việt Nam làm việc. Với hướng nghiên cứu mới của mình, bên cạnh sự cố gắng của bản thân, mình còn nhận được sự hỗ trợ từ các nguồn kinh phí từ nhà nước, Đại học Quốc gia Thành phố Hồ Chí Minh, Quỹ Nafosted….giúp mình xây dựng hướng nghiên cứu, phát triển và có được thành quả như ngày hôm nay.</p>\n<p><em>*VOH: Được biết, Tiến sĩ Hoa có hơn 20 bài báo khoa học công bố trên các tạp chí quốc tế, bên cạnh đó còn hướng dẫn nhiều đề tài nghiên cứu khoa học cho sinh viên, hướng nghiên cứu chính trong lĩnh vực mới của mình là gì?</em></p>\n<p><strong>Tiến sĩ Trần Thị Như Hoa:</strong> Mình theo đuổi hướng nghiên cứu từ khi học tiến sĩ tại Hàn Quốc &#8211; tạm hiểu là nghiên cứu về một vật liệu nano hướng đến ứng dụng trong lĩnh vực y sinh, môi trường, vật liệu có tính chất đặc biệt là độ nhạy cao, cảm biến ở trong các môi trường như môi trường nước, môi trường chứa các yếu tố gây bệnh tiềm ẩn như ung thư dạ dày, hoặc ứng dụng trong môi trường phát hiện chất nhuộm độc hại trong môi trường nước. Mình theo đuổi hướng nghiên cứu này đã nhiều năm, bản thân có nhiều kinh nghiệm hợp tác với các đối tác nước ngoài, trong đó có thầy của mình tại Hàn Quốc, các đối tác khác ở các mảng sinh học, y học ở Úc, Nhật Bản</p>\n<p><em> </em><em>*VOH: Để cân bằng giữa việc nghiên cứu khoa học và giảng dạy, đồng thời đảm bảo đời sống vật chất, tinh thần từ đó cho mình sự toàn tâm toàn ý với đam mê nghiên cứu, bạn làm thế nào?</em></p>\n<p><strong>Tiến sĩ Trần Thị Như Hoa:</strong> Bản thân Hoa khi về Việt Nam đã xác định, mình phải làm song song và làm tốt cả việc giảng dạy và nghiên cứu. Thứ nhất, mình phải hoàn thành nhiệm vụ người giảng viên, đó là truyền đạt kiến thức cho sinh viên, từ đó sinh viên cũng có cái nhìn mới về mảng nghiên cứu, về ngành của mình, đó là ra trường có thể đi làm tại công ty hoặc đi học tiếp ở nước ngoài. Những nghiên cứu trong mảng của mình, cụ thể là với nghiên cứu của bản thân Hoa, cũng có thể được ứng dụng tại các bệnh viện, công ty….Do đó, không chỉ là nghiên cứu ở phòng thí nghiệm mà còn có tính ứng dụng cao trong triển khai thực tế, vì vậy mình phải làm song song hai việc giảng dạy và nghiên cứu.</p>\n<p><em>*VOH: Vậy, trong quá trình nghiên cứu khoa học, Tiến sĩ Hoa đã có sự chủ động, nắm bắt và tiếp cận các nguồn quỹ để phát triển các đề tài nghiên cứu khoa học của mình như thế nào, bạn đã truyền động lực đến sinh viên ra sao?</em></p>\n<p><strong>Tiến sĩ Trần Thị Như Hoa: </strong>Ban đầu, khi mới về Việt Nam, sinh viên biết mình rất ít, vì mình là giảng viên trẻ. Bắt đầu đi dạy một, hai môn, dần dần sinh viên biết đến mình, biết đến cô giảng viên với hướng nghiên cứu rất là lạ, mới, đòi hỏi nhiều kiến thức liên ngành không chỉ toán – lý – hoá mà còn liên quan đến sinh. Một số sinh viên lúc đầu cũng e dè, từ ban đầu chỉ có một vài sinh viên theo hướng này, cộng với tâm huyết của cô giáo trẻ, sau đó các em truyền lửa nghiên cứu đến các sinh viên còn lại. Ví dụ, với một số nhóm nghiên cứu, các bạn phải tự trả một phần chi phí nào đó để làm nghiên cứu, nhưng với các đề tài nghiên cứu của Hoa đều được tài trợ toàn bộ trong nghiên cứu, phân tích mẫu…nên các bạn cảm thấy yên tâm làm nghiên cứu. Mình còn giới thiệu cho các bạn một số công ty sau khi các bạn tốt nghiệp ra trường làm việc. Hiện, mình cũng đã giới thiệu cho 2 bạn học chương trình thạc sĩ nước ngoài.</p>\n<p><em>*VOH: Với lĩnh vực Khoa học và Công nghệ Vật liệu mới, theo Tiến sĩ Hoa, tiềm năng ứng dụng của ngành khoa học vật liệu, nhất là vật liệu mới tại Việt Nam như thế nào?</em></p>\n<p><b>Tiến sĩ Trần Thị Như Hoa:</b> Lĩnh vực Khoa học và Công nghệ Vật liệu là một trong những lĩnh vực mới được nhà nước quan tâm, có nhiều chương trình dành cho các nhà khoa học, một số đề án lớn như chương trình phát triển Vật lý giai đoạn 2021 – 2025. Ngành khoa học công nghệ vật liệu rất cần thiết cho Việt Nam, theo khảo sát từ các doanh nghiệp thì nhu cầu tuyển dụng nhân lực của ngành này hiện rất cao, hầu hết sinh viên ra trường đều có việc làm. Hiện tại, Khoa Khoa học và Công nghệ Vật liệu của Trường cũng đang đào tạo theo hướng tìm hiểu nhu cầu của doanh nghiệp để đào tạo người học theo hướng doanh nghiệp cần, mời doanh nghiệp về Trường chia sẻ và tuyển dụng sinh viên hàng năm.</p>\n<p><em> </em><em>*VOH: Cám ơn Tiến sĩ Hoa rất nhiều qua cuộc trao đổi.</em></p>\n</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/09/Thiet-ke-chua-co-ten.jpg',NULL,1,2019,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,1),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf26','0ac25d55-1ee6-4794-8d46-58f82cde644c','NGUYỄN MINH NHỰT','Ông Nguyễn Minh Nhựt từng đảm nhận các chức vụ: Ủy viên Ban Thường vụ Thành đoàn, Trưởng Ban Tư tưởng - Văn hóa Thành đoàn, Trưởng Ban Mặt trận Thành đoàn, Ủy viên Ban biên tập báo Tuổi Trẻ, Tổng biên tập, Giám đốc Nhà xuất bản','</div>\n					<h2><em><span style=\"font-size: 75%;\">Trước một số than phiền gần đây về sự xuống cấp của văn hóa, đạo đức, ông Nguyễn Minh Nhựt &#8211; vụ trưởng Vụ Văn hóa &#8211; văn nghệ, Ban Tuyên giáo trung ương &#8211; nói ông tin rằng ‘những hạt ngọc long lanh vẫn chiếm đa số trong xã hội’.</span></em></h2>\n<p>(trích từ https://tuoitre.vn/nhung-hat-ngoc-long-lanh-van-chiem-da-so-trong-xa-hoi-20210721194250916.htm)</p>\n<h2><span style=\"font-size: 75%;\">Ông Nguyễn Minh Nhựt &#8211; vụ trưởng Vụ Văn hóa &#8211; văn nghệ, Ban Tuyên giáo trung ương &#8211; khẳng định ngay khi Đảng ta thành lập đã kế thừa truyền thống tốt đẹp của ông cha ta, đặt vai trò của văn hóa, văn nghệ rất quan trọng trong quá trình chỉ đạo và lãnh đạo cách mạng Việt Nam.</span></h2>\n<h2><span style=\"font-size: 75%;\">Coi văn hóa là nền tảng tinh thần của xã hội, là sức mạnh nội sinh để phát triển đất nước trong tình hình mới, văn hóa vừa là mục tiêu, là động lực để phát triển kinh tế xã hội, ông Nhựt cho biết những quan điểm này tiếp tục được duy trì và phát triển xuyên suốt qua nhiều thời kỳ.</span></h2>\n<h2><span style=\"font-size: 75%;\">Gần đây Đảng và Nhà nước xác định phát triển văn hóa phải gắn với xây dựng và phát triển con người, văn hóa đi kèm với con người. Con người vừa là động lực, mục tiêu, vừa là hướng đến, là chủ thể của văn hóa.</span></h2>\n<h2><span style=\"font-size: 75%;\">Ông tin tưởng thời gian tới, việc thực hiện Nghị quyết Đại hội Đảng lần thứ XIII và những nghị quyết khác về văn hóa, văn nghệ sẽ tạo thêm nhiều kết quả, giải quyết thêm nhiều bài toán mà thực tiễn đang đặt ra trong phát triển văn hóa, con người.</span></h2>\n<h2><span style=\"font-size: 75%;\">Về một số than phiền gần đây về sự xuống cấp của văn hóa, đạo đức, ông Nhựt nói ông tin rằng &#8220;những hạt ngọc long lanh vẫn chiếm đa số trong xã hội&#8221;, làm sao phải phát huy mặt tích cực, hạn chế tiêu cực để tập trung xây dựng hệ giá trị quốc gia, hệ giá trị văn hóa và chuẩn mực con người Việt Nam gắn với việc giữ gìn và phát huy các giá trị truyền thống của gia đình Việt Nam.</span></h2>\n<p>&nbsp;</p>\n<p>&nbsp;</p>\n<p>Ông Nguyễn Minh Nhựt từng đảm nhận các chức vụ: Ủy viên Ban Thường vụ Thành đoàn, Trưởng Ban Tư tưởng &#8211; Văn hóa Thành đoàn, Trưởng Ban Mặt trận Thành đoàn, Ủy viên Ban biên tập báo Tuổi Trẻ, Tổng biên tập, Giám đốc Nhà xuất bản Trẻ&#8230; Ông là cựu sinh viên ngành Hoá học Trường Đại học Tổng hợp TP. Hồ Chí Minh, khoá tuyển 1994.</p>\n					<p><b>Ngày cập nhật:</b> 24/10/2023</p>\n				</div>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/09/IMG_1211-2-1-2048x1553.jpeg',NULL,3,2019,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf27','0ac25d55-1ee6-4794-8d46-58f82cde644c','LÂM ĐÌNH THẮNG','Ông Lâm Đình Thắng hiện nay là Giám đốc Sở Thông tin và truyền thông Thành phố Hồ Chí Minh. Ông là cựu sinh viên ngành Công nghệ thông tin Trường Đại học Khoa học Tự nhiên, khoá tuyển năm 1998','<h3><strong>TÓM TẮT QUÁ TRÌNH CÔNG TÁC</strong></h3>\n<p>&#8211; 1999-2004: Phó Bí thư Đoàn trường, Chủ tịch Hội Sinh viên trường Đại học Khoa học tự nhiên Thành phố Hồ Chí Minh. Ông được kết nạp vào Đảng Cộng sản Việt Nam ngày 03 tháng 02 năm 2002</p>\n<p>&#8211; 6/2004 &#8211; 5/2010: Chánh Văn phòng Hội Sinh viên Thành phố, Giám đốc Trung tâm Phát triển Khoa học công nghệ Trẻ, Chánh Văn phòng Thành Đoàn</p>\n<p>&#8211; 5/2010 &#8211; 12/2011: Học cao học Chương trình Quản trị nguồn nhân lực tại Đại học Kỹ thuật Swinburne &#8211; Úc</p>\n<p>&#8211; 1/2012 &#8211; 6/2016: Trưởng ban Ban Tuyên giáo Thành Đoàn, Phó Bí thư Thường trực Thành Đoàn, Chủ tịch Hội Sinh viên Thành phố Hồ Chí Minh, Phó Chủ tịch Trung ương Hội Sinh viên Việt Nam</p>\n<p>&#8211; 7/2016 &#8211; 4/2020: Đại biểu Quốc hội khóa XIV nhiệm kỳ 2016-2021, Phó Bí thư Thường trực Quận ủy quận Bình Thạnh</p>\n<p>&#8211; 5/2020- 1/2021: Bí thư Quận ủy Quận 9, Bí thư Đảng ủy Quân sự Quận 9</p>\n<p>&#8211; 10/2020: Ủy viên Ban chấp hành Đảng bộ Thành phố Hồ Chí Minh khóa XI (nhiệm kỳ 2020-2025)</p>\n<p>&#8211; 3/2021 &#8211; nay: Giám đốc Sở Thông tin và truyền thông Thành phố Hồ Chí Minh.</p>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/09/373-lam-dinh-thang.jpeg',NULL,4,2019,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf28','0ac25d55-1ee6-4794-8d46-58f82cde644c','PHAN MINH LIÊM','Tiến sĩ Phan Minh Liêm (1983) là người Việt Nam đầu tiên được 4 lần vinh danh trên bức tường danh dự của Viện Anderson, viện ung thư hàng đầu của Mỹ. Phan Minh Liêm là cựu sinh viên ngành sinh học khoá tuyển 2001. Là người hàn','<p><em>(Bài viết trích từ https://ybox.vn/guong-mat/phan-minh-liem-tien-si-nguoi-viet-dau-tien-duoc-vinh-danh-4-lan-tai-vien-ung-thu-hang-dau-the-gioi-5ecf6cd7fa7c121418bfd35f)</em></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><i>Tiến sĩ Phan Minh Liêm (1983) là người Việt Nam đầu tiên được 4 lần vinh danh trên bức tường danh dự của Viện Anderson, viện ung thư hàng đầu của Mỹ.</i></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Phan Minh Liêm quê ở Khánh Hòa. Năm 1998, Liêm nhận được học bổng của tổ chức Soleil Francophone để sang Pháp học một năm chương trình lớp 10 nhờ thành tích đoạt giải nhì môn tiếng Pháp trong kỳ thi học sinh giỏi quốc gia năm lớp 9. Khi học ở Pháp, Liêm bị thu hút bởi các thí nghiệm rất hay của môn sinh học và phát hiện niềm đam mê của mình đối với ngành này.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Thi đỗ vào ngành công nghệ sinh học (ĐH Khoa học tự nhiên TPHCM) năm 2001, Liêm tham gia các hoạt động phong trào và nghiên cứu khoa học. Với sự cố gắng liên tục và các đóng góp cho cộng đồng, Liêm được Quỹ giáo dục VN (VEF) trao học bổng nghiên cứu sinh tiến sĩ vào năm thứ 3 đại học. Liêm đến Mỹ năm 2005.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Được nghiên cứu tại trung tâm ung thư hàng đầu thế giới MD Anderson ở Texas, TS Liêm có 15 công trình nghiên cứu xuất bản cùng với các cộng sự trên các tạp chí khoa học quốc tế về công nghệ sinh học và ung thư, như tạp chí của Viện Hàn lâm khoa học quốc gia Mỹ (Proceedings of The National Academy of Sciences), tạp chí của Viện Ung thư quốc gia Mỹ (Journal of National Cancer Institute)&#8230;</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">TS Liêm vinh dự được bầu làm Chủ tịch Hội Sinh viên sau đại học của ĐH Texas (Viện Anderson). Trong lịch sử 73 năm từ khi viện thành lập, đây là lần đầu tiên và duy nhất một sinh viên quốc tế được bầu vào vị trí chủ tịch. Tiến sĩ Liêm làm rạng danh cộng đồng du học sinh Việt khi trở thành thủ lĩnh dẫn dắt các phong trào của sinh viên xuất sắc nhiều quốc gia trên thế giới hội tụ tại ĐH Texas.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Nhiều hoạt động lần đầu tiên được “thủ lĩnh” Liêm tổ chức như hiến máu nhân đạo cho bệnh nhân ung thư, đại hội thể thao sinh viên; tham quan các Cty dược tại Houston, các buổi giao lưu với các giáo sư trong trường, hội thi nhiếp ảnh, thương lượng với các Cty thực phẩm để giảm giá cho các bạn sinh viên; bảo vệ quyền lợi và hướng nghiệp cho các học sinh, sinh viên tại Houston, tổ chức tuần lễ tham quan cho các tân sinh viên…Ban lãnh đạo trường đánh giá đây là nhiệm kỳ thành công nhất trong lịch sử của trường khi Liêm làm Chủ tịch.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><b>Nghiên cứu thành công gene tiêu diệt tế bào ung thư</b></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><img class=\"lazy-load\" decoding=\"async\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.ybox.vn/2020/5/4/1590652012135-TiensiPhanMinhLiemalobacsi.jpg\" /><b><br />\n</b></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Công trình nghiên cứu gene tiêu diệt tế bào ung thư do Tiến sĩ Phan Minh Liêm cùng 30 nhà khoa học các nước đã thành công vào năm 2014 và đăng ký bản quyền tại Viện Anderso có trụ sở tại Houston, Texas, Mỹ, là trung tâm ung thư số 1 của Mỹ do tạp chí US News xếp hạng trong suốt 12 năm qua.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Tin vui với những bệnh nhân ung thư trên toàn thế giới khi Dự án nghiên cứu do nhóm TS Liêm và cộng sự thực hiện đã tìm ra một cơ chế mới có khả năng đảo ngược quá trình phát sinh ung thư và tiêu diệt ung thư hiệu quả. Thông thường, trong quá trình phát sinh ung thư, các tế bào khỏe mạnh tích lũy các đột biến và dần trở thành tế bào ung thư, hình thành khối u, di căn và gây tử vong cho bệnh nhân ung thư.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Công trình nghiên cứu của nhóm TS Liêm phát hiện một gene kháng ung thư quan trọng có khả năng tiêu diệt ung thư hiệu quả cũng như đảo ngược quá trình chuyển hóa năng lượng của khối u. Các kết quả nghiên cứu này sẽ giúp phát triển phương pháp điều trị mới có thể tiêu diệt ung thư hiệu quả, chính xác và giảm khả năng di căn, ức chế sự tăng trưởng của tế bào ung thư thay vì dùng phương pháp điều trị xạ trị hay hóa trị.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Với những cống hiến vượt bậc, TS Liêm là người Việt đầu tiên được 4 lần vinh danh trên bức tường danh dự của Viện trong thời gian từ 2009 đến 2013. Ngoài ra Viện MD Anderson còn trao cho Liêm một số giải thưởng khác về nghiên cứu xuất sắc và có nhiều đóng góp cho cộng đồng trong khoảng thời gian Liêm công tác tại Viện (2005-2015).</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><strong>Khởi nghiệp với công ty giải mã Gen</strong></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Nhận bằng tiến sĩ tại Viện MD Anderson, Liêm được giữ lại làm việc và tiếp tục thực hiện các đề tài nghiên cứu về điều trị ung thư. Trong 10 năm làm tại đây, Liêm cùng các đồng nghiệp đã có 26 công trình nghiên cứu khoa học, chủ yếu về các phương pháp mới điều trị ung thư, trong đó có 3 công trình ứng dụng vào thực tế (dự án nghiên cứu khả năng kiểm soát chuyển hoá năng lượng trong khối u của protein 14-3-3sigma do nhóm của Liêm thực hiện được Quốc Hội và Bộ Quốc Phòng Mỹ trao giải thưởng dưới dạng fellowship trong 3 năm liên tiếp).</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Năm 2015, cùng với bà xã Nguyễn Mai Chi tốt nghiệp ngành dược, Liêm mở công ty khởi nghiệp riêng tại thành phố Houston (bang Texas). Anh cho biết đây là công ty khởi nghiệp đầu tiên trên thế giới ứng dụng công nghệ y sinh học để giải mã gen, nhằm phát hiện sớm các loại bệnh di truyền, đặc biệt là ung thư; cung cấp thông tin về các phương pháp mới phòng ngừa và điều trị ung thư cho bệnh nhân.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Bệnh nhân ở bất cứ quốc gia nào cũng đều có thể được tư vấn, xét nghiệm máu rồi gửi về cho công ty ở Mỹ nghiên cứu, phân tích để đưa ra các đơn thuốc phù hợp mà không cần đến Mỹ.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">“Ở Việt Nam và ngay cả những vùng sâu của nước Mỹ, hiệu quả điều trị ung thư chưa được như mong muốn, vì vậy đây là dự án có thể tối ưu hóa quá trình điều trị.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><img class=\"lazy-load\" decoding=\"async\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.ybox.vn/2020/5/4/1590652081749-Chang-tien-si-Viet-quyet-danh-bai-benh-ung-thu_1.jpg\" /></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><b>Luôn hướng về Việt Nam</b></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Là người hành động, TS Liêm không chờ đến khi học xong mới trở về đóng góp cho sự phát triển quê hương. Năm 2012, TS Liêm góp phần bắc nhịp cầu đưa các giáo sư hàng đầu của Viện MD Anderson giảng dạy khóa học về ung thư cho hơn 100 bác sĩ, nhà khoa học, sinh viên tại Việt Nam.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Khóa học được tổ chức nhờ sự hỗ trợ của Trường ĐH Khoa học Tự nhiên TPHCM và Quỹ Giáo dục Việt Nam. Năm 2013, khóa học được tổ chức tại 2 thành phố Hà Nội và TPHCM dưới sự tài trợ của Quỹ Giáo dục Việt Nam với gần 300 học viên. Các bài giảng và thực hành của khóa học đã cung cấp nhiều kiến thức và kỹ năng quan trọng cho các bác sĩ, các nhà khoa học tại VN, cũng như mở ra nhiều cơ hội hợp tác và đào tạo.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Ngoài ra, TS Liêm và cộng sự thành lập tạp chí khoa học Việt Nam trực tuyến (Vietnam Journal of Science, <a href=\"https://l.facebook.com/l.php?u=http%3A%2F%2Fwww.vjsonline.org%2F%3Ffbclid%3DIwAR2Fp2qHMy-xlOLVeI78DC1EToOORcfO2M_yTEbpzlxOS8zPpDaepdyCIkg&amp;h=AT1NYlZG4tmdCpznnFInBu_bOm3ED3FIBmNYuP5GvSOtu_m7BqjtxSyS5NdqsOt4I2yfzQqDLxab56r8XEeEG9vpFyzZgWFqLDDw-jGVy032_P3tLQu0xG0-n5lmjStVcUBdOX5hNyMv8hDGi1csT7d62WesnPYAZGvVJaZZxyRagMw6PIuZGCs8q-NPE5wVZtv5Bm3sx3IbAFkYY0gZBOlgDRC-xvR_77e1NlNOREyy87TVtER7MnpgrmRILyJDlzOvdBXsK_avFp09BINl5EaaEjtGpCWEJK5L9iAlVitnaDwDHzKaQqbUwJ3lb9MHClbE_rnvY8fDQCgVf4VJDgq6Ht7LlDXwwqQWI7E4CpY4tECicUbfRGEyyosivyhPegTpRHRlpFNmSLDG15Rz-NAz5sQ4mXKNxfo-G-tGns7icL_t4adpNt4TBllwmqMUXZ9Ay2nSMFHZiL6L0alLINuy5VRGToVfLSVyOFZBVaX_Og7pzOslnDnlm3RUwAFI6RIRON82UQgeyUI3eevNfWaQ973JuxcWXAdh3Z81058S_2qedI2TVQab56wHzFwGIW-DofY6CSHb4eEvOa-JsDeS094RkSHAeRTcqv1QhgiOMnA6FJit3ZnIsyxDcIwa2qv1JEF5-w\" target=\"_blank\" rel=\"noopener nofollow\" data-ft=\"{&quot;tn&quot;:&quot;-U&quot;}\" data-lynx-mode=\"async\">www.vjsonline.org</a>) để giúp cung cấp các thông tin khoa học quan trọng cho độc giả và đóng góp vào sự phát triển của khoa học công nghệ tại VN.</span><br />\n<span style=\"font-family: arial, helvetica, sans-serif;\">Liêm tham gia vào Ban Cố vấn của Hiệp hội các học giả của Quỹ Giáo dục Việt Nam và các hoạt động của hội; hỗ trợ thiết lập các hợp tác giữa Viện MD Anderson, Bộ Khoa học và Công nghệ và nhiều viện nghiên cứu, bệnh viện, nhiều trường đại học uy tín của Việt Nam.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Hiện TS Liêm sống cùng vợ cũng đang học Tiến sĩ Dược tại ĐH Texas. Hai vợ chồng TS Liêm cùng làm trong các ngành có chuyên môn tương tự nên chia sẻ và hỗ trợ nhau nhiều trong công việc nghiên cứu, học tập và cuộc sống.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">TS Liêm chia sẻ, để đạt được thành tựu quan trọng như hiện nay, anh nỗ lực trên cả 3 phương diện: Đạo đức, sức khoẻ và tài năng với triết lý “Nơi nào có ý chí, nơi đó có một con đường”.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">“Tôi rất may mắn có được cơ hội học tập thành tài. Do đó, tôi luôn cố gắng đem hết khả năng để đóng góp cho xã hội và giúp đỡ các thế hệ sau này. Đó là một cách để tôi đền đáp công ơn của gia đình, thầy cô, bạn bè và quê hương đã sinh ra và nuôi dưỡng tôi như ngày nay”, TS Liêm nói.</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><b>Vô vàn giải thưởng</b></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\"><img class=\"lazy-load\" decoding=\"async\" src=\"data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E\" data-src=\"https://static.ybox.vn/2020/5/4/1590652067968-Tien-sy-phan-minh-liem-2%20(1).jpg\" /><b><br />\n</b></span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">TS Liêm nhận Giải thưởng và học bổng nghiên cứu khoa học (NCKH) của Quốc hội và Bộ Quốc phòng Mỹ trao tặng cho các nhà khoa học xuất sắc trong lĩnh vực ung thư; Giải thưởng và học bổng NCKH của các tổ chức Rosalie B. Hite Foundation, Cancer Answer Foundation, Andrew-Huggins Foundation,&#8230; dành cho các nhà nghiên cứu ung thư xuất sắc. Danh hiệu Học giả Sylvan Rodriguez dành cho các nhà khoa học xuất sắc có những đóng góp quan trọng cho cộng đồng</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Các giải thưởng khoa học do Viện MD Anderson, Trường Đại học Texas, Quốc hội, Bộ Quốc phòng Mỹ, Quỹ Giáo dục Việt Nam, Viện Hàn lâm Khoa học Mỹ trao tặng. Giải thưởng Phục vụ cộng đồng do Hội Sinh viên của trường Đại học Texas Houston trao tặng, các bằng khen về thành tích lãnh đạo và hoạt động tình nguyện do Quỹ Giáo dục Việt Nam, Trường Đại học Texas trao tặng..</span></p>\n<p><span style=\"font-family: arial, helvetica, sans-serif;\">Khi được hỏi về bí quyết thành công, tiến sĩ Phan Minh Liêm chia sẻ một cách thật giản dị: “Quá trình dẫn đến thành công cần có sự nỗ lực liên tục trên cả 3 phương diện: đạo đức, sức khỏe và tài năng; bao gồm cả khả năng chuyên môn và các kỹ năng cần thiết để sống chan hòa và đóng góp cho cộng đồng”.</span></p>\n<p><em><span style=\"font-family: arial, helvetica, sans-serif;\">(Tổng hợp từ hvnclc.vn &amp; sggp.org.vn)</span></em></p>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/09/1590652106911-3b01c45f0419ed47b408.jpg',NULL,5,2019,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf29','0ac25d55-1ee6-4794-8d46-58f82cde644c','NGUYỄN VĂN ĐƯỢC','Ông Nguyễn Văn Được hiện đang là Ủy viên Trung ương Đảng khóa XIII, Bí thư Tỉnh uỷ Long An. Ông là cựu sinh viên ngành Địa chất Trường Đại học Tổng hợp TP. Hồ Chí Minh.','h3><strong><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">TÓM TẮT QUÁ TRÌNH CÔNG TÁC</span></strong></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 3/1993: Công tác tại Ban quản lý ruộng đất tỉnh Long An (nay là Sở Tài nguyên và Môi trường tỉnh Long An)</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 7/2006: Giám đốc Văn phòng Đăng ký quyền sử dụng đất tỉnh Long An</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 2/2007: Trưởng phòng Tài nguyên và Môi trường huyện Thạnh Hóa, tỉnh Long An</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 7/2009 &#8211; 5/2010: Phó Giám đốc Sở Tài nguyên và Môi trường tỉnh Long An</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 5/2010 &#8211; 10/2010: Giám đốc Sở Tài nguyên và Môi trường tỉnh Long An</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 11/2010 &#8211; 3/2013: Tỉnh ủy viên, Giám đốc Sở Tài nguyên và Môi trường tỉnh Long An</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 4/2013 &#8211; 12/2015: Tỉnh ủy viên, Bí thư Huyện ủy Tân Thạnh, tỉnh Long An</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 1/2016 &#8211; 6/2016: Ủy viên Ban Thường vụ Tỉnh ủy khóa IX, Phó Chủ tịch UBND tỉnh Long An khóa VIII, nhiệm kỳ 2011-2016</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 6/2016 &#8211; 4/2019: Ủy viên Ban Thường vụ Tỉnh ủy khóa IX, Phó Chủ tịch UBND tỉnh Long An khóa IX, nhiệm kỳ 2016-2021</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 4/2019 &#8211; 10/2020: Phó Bí thư Thường trực Tỉnh ủy Long An khóa X, nhiệm kỳ 2015-2020</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 14/10/2020: Tại Đại hội đại biểu Đảng bộ tỉnh Long An lần thứ XI, đồng chí được bầu giữ chức Bí thư Tỉnh ủy khóa XI, nhiệm kỳ 2020-2025</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 11/11/2020: Bí thư Tỉnh ủy Long An khóa XI, nhiệm kỳ 2020-2025; Chủ tịch HĐND tỉnh Long An nhiệm kỳ 2016-2021</span></h3>\n<h3><span style=\"font-family: arial, helvetica, sans-serif; font-size: 75%;\">&#8211; 30/1/2021: Tại Đại hội đại biểu toàn quốc lần thứ XIII của Đảng, đồng chí được bầu là Ủy viên Trung ương Đảng khóa XIII, nhiệm kỳ 2021-2026.</span></h3>\n					<p><b>Ngày cập nhật:</b> 24/10/2023</p>','https://alumni.hcmus.edu.vn/wp-content/uploads/2023/09/20210105222852-longan-1602726655840.jpg',NULL,1,2019,'2024-04-10 20:29:15','2024-04-10 20:29:15','2024-04-20 20:29:15',2,0);
-
--- INSERT INTO `group` VALUES ('2bc8fdb8-aa12-4402-9bd6-26ff061dcf23','Cầu lông','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nơi các bạn chia sẻ niềm đam mê cầu lông của mình và hẹn kèo giao lưu cầu lông',NULL,'https://cdn.shopvnb.com/uploads/images/tin_tuc/vot-cau-long-qua-cung-tac-hai-gi-cach-chon-vot-cau-long-phu-hop-1.webp',NULL,'PUBLIC','2024-04-10 20:29:15','2024-04-10 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf24','Bóng đá','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nơi các bạn chia sẻ niềm đam mê bóng đá của mình và hẹn kèo bóng đá',NULL,'https://acc.vn/wp-content/uploads/2022/04/chan-thuong-trong-bong-da.jpg',NULL,'PUBLIC','2024-04-10 20:29:15','2024-04-10 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf25','Liên minh huyền thoại','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nơi các bạn chia sẻ niềm đam mê LOL của mình và tìm người chơi chung',NULL,'https://cdn.tgdd.vn/Files/2023/11/08/1554396/1-101123-112309.jpg',NULL,'PUBLIC','2024-04-10 20:29:15','2024-04-10 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf26','Cộng đồng khoa Công nghệ thông tin','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nơi các sinh viên Công nghệ thông tin hỏi đáp và chia sẻ kiến thức',NULL,'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-GOWlmqO7pptSvR-BDRXomYXL8ZHlJNsRrSAyzhn8SA&s',NULL,'PUBLIC','2024-04-10 20:29:15','2024-04-10 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf27','Cộng đồng khoa Công nghệ sinh học','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nơi các sinh viên Công nghệ sinh học hỏi đáp và chia sẻ kiến thức',NULL,'https://hrchannels.com/uptalent/attachments/images/20200724/1595573547497-lam-cach-nao-de-tro-thanh-ky-su-cong-nghe-sinh-hoc-2.jpg',NULL,'PRIVATE','2024-04-10 20:29:15','2024-04-10 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf28','Đọc sách','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nơi các sinh viên chia sẻ niềm đam mê đọc sách',NULL,'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQqtPdC9XKxTnfTpNXS-sHZk4k4vGHmIBMbqFO-DhuKw&s',NULL,'PRIVATE','2024-04-10 20:29:15','2024-04-10 20:29:15',2,0),('2bc8fdb8-aa12-4402-9bd6-26ff061dcf29','Ăn vặt','0ac25d55-1ee6-4794-8d46-58f82cde644c','Nơi các bạn chia sẻ những địa điểm ăn vặt ngon rẻ',NULL,'https://bloganchoi.com/wp-content/uploads/2022/11/tong-hop-10-mon-an-vat.jpg',NULL,'PRIVATE','2024-04-10 20:29:15','2024-04-10 20:29:15',2,0);
+INSERT into
+    react (name)
+VALUES
+    ('Like');
