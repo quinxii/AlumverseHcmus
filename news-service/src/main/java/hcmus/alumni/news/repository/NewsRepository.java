@@ -37,8 +37,8 @@ public interface NewsRepository extends JpaRepository<NewsModel, String> {
 			"FROM NewsModel n " +
 			"LEFT JOIN n.faculty f " +
 			"LEFT JOIN n.tags t " +
-			"WHERE ((:facultyId IS NULL OR f.id = :facultyId) " +
-			"OR (:tagsId IS NULL OR t.id IN :tagsId)) " +
+			"WHERE ((f.id = :facultyId) " +
+			"OR (t.id IN :tagsId)) " +
 			"AND n.status.id = 2 " +
 			"AND n.id != :originalNewsId")
 	Page<INewsDto> getRelatedNews(String originalNewsId, Integer facultyId, List<Long> tagsId, Pageable pageable);
