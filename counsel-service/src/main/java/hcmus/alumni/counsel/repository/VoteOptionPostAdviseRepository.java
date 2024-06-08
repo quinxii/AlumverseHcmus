@@ -10,6 +10,10 @@ import hcmus.alumni.counsel.model.VoteOptionPostAdviseModel;
 
 public interface VoteOptionPostAdviseRepository
         extends JpaRepository<VoteOptionPostAdviseModel, VoteOptionPostAdviseId> {
+    @Query(value = "select max(id) from vote_option_post_advise " +
+            "where post_advise_id = :postId", nativeQuery = true)
+    Integer getMaxVoteId(String postId);
+
     @Transactional
     @Modifying
     @Query("UPDATE VoteOptionPostAdviseModel vopa " +

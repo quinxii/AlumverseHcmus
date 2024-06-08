@@ -59,6 +59,12 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("UPDATE PostAdviseModel pa SET pa.reactionCount = pa.reactionCount + :count WHERE pa.id = :id")
 	int reactionCountIncrement(String id, @Param("count") Integer count);
 
+	@Query(value = "select allow_multiple_votes from post_advise where id = :postId", nativeQuery = true)
+	boolean isAllowMultipleVotes(String postId);
+
+	@Query(value = "select allow_add_options from post_advise where id = :postId", nativeQuery = true)
+	boolean isAllowAddOptions(String postId);
+
 	@Query(value = "select distinct p.name from role_permission rp " +
 			"join role r on r.id = rp.role_id and r.is_delete = false " +
 			"join permission p on p.id = rp.permission_id and p.is_delete = false " +

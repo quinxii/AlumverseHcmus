@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto;
 import hcmus.alumni.counsel.dto.request.ReactRequestDto;
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.TagRequestDto;
+import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.VoteRequestDto;
 import hcmus.alumni.counsel.dto.response.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.response.IInteractPostAdviseDto;
 import hcmus.alumni.counsel.dto.response.IUserVotePostAdviseDto;
@@ -93,6 +93,7 @@ public class CounselServiceController {
 
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
+	private final static int MAXIMUM_VOTE_OPTIONS = 10;
 	private final int MAX_IMAGE_SIZE_PER_POST = 5;
 
 	@GetMapping("")
@@ -190,14 +191,18 @@ public class CounselServiceController {
 	@PostMapping("")
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseRequestDto reqPostAdvise) {
-		if (reqPostAdvise.getTitle() == null || reqPostAdvise.getTitle().isEmpty()) {
+		if (reqPostAdvise.getTitle() == null || reqPostAdvise.getTitle().isBlank()) {
 			throw new AppException(60300, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
-		if (reqPostAdvise.getContent() == null || reqPostAdvise.getContent().isEmpty()) {
+		if (reqPostAdvise.getContent() == null || reqPostAdvise.getContent().isBlank()) {
 			throw new AppException(60301, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		if (reqPostAdvise.getTags() != null && reqPostAdvise.getTags().size() > MAXIMUM_TAGS) {
 			throw new AppException(60302, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
+		if (reqPostAdvise.getVotes() != null && reqPostAdvise.getVotes().size() > MAXIMUM_VOTE_OPTIONS) {
+			throw new AppException(60303, "Số lượng lựa chọn không được vượt quá " + MAXIMUM_VOTE_OPTIONS,
+					HttpStatus.BAD_REQUEST);
 		}
 
 		// Handle tags
@@ -236,10 +241,10 @@ public class CounselServiceController {
 			throw new AppException(60400, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 
-		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
+		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isBlank()) {
 			postAdvise.setTitle(updatedPostAdvise.getTitle());
 		}
-		if (updatedPostAdvise.getContent() != null && !updatedPostAdvise.getContent().isEmpty()) {
+		if (updatedPostAdvise.getContent() != null && !updatedPostAdvise.getContent().isBlank()) {
 			postAdvise.setContent(updatedPostAdvise.getContent());
 		}
 		if (updatedPostAdvise.getTags() != null) {
@@ -658,7 +663,8 @@ public class CounselServiceController {
 			@RequestHeader("userId") String userId,
 			@PathVariable(name = "id") String postId,
 			@PathVariable Integer voteId) {
-		if (userVotePostAdviseRepository.userVoteCountByPost(postId, userId) >= 1) {
+		if (!postAdviseRepository.isAllowMultipleVotes(postId)
+				&& userVotePostAdviseRepository.userVoteCountByPost(postId, userId) >= 1) {
 			throw new AppException(61700, "Chỉ được bình chọn tối đa 1 lựa chọn", HttpStatus.BAD_REQUEST);
 		}
 
@@ -703,6 +709,37 @@ public class CounselServiceController {
 		userVotePostAdviseRepository.deleteById(new UserVotePostAdviseId(userId, voteId, postId));
 		voteOptionPostAdviseRepository.voteCountIncrement(voteId, postId, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@PostMapping("/{id}/votes")
+	public ResponseEntity<Map<String, Object>> addPostVoteOption(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "id") String postId,
+			@RequestBody VoteRequestDto reqVoteOption) {
+		if (reqVoteOption.getName() == null || reqVoteOption.getName().isBlank()) {
+			throw new AppException(62000, "Tên lựa chọn không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
+		Integer maxVoteId = voteOptionPostAdviseRepository.getMaxVoteId(postId);
+		if (maxVoteId == null) {
+			throw new AppException(62001, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
+		boolean isAllowAddOptions = postAdviseRepository.isAllowAddOptions(postId);
+		if (!isAllowAddOptions) {
+			throw new AppException(62002, "Không thể thêm lựa chọn", HttpStatus.BAD_REQUEST);
+		}
+		if (maxVoteId >= MAXIMUM_VOTE_OPTIONS) {
+			throw new AppException(62003, "Số lượng lựa chọn không được vượt quá " + MAXIMUM_VOTE_OPTIONS,
+					HttpStatus.BAD_REQUEST);
+		}
+
+		VoteOptionPostAdviseModel voteOption = new VoteOptionPostAdviseModel(maxVoteId + 1, new PostAdviseModel(postId),
+				reqVoteOption.getName());
+		var returnedVoteOption = voteOptionPostAdviseRepository.save(voteOption);
+
+		System.out.println(reqVoteOption);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(Collections.singletonMap("vote", mapper.map(returnedVoteOption, PostAdviseDto.Votes.class)));
 	}
 
 }

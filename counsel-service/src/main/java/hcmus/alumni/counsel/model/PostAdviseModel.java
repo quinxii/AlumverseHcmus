@@ -14,7 +14,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import hcmus.alumni.counsel.common.PostAdvisePermissions;
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto;
-import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.TagRequestDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -89,6 +88,12 @@ public class PostAdviseModel implements Serializable {
     @Column(name = "reaction_count", columnDefinition = "INT DEFAULT(0)")
     private Integer reactionCount = 0;
 
+    @Column(name = "allow_multiple_votes", columnDefinition = "TINYINT(1) DEFAULT(0)")
+    private Boolean allowMultipleVotes = false;
+
+    @Column(name = "allow_add_options", columnDefinition = "TINYINT(1) DEFAULT(0)")
+    private Boolean allowAddOptions = false;
+
     @Transient
     private Boolean isReacted;
 
@@ -112,6 +117,8 @@ public class PostAdviseModel implements Serializable {
                 this.votes.add(new VoteOptionPostAdviseModel(i + 1, this, request.getVotes().get(i).getName()));
             }
         }
+        this.allowMultipleVotes = request.getAllowMultipleVotes();
+        this.allowAddOptions = request.getAllowAddOptions();
     }
 
     // Copy constructor for responses
