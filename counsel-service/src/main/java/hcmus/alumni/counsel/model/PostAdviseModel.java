@@ -63,7 +63,7 @@ public class PostAdviseModel implements Serializable {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "tag_post_advise", joinColumns = @JoinColumn(name = "post_advise_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<TagModel> tags = new HashSet<>();
 
@@ -75,6 +75,7 @@ public class PostAdviseModel implements Serializable {
     @Column(name = "update_at")
     private Date updateAt;
 
+    @CreationTimestamp
     @Column(name = "published_at")
     private Date publishedAt;
 
@@ -106,8 +107,6 @@ public class PostAdviseModel implements Serializable {
         this.creator = new UserModel(creator);
         this.title = request.getTitle();
         this.content = request.getContent();
-        if (request.getTags() != null)
-            request.getTags().forEach(tag -> this.tags.add(new TagModel(tag.getId())));
         if (request.getVotes() != null) {
             for (int i = 0; i < request.getVotes().size(); i++) {
                 this.votes.add(new VoteOptionPostAdviseModel(i + 1, this, request.getVotes().get(i).getName()));
@@ -151,11 +150,6 @@ public class PostAdviseModel implements Serializable {
         if (canDelete) {
             this.permissions.setDelete(true);
         }
-    }
-
-    public void updateTags(List<TagRequestDto> tags) {
-        this.tags.clear();
-        tags.forEach(tag -> this.tags.add(new TagModel(tag.getId())));
     }
 
     public void addPicture(PicturePostAdviseModel picture) {

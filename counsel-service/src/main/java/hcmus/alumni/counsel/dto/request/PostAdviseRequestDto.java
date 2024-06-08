@@ -14,14 +14,13 @@ public class PostAdviseRequestDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class TagRequestDto {
-        private Integer id;
+        private String name;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class VoteRequestDto {
-        private Integer id;
         private String name;
     }
 
