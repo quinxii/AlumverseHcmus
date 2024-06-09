@@ -38,12 +38,15 @@ public interface GroupRepository extends JpaRepository<GroupModel, String> {
         "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
         "LEFT JOIN RequestJoinGroupModel rjg ON rjg.id.group.id = g.id AND rjg.id.user.id = :requestingUserId AND rjg.isDelete = false " +
         "LEFT JOIN g.status s " +
+        "LEFT JOIN g.tags t " +
         "WHERE (:statusId IS NULL OR s.id = :statusId) " +
         "AND (:privacy IS NULL OR g.privacy = :privacy) " +
         "AND (:isJoined IS NULL OR (gm IS NOT NULL AND :isJoined = true) OR (gm IS NULL AND :isJoined = false)) " +
-        "AND g.name LIKE %:name%")
+        "AND g.name LIKE %:name% " +
+        "AND (:tagNames IS NULL OR t.name IN :tagNames)")
 	Page<IGroupDto> searchGroups(
 	    @Param("name") String name,
+	    @Param("tagNames") List<String> tagNames,
 	    @Param("statusId") Integer statusId,
 	    @Param("privacy") Privacy privacy,
 	    @Param("isJoined") Boolean isJoined,

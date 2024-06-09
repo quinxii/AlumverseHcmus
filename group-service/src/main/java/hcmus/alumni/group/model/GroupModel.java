@@ -63,6 +63,14 @@ public class GroupModel implements Serializable {
     @Column(name = "privacy", columnDefinition = "ENUM('PUBLIC', 'PRIVATE') DEFAULT 'PUBLIC'")
     @Enumerated(EnumType.STRING)
     private Privacy privacy = Privacy.PUBLIC;
+    
+    @ManyToMany(fetch = FetchType.EAGER)
+	@JoinTable(
+	    name = "tag_group",
+	    joinColumns = @JoinColumn(name = "group_id"),
+	    inverseJoinColumns = @JoinColumn(name = "tag_id")
+	)
+	private Set<TagModel> tags = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "create_at")
@@ -87,6 +95,14 @@ public class GroupModel implements Serializable {
     
     @Transient
 	private GroupPermissions permissions;
+    
+    public void setTags(Integer[] tags) {
+		Set<TagModel> newTags = new HashSet<>();
+		for (Integer tag : tags) {
+			newTags.add(new TagModel(tag));
+		}
+		this.tags = newTags;
+	}
     
     public GroupModel(String id) {
     	this.id = id;

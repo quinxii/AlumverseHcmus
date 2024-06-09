@@ -8,6 +8,7 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -58,7 +59,7 @@ public class EventModel implements Serializable {
 	@JoinColumn(name = "faculty_id")
 	private FacultyModel faculty;
     
-	@ManyToMany(fetch = FetchType.EAGER)
+	@ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(
 	    name = "tag_event",
 	    joinColumns = @JoinColumn(name = "event_id"),
@@ -95,14 +96,6 @@ public class EventModel implements Serializable {
 	
 	@Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
 	private Integer childrenCommentNumber = 0;
-	
-	public void setTags(Integer[] tags) {
-		Set<TagModel> newTags = new HashSet<>();
-		for (Integer tag : tags) {
-			newTags.add(new TagModel(tag));
-		}
-		this.tags = newTags;
-	}
 	
 	public EventModel(String id) {
 		this.id = id;

@@ -1,4 +1,4 @@
-package hcmus.alumni.group.dto;
+package hcmus.alumni.group.dto.request;
 
 import java.io.Serializable;
 
