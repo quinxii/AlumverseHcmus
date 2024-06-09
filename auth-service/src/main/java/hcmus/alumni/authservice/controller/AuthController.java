@@ -66,6 +66,10 @@ public class AuthController {
 					.authenticate(new UsernamePasswordAuthenticationToken(email, pass));
 			if (authenticate.isAuthenticated()) {
 				UserModel user = userRepository.findByEmail(email);
+				
+				if (!user.getStatusId().equals(2)) {
+	                throw new AppException(10100, "Tài khoản đã bị khóa hoặc xóa", HttpStatus.UNAUTHORIZED);
+	            }
 
 				PasswordHistoryModel currentPasswordHistory = passwordHistoryRepository.findByUserId(user.getId());
 
@@ -93,7 +97,9 @@ public class AuthController {
 			} else {
 				throw new AppException(10100, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
 			}
-		} catch (Exception e) {
+		} catch (AppException e) {
+	        throw e;
+	    } catch (Exception e) {
 			throw new AppException(10101, "Lỗi đăng nhập", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 

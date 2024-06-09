@@ -74,7 +74,7 @@ public class UserUtils {
 	    long diffInMilliseconds = Math.abs(new Date().getTime() - createdAt.getTime());
 	    long diffInMinutes = diffInMilliseconds / (1000 * 60);
 
-	    return email.equals(expectedActivateCode.getEmail()) && activationCode.equals(expectedActivateCode.getActivationCode()) && diffInMinutes < 1;
+	    return email.equals(expectedActivateCode.getEmail()) && activationCode.equals(expectedActivateCode.getActivationCode()) && diffInMinutes < 15;
 	}
 
 }
