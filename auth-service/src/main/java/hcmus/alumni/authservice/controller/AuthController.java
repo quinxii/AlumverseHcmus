@@ -93,8 +93,6 @@ public class AuthController {
 			} else {
 				throw new AppException(10100, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
 			}
-		} catch (BadCredentialsException e) {
-			throw new AppException(10101, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
 		} catch (Exception e) {
 			throw new AppException(10102, "Lỗi đăng nhập", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -150,12 +148,12 @@ public class AuthController {
 			boolean isValid = userUtils.checkActivationCode(emailActivationCodeRepository, email, activationCode);
 			if (isValid) {
 				return ResponseEntity.status(HttpStatus.OK).body("");
-			} else {
+			}
+			else {
 				throw new AppException(10402, "Mã xác thực không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			throw new AppException(10403, "Xác minh mã xác thực thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(10402, "Mã xác thực không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
 		}
 	}
 
