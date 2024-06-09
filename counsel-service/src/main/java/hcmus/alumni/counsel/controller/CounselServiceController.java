@@ -553,7 +553,7 @@ public class CounselServiceController {
 			@RequestParam Integer reactId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
-		if (pageSize == 0 || pageSize > MAXIMUM_PAGES) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
@@ -643,7 +643,7 @@ public class CounselServiceController {
 			@PathVariable Integer voteId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
-		if (pageSize == 0 || pageSize > MAXIMUM_PAGES) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
