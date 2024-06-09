@@ -10,7 +10,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Collections;
 
+import org.modelmapper.ModelMapper;
 import org.hibernate.query.sqm.UnknownPathException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -55,6 +59,9 @@ import hcmus.alumni.group.model.InteractPostGroupId;
 import hcmus.alumni.group.model.InteractPostGroupModel;
 import hcmus.alumni.group.model.ReactModel;
 import hcmus.alumni.group.model.TagModel;
+import hcmus.alumni.group.model.UserVotePostGroupId;
+import hcmus.alumni.group.model.UserVotePostGroupModel;
+import hcmus.alumni.group.model.VoteOptionPostGroupModel;
 import hcmus.alumni.group.utils.ImageUtils;
 import hcmus.alumni.group.dto.response.IGroupDto;
 import hcmus.alumni.group.dto.response.IGroupMemberDto;
@@ -63,6 +70,8 @@ import hcmus.alumni.group.dto.response.PostGroupDto;
 import hcmus.alumni.group.dto.response.ICommentPostGroupDto;
 import hcmus.alumni.group.dto.response.IInteractPostGroupDto;
 import hcmus.alumni.group.dto.response.IUserDto;
+import hcmus.alumni.group.dto.response.IUserVotePostGroupDto;
+import hcmus.alumni.group.dto.request.PostGroupRequestDto;
 import hcmus.alumni.group.dto.request.ReactRequestDto;
 import hcmus.alumni.group.dto.request.PostGroupRequestDto.TagRequestDto;
 import hcmus.alumni.group.dto.request.PostGroupRequestDto.VoteRequestDto;
@@ -73,6 +82,8 @@ import hcmus.alumni.group.repository.PostGroupRepository;
 import hcmus.alumni.group.repository.CommentPostGroupRepository;
 import hcmus.alumni.group.repository.InteractPostGroupRepository;
 import hcmus.alumni.group.repository.TagRepository;
+import hcmus.alumni.group.repository.VoteOptionPostGroupRepository;
+import hcmus.alumni.group.repository.UserVotePostGroupRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -81,6 +92,8 @@ import jakarta.persistence.PersistenceContext;
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/groups")
 public class GroupServiceController {
+	@Autowired
+	private final ModelMapper mapper = new ModelMapper();
 	@PersistenceContext
 	private EntityManager em;
 	@Autowired
@@ -568,14 +581,15 @@ public class GroupServiceController {
 
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (1 == groupMemberRepository.hasGroupMemberRole(id, requestingUserId, "CREATOR") || 
-				1 == groupMemberRepository.hasGroupMemberRole(id, requestingUserId, "ADMIN")) {
+		if (1 == groupMemberRepository.hasGroupMemberRole(id, userId, "CREATOR") || 
+				1 == groupMemberRepository.hasGroupMemberRole(id, userId, "ADMIN")) {
 			canDelete = true;
 		}
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(id, title, requestingUserId, tagsId, statusId, canDelete, pageable);
+			Page<PostGroupModel> postsPage = postGroupRepository.searchPostGroup(id, title, userId, tagsId, 
+					canDelete, pageable);
 
 			result.put("totalPages", postsPage.getTotalPages());
 			List<PostGroupModel> postList = postsPage.getContent();
@@ -618,11 +632,11 @@ public class GroupServiceController {
 
 	@PreAuthorize("0 == @postGroupRepository.isPrivateByPostId(#id) or 1 == @postGroupRepository.isMemberByPostId(#id, #userId)")
     @GetMapping("/posts/{id}")
-	public ResponseEntity<IPostGroupDto> getPostById(@RequestHeader("userId") String userId, @PathVariable String id) {
+	public ResponseEntity<PostGroupDto> getPostById(@RequestHeader("userId") String userId, @PathVariable String id) {
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "CREATOR") || 
-				1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "ADMIN")) {
+		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "CREATOR") || 
+				1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "ADMIN")) {
 			canDelete = true;
 		}
 
@@ -640,7 +654,7 @@ public class GroupServiceController {
 			}
 		}
 
-		return ResponseEntity.status(HttpStatus.OK).body(mapper.map(post, IPostGroupDto.class));
+		return ResponseEntity.status(HttpStatus.OK).body(mapper.map(post, PostGroupDto.class));
 	}
 
 	@PreAuthorize("1 == @groupMemberRepository.isMember(#id, #creator)")

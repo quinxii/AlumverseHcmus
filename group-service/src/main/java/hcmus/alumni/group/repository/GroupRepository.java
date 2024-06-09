@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import hcmus.alumni.group.dto.IGroupDto;
+import hcmus.alumni.group.dto.response.IGroupDto;
 import hcmus.alumni.group.model.GroupModel;
 import hcmus.alumni.group.model.UserModel;
 import hcmus.alumni.group.common.Privacy;

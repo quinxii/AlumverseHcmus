@@ -1,4 +1,4 @@
-package src.main.java.hcmus.alumni.group.model;
+package hcmus.alumni.group.model;
 
 import java.io.Serializable;
 import java.util.Date;

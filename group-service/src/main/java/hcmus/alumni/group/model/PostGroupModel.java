@@ -1,12 +1,17 @@
 package hcmus.alumni.group.model;
 
-import hcmus.alumni.group.common.PostGroupPermissions;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import hcmus.alumni.group.common.PostGroupPermissions;
+import hcmus.alumni.group.dto.request.PostGroupRequestDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,15 +22,13 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Data;
 
 @Entity
 @Table(name = "post_group")
@@ -99,9 +102,6 @@ public class PostGroupModel implements Serializable {
 
     @Transient
     private PostGroupPermissions permissions = new PostGroupPermissions(false, false);
-
-    public PostGroupModel() {
-    }
 
     public PostGroupModel(String id) {
         this.id = id;

@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.group.model.CommentPostGroupModel;
-import hcmus.alumni.group.dto.ICommentPostGroupDto;
+import hcmus.alumni.group.dto.response.ICommentPostGroupDto;
 
 public interface CommentPostGroupRepository extends JpaRepository<CommentPostGroupModel, String> {
 	@Query(value = "select count(*) > 0 from comment_post_group where id = :commentId and creator = :userId", nativeQuery = true)

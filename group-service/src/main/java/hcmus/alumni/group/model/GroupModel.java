@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import hcmus.alumni.group.common.Privacy;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -64,7 +65,7 @@ public class GroupModel implements Serializable {
     @Enumerated(EnumType.STRING)
     private Privacy privacy = Privacy.PUBLIC;
     
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(
 	    name = "tag_group",
 	    joinColumns = @JoinColumn(name = "group_id"),
@@ -95,14 +96,6 @@ public class GroupModel implements Serializable {
     
     @Transient
 	private GroupPermissions permissions;
-    
-    public void setTags(Integer[] tags) {
-		Set<TagModel> newTags = new HashSet<>();
-		for (Integer tag : tags) {
-			newTags.add(new TagModel(tag));
-		}
-		this.tags = newTags;
-	}
     
     public GroupModel(String id) {
     	this.id = id;
