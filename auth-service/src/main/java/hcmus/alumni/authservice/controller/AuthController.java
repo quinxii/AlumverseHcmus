@@ -94,7 +94,7 @@ public class AuthController {
 				throw new AppException(10100, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
 			}
 		} catch (Exception e) {
-			throw new AppException(10102, "Lỗi đăng nhập", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new AppException(10101, "Lỗi đăng nhập", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 	}
