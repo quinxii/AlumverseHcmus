@@ -767,10 +767,18 @@ public class CounselServiceController {
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "tagNames", required = false) List<String> tagNames) {
+		if (!userId.equals(reqUserId)) {
+			throw new AppException(62102, "Không thể xem bài viết của người khác", HttpStatus.FORBIDDEN);
+		}
 		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (tagNames != null) {
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
+			}
+		}
 
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
@@ -780,9 +788,9 @@ public class CounselServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<PostAdviseModel> postsPage = postAdviseRepository.searchPostAdvise(title, reqUserId, canDelete,
-					tagNames,
-					pageable);
+			Page<PostAdviseModel> postsPage = postAdviseRepository.searchPostAdviseOfUser(userId, title, reqUserId,
+					canDelete,
+					tagNames, pageable);
 
 			result.put("totalPages", postsPage.getTotalPages());
 			List<PostAdviseModel> postList = postsPage.getContent();
@@ -815,9 +823,9 @@ public class CounselServiceController {
 
 			result.put("posts", postList.stream().map(p -> mapper.map(p, PostAdviseDto.class)).toList());
 		} catch (IllegalArgumentException e) {
-			throw new AppException(60100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+			throw new AppException(62100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (InvalidDataAccessApiUsageException e) {
-			throw new AppException(60101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(62101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
