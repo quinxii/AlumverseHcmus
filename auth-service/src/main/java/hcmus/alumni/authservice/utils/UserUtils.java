@@ -1,5 +1,6 @@
 package hcmus.alumni.authservice.utils;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -61,7 +62,7 @@ public class UserUtils {
 	    }
 	}
 	
-	public boolean checkActivationCode(EmailActivationCodeRepository emailActivationCodeRepository, String email, String activationCode) throws Exception {
+	public boolean checkActivationCode(EmailActivationCodeRepository emailActivationCodeRepository, String email, String activationCode) {
 	    EmailActivationCodeModel expectedActivateCode = emailActivationCodeRepository.findByEmail(email);
 	    
 	    if (expectedActivateCode == null) {
@@ -69,12 +70,18 @@ public class UserUtils {
 	    }
 	    
 	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	    Date createdAt = sdf.parse(expectedActivateCode.getCreateAt());
+	    Date createdAt;
+	    long diffInMinutes = 0; 
+		try {
+			createdAt = sdf.parse(expectedActivateCode.getCreateAt());
+			long diffInMilliseconds = Math.abs(new Date().getTime() - createdAt.getTime());
+			diffInMinutes = diffInMilliseconds / (1000 * 60);
+		} catch (ParseException pe) {
+			pe.printStackTrace();
+			return false;
+		}
 	    
-	    long diffInMilliseconds = Math.abs(new Date().getTime() - createdAt.getTime());
-	    long diffInMinutes = diffInMilliseconds / (1000 * 60);
-
-	    return email.equals(expectedActivateCode.getEmail()) && activationCode.equals(expectedActivateCode.getActivationCode()) && diffInMinutes < 15;
+	    return email.equals(expectedActivateCode.getEmail()) && activationCode.equals(expectedActivateCode.getActivationCode()) && diffInMinutes < 1;
 	}
 
 }
