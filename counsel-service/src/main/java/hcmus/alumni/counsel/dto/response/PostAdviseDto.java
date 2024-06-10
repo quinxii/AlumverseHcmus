@@ -63,5 +63,7 @@ public class PostAdviseDto {
     private Set<Tag> tags;
     private StatusPost status;
     private Boolean isReacted;
+    private Boolean allowMultipleVotes;
+    private Boolean allowAddOptions;
     private Permissions permissions;
 }

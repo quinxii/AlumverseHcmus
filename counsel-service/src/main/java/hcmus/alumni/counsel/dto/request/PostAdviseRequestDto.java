@@ -2,6 +2,8 @@ package hcmus.alumni.counsel.dto.request;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,19 +16,20 @@ public class PostAdviseRequestDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class TagRequestDto {
-        private Integer id;
+        private String name;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class VoteRequestDto {
-        private Integer id;
         private String name;
     }
 
     String title;
     String content;
+    Boolean allowMultipleVotes = false;
+    Boolean allowAddOptions = false;
     List<TagRequestDto> tags;
     List<VoteRequestDto> votes;
 }

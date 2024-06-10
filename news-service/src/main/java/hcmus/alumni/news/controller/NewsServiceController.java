@@ -142,7 +142,7 @@ public class NewsServiceController {
 			throw new AppException(40401, "Ảnh thumbnail không được để trống",
 					HttpStatus.BAD_REQUEST);
 		}
-		if (tagNames.size() > MAXIMUM_TAGS) {
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(40403, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
 		String id = UUID.randomUUID().toString();
@@ -159,7 +159,7 @@ public class NewsServiceController {
 			} else {
 				news.setPublishedAt(new Date());
 			}
-			if (!tagNames.isEmpty()) {
+			if (tagNames != null) {
 				Set<TagModel> tags = new HashSet<TagModel>();
 				for (String tagName : tagNames) {
 					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
@@ -195,7 +195,7 @@ public class NewsServiceController {
 			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 		boolean isPut = false;
-		if (tagNames.size() > MAXIMUM_TAGS) {
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(40502, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
 
