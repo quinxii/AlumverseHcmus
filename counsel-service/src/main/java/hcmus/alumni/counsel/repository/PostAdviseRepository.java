@@ -34,10 +34,10 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 			"JOIN pa.status s " +
 			"LEFT JOIN pa.tags t " +
 			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :userId " +
-			"WHERE (:tagsId IS NULL OR t.id IN :tagsId) " +
+			"WHERE (:tagNames IS NULL OR t.name IN :tagNames) " +
 			"AND s.id = 2 " +
 			"AND (:title IS NULL OR pa.title like %:title%)")
-	Page<PostAdviseModel> searchPostAdvise(String title, String userId, boolean canDelete, List<Integer> tagsId,
+	Page<PostAdviseModel> searchPostAdvise(String title, String userId, boolean canDelete, List<String> tagNames,
 			Pageable pageable);
 
 	@Query("SELECT COUNT(pa) FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = :statusId")
