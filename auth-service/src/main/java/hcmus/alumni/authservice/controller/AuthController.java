@@ -94,7 +94,7 @@ public class AuthController {
 
 			return ResponseEntity.status(HttpStatus.OK).body(response);
 		} else {
-			throw new AppException(10100, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
+			throw new AppException(10101, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
 		}
 	}
 
