@@ -110,6 +110,7 @@ public class GroupModel implements Serializable {
         this.coverUrl = copy.getCoverUrl();
         this.website = copy.getWebsite();
         this.privacy = copy.getPrivacy();
+        this.tags = copy.getTags();
         this.createAt = copy.getCreateAt();
         this.updateAt = copy.getUpdateAt();
         this.status = copy.getStatus();

@@ -153,7 +153,7 @@ public class EventServiceController {
 		if (thumbnail.isEmpty()) {
 			throw new AppException(50301, "thumbnail không được để trống", HttpStatus.BAD_REQUEST);
         }
-		if (tagNames.size() > MAXIMUM_TAGS) {
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(50303, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
 		
@@ -172,7 +172,7 @@ public class EventServiceController {
 	        event.setOrganizationLocation(organizationLocation);
 	        event.setOrganizationTime(organizationTime);
 	        event.setPublishedAt(new Date());
-	        if (!tagNames.isEmpty()) {
+	        if (tagNames != null && !tagNames.isEmpty()) {
 				Set<TagModel> tags = new HashSet<TagModel>();
 				for (String tagName : tagNames) {
 					var sanitizedTagName = TagModel.sanitizeTagName(tagName);

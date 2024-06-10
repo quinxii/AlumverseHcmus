@@ -212,7 +212,7 @@ public class GroupServiceController {
 		if (name.equals("")) {
 			throw new AppException(70400, "Name không được để trống", HttpStatus.BAD_REQUEST);
         }
-		if (tagNames.size() > MAXIMUM_TAGS) {
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(70402, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
 		
@@ -237,7 +237,7 @@ public class GroupServiceController {
             groupModel.setPrivacy(privacy);
             groupModel.setCreator(new UserModel(creatorId));
             groupModel.setCoverUrl(coverUrl);
-            if (!tagNames.isEmpty()) {
+            if (tagNames != null && !tagNames.isEmpty()) {
 				Set<TagModel> tags = new HashSet<TagModel>();
 				for (String tagName : tagNames) {
 					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
@@ -573,11 +573,18 @@ public class GroupServiceController {
 			@RequestParam(value = "title", required = false) String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId) {
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames) {
 		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (tagNames != null) {
+			if (tagNames != null) {
+				for (int i = 0; i < tagNames.size(); i++) {
+					tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
+				}
+			}
+		}
 
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
@@ -588,7 +595,7 @@ public class GroupServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<PostGroupModel> postsPage = postGroupRepository.searchPostGroup(id, title, userId, tagsId, 
+			Page<PostGroupModel> postsPage = postGroupRepository.searchPostGroup(id, title, userId, tagNames, 
 					canDelete, pageable);
 
 			result.put("totalPages", postsPage.getTotalPages());
@@ -713,6 +720,10 @@ public class GroupServiceController {
 		if (postGroup == null) {
 			throw new AppException(71601, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
+		if (postGroup.getVotes().size() > 0) {
+			throw new AppException(71602, "Không thể cập nhật bài viết đã có lựa chọn bình chọn",
+					HttpStatus.BAD_REQUEST);
+		}
 
 		if (updatedPostGroup.getTitle() != null && !updatedPostGroup.getTitle().isBlank()) {
 			postGroup.setTitle(updatedPostGroup.getTitle());
@@ -748,6 +759,7 @@ public class GroupServiceController {
 					currentTags.add(find);
 				}
 			}
+			postGroup.setTags(currentTags);
 		}
 
 		postGroupRepository.save(postGroup);

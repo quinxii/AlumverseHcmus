@@ -39,16 +39,16 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	        "LEFT JOIN p.tags t " + 
 	        "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
 	        "WHERE (:title IS NULL OR p.title LIKE %:title%) " +
-	        "AND (:tagsId IS NULL OR t.id IN :tagsId) " + 
+	        "AND (:tagNames IS NULL OR t.name IN :tagNames) " +
 	        "AND s.id = 2 " +
 	        "AND p.groupId = :groupId")
 	Page<PostGroupModel> searchPostGroup(
-			@Param("groupId") String groupId,
-	        @Param("title") String title,
-	        @Param("userId") String userId,
-	        @Param("tagsId") List<Integer> tagsId,
-	        boolean canDelete,
-	        Pageable pageable);
+			String groupId,
+			String title,
+			String userId,
+			List<String> tagNames,
+			boolean canDelete,
+			Pageable pageable);
 
 
     @Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
