@@ -749,7 +749,6 @@ public class CounselServiceController {
 				reqVoteOption.getName());
 		var returnedVoteOption = voteOptionPostAdviseRepository.save(voteOption);
 
-		System.out.println(reqVoteOption);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(Collections.singletonMap("vote", mapper.map(returnedVoteOption, PostAdviseDto.Votes.class)));
 	}
