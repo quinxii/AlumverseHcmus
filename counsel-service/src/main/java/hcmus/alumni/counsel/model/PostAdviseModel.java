@@ -133,6 +133,8 @@ public class PostAdviseModel implements Serializable {
         this.updateAt = copy.updateAt;
         this.publishedAt = copy.publishedAt;
         this.status = copy.status;
+        this.allowAddOptions = copy.allowAddOptions;
+        this.allowMultipleVotes = copy.allowMultipleVotes;
         this.childrenCommentNumber = copy.childrenCommentNumber;
         this.reactionCount = copy.reactionCount;
 
