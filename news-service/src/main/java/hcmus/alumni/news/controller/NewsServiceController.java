@@ -92,10 +92,8 @@ public class NewsServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		if (tagNames != null) {
-			if (tagNames != null) {
-				for (int i = 0; i < tagNames.size(); i++) {
-					tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
-				}
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
 			}
 		}
 
