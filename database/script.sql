@@ -849,6 +849,22 @@ CREATE TABLE
             KEY `user_id` (`user_id`),
             CONSTRAINT `passwo_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+    
+BEGIN;
+
+DROP TABLE IF EXISTS notification;
+
+CREATE TABLE
+    notification (
+        id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        content TEXT,
+        link TEXT NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_read TINYINT (1) DEFAULT (0),
+        FOREIGN KEY (user_id) REFERENCES user (id),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- INDEX
 ALTER TABLE `group` ADD INDEX idx_creator (creator);
