@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import hcmus.alumni.group.common.Privacy;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -63,6 +64,14 @@ public class GroupModel implements Serializable {
     @Column(name = "privacy", columnDefinition = "ENUM('PUBLIC', 'PRIVATE') DEFAULT 'PUBLIC'")
     @Enumerated(EnumType.STRING)
     private Privacy privacy = Privacy.PUBLIC;
+    
+    @ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@JoinTable(
+	    name = "tag_group",
+	    joinColumns = @JoinColumn(name = "group_id"),
+	    inverseJoinColumns = @JoinColumn(name = "tag_id")
+	)
+	private Set<TagModel> tags = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "create_at")
@@ -101,6 +110,7 @@ public class GroupModel implements Serializable {
         this.coverUrl = copy.getCoverUrl();
         this.website = copy.getWebsite();
         this.privacy = copy.getPrivacy();
+        this.tags = copy.getTags();
         this.createAt = copy.getCreateAt();
         this.updateAt = copy.getUpdateAt();
         this.status = copy.getStatus();

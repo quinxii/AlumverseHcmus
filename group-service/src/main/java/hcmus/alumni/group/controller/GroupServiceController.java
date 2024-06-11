@@ -9,7 +9,12 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Collections;
 
+import org.modelmapper.ModelMapper;
 import org.hibernate.query.sqm.UnknownPathException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -53,21 +58,33 @@ import hcmus.alumni.group.model.PicturePostGroupModel;
 import hcmus.alumni.group.model.InteractPostGroupId;
 import hcmus.alumni.group.model.InteractPostGroupModel;
 import hcmus.alumni.group.model.ReactModel;
+import hcmus.alumni.group.model.TagModel;
+import hcmus.alumni.group.model.UserVotePostGroupId;
+import hcmus.alumni.group.model.UserVotePostGroupModel;
+import hcmus.alumni.group.model.VoteOptionPostGroupModel;
 import hcmus.alumni.group.utils.ImageUtils;
-import hcmus.alumni.group.dto.IGroupDto;
-import hcmus.alumni.group.dto.IGroupMemberDto;
-import hcmus.alumni.group.dto.IRequestJoinGroupDto;
-import hcmus.alumni.group.dto.IPostGroupDto;
-import hcmus.alumni.group.dto.ICommentPostGroupDto;
-import hcmus.alumni.group.dto.IInteractPostGroupDto;
-import hcmus.alumni.group.dto.ReactRequestDto;
-import hcmus.alumni.group.dto.IUserDto;
+import hcmus.alumni.group.dto.response.IGroupDto;
+import hcmus.alumni.group.dto.response.IGroupMemberDto;
+import hcmus.alumni.group.dto.response.IRequestJoinGroupDto;
+import hcmus.alumni.group.dto.response.PostGroupDto;
+import hcmus.alumni.group.dto.response.ICommentPostGroupDto;
+import hcmus.alumni.group.dto.response.IInteractPostGroupDto;
+import hcmus.alumni.group.dto.response.IUserDto;
+import hcmus.alumni.group.dto.response.IUserVotePostGroupDto;
+import hcmus.alumni.group.dto.request.PostGroupRequestDto;
+import hcmus.alumni.group.dto.request.ReactRequestDto;
+import hcmus.alumni.group.dto.request.PostGroupRequestDto.TagRequestDto;
+import hcmus.alumni.group.dto.request.PostGroupRequestDto.VoteRequestDto;
 import hcmus.alumni.group.repository.GroupRepository;
 import hcmus.alumni.group.repository.GroupMemberRepository;
 import hcmus.alumni.group.repository.RequestJoinGroupRepository;
 import hcmus.alumni.group.repository.PostGroupRepository;
 import hcmus.alumni.group.repository.CommentPostGroupRepository;
 import hcmus.alumni.group.repository.InteractPostGroupRepository;
+import hcmus.alumni.group.repository.TagRepository;
+import hcmus.alumni.group.repository.VoteOptionPostGroupRepository;
+import hcmus.alumni.group.repository.UserVotePostGroupRepository;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -75,6 +92,8 @@ import jakarta.persistence.PersistenceContext;
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/groups")
 public class GroupServiceController {
+	@Autowired
+	private final ModelMapper mapper = new ModelMapper();
 	@PersistenceContext
 	private EntityManager em;
 	@Autowired
@@ -86,12 +105,21 @@ public class GroupServiceController {
 	@Autowired
 	private PostGroupRepository postGroupRepository;
 	@Autowired
+	private TagRepository tagRepository;
+	@Autowired
 	private CommentPostGroupRepository commentPostGroupRepository;
 	@Autowired
 	private InteractPostGroupRepository interactPostGroupRepository;
 	@Autowired
+	private VoteOptionPostGroupRepository voteOptionPostGroupRepository;
+	@Autowired
+	private UserVotePostGroupRepository userVotePostGroupRepository;
+	@Autowired
 	private ImageUtils imageUtils;
 	
+	private final static int MAXIMUM_PAGES = 50;
+	private final static int MAXIMUM_TAGS = 5;
+	private final static int MAXIMUM_VOTE_OPTIONS = 10;
 	private final int MAX_IMAGE_SIZE_PER_POST = 5;
 	
 	@GetMapping("")
@@ -103,15 +131,21 @@ public class GroupServiceController {
 			@RequestParam(value = "name", required = false, defaultValue = "") String name,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "createAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
 			@RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId,
 			@RequestParam(value = "privacy", required = false) Privacy privacy,
 			@RequestParam(value = "isJoined", required = false) Boolean isJoined) {
 
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		
 		HashMap<String, Object> result = new HashMap<>();
+		if (tagNames != null) {
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
+			}
+		}
 		
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
@@ -121,7 +155,7 @@ public class GroupServiceController {
 		
 		try {
 		    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-		    Page<IGroupDto> groups = groupRepository.searchGroups(name, statusId, privacy, isJoined, requestingUserId, canDelete, pageable);
+		    Page<IGroupDto> groups = groupRepository.searchGroups(name, tagNames, statusId, privacy, isJoined, requestingUserId, canDelete, pageable);
 		
 		    result.put("totalPages", groups.getTotalPages());
 		    result.put("groups", groups.getContent());
@@ -170,11 +204,15 @@ public class GroupServiceController {
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "PUBLIC") Privacy privacy,
             @RequestParam(value = "cover", required = false) MultipartFile cover,
+            @RequestParam(value = "tagNames", required = false) List<String> tagNames,
             @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId
 	) {
 		if (name.equals("")) {
 			throw new AppException(70400, "Name không được để trống", HttpStatus.BAD_REQUEST);
         }
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
+			throw new AppException(70402, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
 		
         String id = UUID.randomUUID().toString();
         try {
@@ -197,6 +235,21 @@ public class GroupServiceController {
             groupModel.setPrivacy(privacy);
             groupModel.setCreator(new UserModel(creatorId));
             groupModel.setCoverUrl(coverUrl);
+            if (tagNames != null && !tagNames.isEmpty()) {
+				Set<TagModel> tags = new HashSet<TagModel>();
+				for (String tagName : tagNames) {
+					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
+					if (sanitizedTagName.isBlank()) {
+						continue;
+					}
+					TagModel tag = tagRepository.findByName(sanitizedTagName);
+					if (tag == null) {
+						tag = new TagModel(sanitizedTagName);
+					}
+					tags.add(tag);
+				}
+				groupModel.setTags(tags);
+			}
             groupModel.setStatus(new StatusUserGroupModel(statusId));
             groupModel.setParticipantCount(1);
             
@@ -229,8 +282,12 @@ public class GroupServiceController {
             @RequestParam(value = "website", required = false, defaultValue = "") String website,
             @RequestParam(value = "privacy", required = false, defaultValue = "") Privacy privacy,
             @RequestParam(value = "cover", required = false) MultipartFile cover,
+            @RequestParam(value = "tagNames", required = false) List<String> tagNames,
             @RequestParam(value = "statusId", required = false) Integer statusId
 	) {
+		if (tagNames.size() > MAXIMUM_TAGS) {
+			throw new AppException(70502, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
         try {
     		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
     		if (optionalGroup.isEmpty()) {
@@ -269,6 +326,38 @@ public class GroupServiceController {
                 groupModel.setCoverUrl(coverUrl);
                 isPut = true;
             }
+            
+            if (tagNames != null) {
+				Set<TagModel> currentTags = groupModel.getTags();
+				Set<TagModel> updatedTags = new HashSet<TagModel>();
+
+				for (String tagName : tagNames) {
+					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
+					if (sanitizedTagName.isBlank()) {
+						continue;
+					}
+					updatedTags.add(new TagModel(sanitizedTagName));
+				}
+				// Remove tags
+				for (Iterator<TagModel> iterator = currentTags.iterator(); iterator.hasNext();) {
+					TagModel tag = iterator.next();
+					if (!updatedTags.contains(tag)) {
+						iterator.remove();
+					}
+				}
+				// Add tags
+				for (TagModel tag : updatedTags) {
+					if (!currentTags.contains(tag)) {
+						TagModel find = tagRepository.findByName(tag.getName());
+						if (find == null) {
+							find = new TagModel(tag.getName());
+						}
+						currentTags.add(find);
+					}
+				}
+				groupModel.setTags(currentTags);
+				isPut = true;
+			}
             
             if (statusId != null) {
             	groupModel.setStatus(new StatusUserGroupModel(statusId));
@@ -310,8 +399,8 @@ public class GroupServiceController {
 		    @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
 		    @RequestParam(value = "role", required = false) GroupMemberRole role
 	) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		
 		HashMap<String, Object> result = new HashMap<>();
@@ -378,8 +467,8 @@ public class GroupServiceController {
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "pageSize", defaultValue = "10") int pageSize
     ) {
-        if (pageSize <= 0 || pageSize > 50) {
-        	pageSize = 50;
+        if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+        	pageSize = MAXIMUM_PAGES;
         }
 
         HashMap<String, Object> result = new HashMap<>();
@@ -393,6 +482,7 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
     
+	@PreAuthorize("hasAnyAuthority('Group.Join')")
     @PostMapping("/{id}/requests")
     public ResponseEntity<String> addRequestJoin(
     		@PathVariable String id,
@@ -472,114 +562,210 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
     }
     
-	@PreAuthorize("0 == @groupRepository.isPrivate(#id) or 1 == @groupMemberRepository.isMember(#id, #requestingUserId)")
+	@PreAuthorize("0 == @groupRepository.isPrivate(#id) or 1 == @groupMemberRepository.isMember(#id, #userId)")
     @GetMapping("{id}/posts")
-    public ResponseEntity<HashMap<String, Object>> searchGroupPosts(
-    		@PathVariable String id,
-    		@RequestHeader("userId") String requestingUserId,
-            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-            @RequestParam(value = "title", required = false, defaultValue = "") String title,
-            @RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
-            @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
-    	Optional<GroupModel> optionalGroup = groupRepository.findById(id);
-	    GroupModel group = optionalGroup.get();
-	    Optional<GroupMemberModel> existingMemberOptional = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-        
-        if (pageSize <= 0 || pageSize > 50) {
-        	pageSize = 50;
-        }
-        HashMap<String, Object> result = new HashMap<>();
-        
-    	boolean canDelete = false;
-		if (1 == groupMemberRepository.hasGroupMemberRole(id, requestingUserId, "CREATOR") || 
-				1 == groupMemberRepository.hasGroupMemberRole(id, requestingUserId, "ADMIN")) {
-			canDelete = true;
+	public ResponseEntity<HashMap<String, Object>> getPosts(
+			@PathVariable String id, //group id
+			@RequestHeader("userId") String userId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
-        
-        Pageable pageable = PageRequest.of(page, pageSize);
-        Page<IPostGroupDto> posts = postGroupRepository.searchGroupPosts(id, title, requestingUserId, tagsId, statusId, canDelete, pageable);
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (tagNames != null) {
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
+			}
+		}
 
-        result.put("totalPages", posts.getTotalPages());
-        result.put("posts", posts.getContent());
-        return ResponseEntity.status(HttpStatus.OK).body(result);
-    }
-
-	@PreAuthorize("0 == @postGroupRepository.isPrivateByPostId(#postId) or 1 == @postGroupRepository.isMemberByPostId(#postId, #requestingUserId)")
-    @GetMapping("/posts/{postId}")
-    public ResponseEntity<IPostGroupDto> getGroupPostById(
-    		@PathVariable String postId, 
-    		@RequestHeader("userId") String requestingUserId) {
+		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "CREATOR") || 
-				1 == postGroupRepository.hasGroupMemberRoleByPostId(postId, requestingUserId, "ADMIN")) {
+		if (1 == groupMemberRepository.hasGroupMemberRole(id, userId, "CREATOR") || 
+				1 == groupMemberRepository.hasGroupMemberRole(id, userId, "ADMIN")) {
 			canDelete = true;
 		}
-		
-        Optional<IPostGroupDto> optionalPost = postGroupRepository.findPostById(postId, requestingUserId, canDelete);
-        if (optionalPost.isEmpty()) {
-        	throw new AppException(71400, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
-        }
-        
-        return ResponseEntity.status(HttpStatus.OK).body(optionalPost.get());
-    }
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<PostGroupModel> postsPage = postGroupRepository.searchPostGroup(id, title, userId, tagNames, 
+					canDelete, pageable);
+
+			result.put("totalPages", postsPage.getTotalPages());
+			List<PostGroupModel> postList = postsPage.getContent();
+			List<Object[]> resultList = userVotePostGroupRepository.getVoteIdsByUserAndPosts(userId,
+					postList.stream().map(PostGroupModel::getId).toList());
+
+			// Create a map with key is post id and value is a set of vote ids
+			HashMap<String, Set<Integer>> voteIdsMap = new HashMap<String, Set<Integer>>();
+			for (Object[] obj : resultList) {
+				Set<Integer> voteIds = voteIdsMap.get(String.valueOf(obj[0]));
+				if (voteIds == null) {
+					voteIds = new HashSet<Integer>();
+				}
+				voteIds.add(Integer.valueOf(String.valueOf(obj[1])));
+				voteIdsMap.put(String.valueOf(obj[0]), voteIds);
+			}
+
+			// Set isVoted for each vote option
+			for (PostGroupModel post : postList) {
+				Set<Integer> voteIds = voteIdsMap.get(post.getId());
+				if (voteIds == null) {
+					continue;
+				}
+				for (VoteOptionPostGroupModel vote : post.getVotes()) {
+					if (voteIds.contains(vote.getId().getVoteId())) {
+						vote.setIsVoted(true);
+					}
+				}
+			}
+
+			result.put("posts", postList.stream().map(p -> mapper.map(p, PostGroupDto.class)).toList());
+		} catch (IllegalArgumentException e) {
+			throw new AppException(71300, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(71301, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PreAuthorize("0 == @postGroupRepository.isPrivateByPostId(#id) or 1 == @postGroupRepository.isMemberByPostId(#id, #userId)")
+    @GetMapping("/posts/{id}")
+	public ResponseEntity<PostGroupDto> getPostById(@RequestHeader("userId") String userId, @PathVariable String id) {
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "CREATOR") || 
+				1 == postGroupRepository.hasGroupMemberRoleByPostId(id, userId, "ADMIN")) {
+			canDelete = true;
+		}
+
+		PostGroupModel post = postGroupRepository.findPostGroupById(id, userId, canDelete).orElse(null);
+
+		if (post == null) {
+			throw new AppException(71400, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
+
+		Set<Integer> voteIds = userVotePostGroupRepository.getVoteIdsByUserAndPost(userId, id);
+
+		for (VoteOptionPostGroupModel vote : post.getVotes()) {
+			if (voteIds.contains(vote.getId().getVoteId())) {
+				vote.setIsVoted(true);
+			}
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(mapper.map(post, PostGroupDto.class));
+	}
 
 	@PreAuthorize("1 == @groupMemberRepository.isMember(#id, #creator)")
     @PostMapping("{id}/posts")
-    public ResponseEntity<String> addGroupPost(@PathVariable String id, //group id
-    		@RequestHeader("userId") String creator,
-    		@RequestBody PostGroupModel reqPostModel) {
-		if (reqPostModel.getTitle() == null || reqPostModel.getTitle().isEmpty()) {
+	public ResponseEntity<Map<String, Object>> createPostGroup(
+			@PathVariable String id, //group id
+			@RequestHeader("userId") String creator,
+			@RequestBody PostGroupRequestDto reqPostGroup) {
+		if (reqPostGroup.getTitle() == null || reqPostGroup.getTitle().isBlank()) {
 			throw new AppException(71500, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
-		if (reqPostModel.getContent() == null || reqPostModel.getContent().isEmpty()) {
+		if (reqPostGroup.getContent() == null || reqPostGroup.getContent().isBlank()) {
 			throw new AppException(71501, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
 		}
+		if (reqPostGroup.getTags() != null && reqPostGroup.getTags().size() > MAXIMUM_TAGS) {
+			throw new AppException(71502, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
+		if (reqPostGroup.getVotes() != null && reqPostGroup.getVotes().size() > MAXIMUM_VOTE_OPTIONS) {
+			throw new AppException(71503, "Số lượng lựa chọn không được vượt quá " + MAXIMUM_VOTE_OPTIONS,
+					HttpStatus.BAD_REQUEST);
+		}
 
-    	PostGroupModel newPost = new PostGroupModel(id, creator, reqPostModel.getTitle(), reqPostModel.getContent(), reqPostModel.getTags());
-    	newPost.setPublishedAt(new Date());
-    	
-    	try {
-            postGroupRepository.save(newPost);
-        } catch (DataIntegrityViolationException ex) {
-            throw new AppException(71502, "Không tìm thấy nhóm", HttpStatus.BAD_REQUEST);
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(newPost.getId());
-    }
+		// Handle tags
+		Set<TagModel> tags = new HashSet<TagModel>();
+		if (reqPostGroup.getTags() != null) {
+			for (TagRequestDto reqTag : reqPostGroup.getTags()) {
+				String sanitizedTagName = TagModel.sanitizeTagName(reqTag.getName());
+				if (sanitizedTagName.isBlank()) {
+					continue;
+				}
+				TagModel tag = tagRepository.findByName(sanitizedTagName);
+				if (tag == null) {
+					tag = new TagModel(sanitizedTagName);
+				}
+				tags.add(tag);
+			}
+		}
 
-	@PreAuthorize("1 == @postGroupRepository.isGroupPostOwner(#postId, #creator)")
-    @PutMapping("/posts/{postId}")
-    public ResponseEntity<String> updateGroupPost(
-    		@PathVariable String postId, 
-    		@RequestHeader("userId") String creator,
-    		@RequestBody PostGroupModel reqPostModel) {
-        Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
-        if (optionalPost.isEmpty()) {
-        	throw new AppException(71600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
-        }
-        PostGroupModel post = optionalPost.get();
-        
-        if (!reqPostModel.getTitle().isEmpty() && reqPostModel.getTitle() != null) {
-        	post.setTitle(reqPostModel.getTitle());
-        }
-        if (!reqPostModel.getContent().isEmpty() && reqPostModel.getContent() != null) {
-        	post.setContent(reqPostModel.getContent());
-        }
-        if (reqPostModel.getTags() != null) {
-        	post.setTags(reqPostModel.getTags());
-        }
-        if (reqPostModel.getStatus() != null) {
-        	post.setStatus(reqPostModel.getStatus());
-        }
-        
-        postGroupRepository.save(post);
-        
-        return ResponseEntity.status(HttpStatus.OK).body(null);
-    }
+		PostGroupModel postGroup = new PostGroupModel(creator, reqPostGroup);
+		postGroup.setGroupId(id);
+		postGroup.setTags(tags);
+		postGroupRepository.save(postGroup);
+		return ResponseEntity.status(HttpStatus.CREATED).body(Collections.singletonMap("id", postGroup.getId()));
+	}
+
+	@PreAuthorize("1 == @postGroupRepository.isGroupPostOwner(#id, #userId)")
+    @PutMapping("/posts/{id}")
+	public ResponseEntity<String> updatePostGroup(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id,
+			@RequestBody PostGroupRequestDto updatedPostGroup) {
+		if (updatedPostGroup.getTags() != null && updatedPostGroup.getTags().size() > MAXIMUM_TAGS) {
+			throw new AppException(71600, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
+		PostGroupModel postGroup = postGroupRepository.findById(id).orElse(null);
+		if (postGroup == null) {
+			throw new AppException(71601, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
+		if (postGroup.getVotes().size() > 0) {
+			throw new AppException(71602, "Không thể cập nhật bài viết đã có lựa chọn bình chọn",
+					HttpStatus.BAD_REQUEST);
+		}
+
+		if (updatedPostGroup.getTitle() != null && !updatedPostGroup.getTitle().isBlank()) {
+			postGroup.setTitle(updatedPostGroup.getTitle());
+		}
+		if (updatedPostGroup.getContent() != null && !updatedPostGroup.getContent().isBlank()) {
+			postGroup.setContent(updatedPostGroup.getContent());
+		}
+		if (updatedPostGroup.getTags() != null) {
+			Set<TagModel> currentTags = postGroup.getTags();
+			Set<TagModel> updatedTags = new HashSet<TagModel>();
+
+			for (var updatedTag : updatedPostGroup.getTags()) {
+				var sanitizedTagName = TagModel.sanitizeTagName(updatedTag.getName());
+				if (sanitizedTagName.isBlank()) {
+					continue;
+				}
+				updatedTags.add(new TagModel(sanitizedTagName));
+			}
+			// Remove tags
+			for (Iterator<TagModel> iterator = currentTags.iterator(); iterator.hasNext();) {
+				TagModel tag = iterator.next();
+				if (!updatedTags.contains(tag)) {
+					iterator.remove();
+				}
+			}
+			// Add tags
+			for (TagModel tag : updatedTags) {
+				if (!currentTags.contains(tag)) {
+					TagModel find = tagRepository.findByName(tag.getName());
+					if (find == null) {
+						find = new TagModel(tag.getName());
+					}
+					currentTags.add(find);
+				}
+			}
+			postGroup.setTags(currentTags);
+		}
+
+		postGroupRepository.save(postGroup);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
     
-	@PreAuthorize("1 == @postGroupRepository.isGroupPostOwner(#id, #creator)")
+	@PreAuthorize("1 == @postGroupRepository.isGroupPostOwner(#id, #userId)")
 	@PutMapping("/posts/{id}/images")
-	public ResponseEntity<String> createPostGroupImages(@RequestHeader("userId") String creator,
+	public ResponseEntity<String> createPostGroupImages(@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "addedImages", required = false) List<MultipartFile> addedImages,
 			@RequestParam(value = "deletedImageIds", required = false) List<String> deletedImageIds) {
@@ -593,12 +779,14 @@ public class GroupServiceController {
 		}
 
 		PostGroupModel postGroup = optionalPostGroup.get();
+
 		List<PicturePostGroupModel> images = postGroup.getPictures();
 
 		if (addedImages != null && deletedImageIds != null
 				&& images.size() + addedImages.size() - deletedImageIds.size() > MAX_IMAGE_SIZE_PER_POST) {
 			throw new AppException(71701, "Vượt quá giới hạn " + MAX_IMAGE_SIZE_PER_POST + " ảnh mỗi bài viết",
 					HttpStatus.BAD_REQUEST);
+
 		}
 
 		// Delete images
@@ -620,6 +808,7 @@ public class GroupServiceController {
 						e.printStackTrace();
 						throw new AppException(71703, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					}
+
 				}
 			}
 			// Remove deleted images from list
@@ -655,32 +844,48 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("1 == @postGroupRepository.hasGroupMemberRoleByPostId(#postId, #creator, \"CREATOR\") or "
-			+ "1 == @postGroupRepository.hasGroupMemberRoleByPostId(#postId, #creator, \"ADMIN\") or "
-			+ "1 == @postGroupRepository.isGroupPostOwner(#postId, #creator)")
-    @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<String> deleteGroupPost(
-    		@PathVariable String postId,
-    		@RequestHeader("userId") String creator) {
-        Optional<PostGroupModel> optionalPost = postGroupRepository.findById(postId);
-        if (optionalPost.isEmpty()) {
+	@PreAuthorize("1 == @postGroupRepository.hasGroupMemberRoleByPostId(#id, #userId, \"CREATOR\") or "
+			+ "1 == @postGroupRepository.hasGroupMemberRoleByPostId(#id, #userId, \"ADMIN\") or "
+			+ "1 == @postGroupRepository.isGroupPostOwner(#id, #userId)")
+    @DeleteMapping("/posts/{id}")
+	public ResponseEntity<String> deletePostGroup(
+			@RequestHeader("userId") String userId,
+			@PathVariable String id) {
+		// Find Group post
+		Optional<PostGroupModel> optionalPostGroup = postGroupRepository.findById(id);
+		if (optionalPostGroup.isEmpty()) {
 			throw new AppException(71800, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
-        PostGroupModel post = optionalPost.get();
-        post.getPictures().clear();
-        post.setStatus(new StatusPostModel(4));
-        postGroupRepository.save(post);
-        return ResponseEntity.status(HttpStatus.OK).body(null);
-    }
+
+		PostGroupModel postGroup = optionalPostGroup.get();
+
+		List<PicturePostGroupModel> pictures = postGroup.getPictures();
+		for (PicturePostGroupModel picture : pictures) {
+			try {
+				imageUtils.deleteImageFromStorageByUrl(picture.getPictureUrl());
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				throw new AppException(71801, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new AppException(71802, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+		pictures.clear();
+
+		postGroup.setStatus(new StatusPostModel(4));
+		postGroupRepository.save(postGroup);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
     
     @GetMapping("/{id}/comments")
-	public ResponseEntity<HashMap<String, Object>> getPostComments(
+    public ResponseEntity<HashMap<String, Object>> getPostComments(
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
@@ -705,8 +910,8 @@ public class GroupServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -831,8 +1036,8 @@ public class GroupServiceController {
 			@RequestParam Integer reactId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -911,5 +1116,110 @@ public class GroupServiceController {
 		interactPostGroup.setIsDelete(true);
 		postGroupRepository.reactionCountIncrement(id, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+	
+	@GetMapping("/{postId}/votes/{voteId}")
+	public ResponseEntity<HashMap<String, Object>> getVoteUsers(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "postId") String postId,
+			@PathVariable Integer voteId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
+		if (pageSize == 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString("desc"), "createAt"));
+		Page<IUserVotePostGroupDto> users = userVotePostGroupRepository.getUsers(voteId, postId, pageable);
+
+		result.put("totalPages", users.getTotalPages());
+		result.put("users", users.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#postId, #userId)")
+	@PostMapping("/{postId}/votes/{voteId}")
+	public ResponseEntity<HashMap<String, Object>> postVote(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "postId") String postId,
+			@PathVariable Integer voteId) {
+		if (!postGroupRepository.isAllowMultipleVotes(postId)
+				&& userVotePostGroupRepository.userVoteCountByPost(postId, userId) >= 1) {
+			throw new AppException(72900, "Chỉ được bình chọn tối đa 1 lựa chọn", HttpStatus.BAD_REQUEST);
+		}
+
+		UserVotePostGroupModel userVote = new UserVotePostGroupModel(userId, voteId, postId);
+		try {
+			userVotePostGroupRepository.save(userVote);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(72901, "Lựa chọn không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+		voteOptionPostGroupRepository.voteCountIncrement(voteId, postId, 1);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+	}
+
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#postId, #userId)")
+	@PutMapping("/{postId}/votes/{voteId}")
+	public ResponseEntity<HashMap<String, Object>> putVote(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "postId") String postId,
+			@PathVariable(name = "voteId") Integer oldVoteId,
+			@RequestBody HashMap<String, String> body) {
+		Integer updatedVoteId = Integer.valueOf(body.get("updatedVoteId"));
+		try {
+			int updated = userVotePostGroupRepository.updateVoteOption(updatedVoteId, userId, oldVoteId, postId);
+			if (updated == 0) {
+				throw new AppException(73000, "Không tìm thấy bình chọn", HttpStatus.BAD_REQUEST);
+			}
+			voteOptionPostGroupRepository.voteCountIncrement(oldVoteId, postId, -1);
+			voteOptionPostGroupRepository.voteCountIncrement(updatedVoteId, postId, 1);
+		} catch (DataIntegrityViolationException e) {
+			throw new AppException(73001, "Lựa chọn cập nhật không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#postId, #userId)")
+	@DeleteMapping("/{postId}/votes/{voteId}")
+	public ResponseEntity<String> deleteVote(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "postId") String postId,
+			@PathVariable Integer voteId) {
+		userVotePostGroupRepository.deleteById(new UserVotePostGroupId(userId, voteId, postId));
+		voteOptionPostGroupRepository.voteCountIncrement(voteId, postId, -1);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	@PostMapping("/{postId}/votes")
+	public ResponseEntity<Map<String, Object>> addPostVoteOption(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "postId") String postId,
+			@RequestBody VoteRequestDto reqVoteOption) {
+		if (reqVoteOption.getName() == null || reqVoteOption.getName().isBlank()) {
+			throw new AppException(73200, "Tên lựa chọn không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
+		Integer maxVoteId = voteOptionPostGroupRepository.getMaxVoteId(postId);
+		if (maxVoteId == null) {
+			throw new AppException(73201, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
+		boolean isAllowAddOptions = postGroupRepository.isAllowAddOptions(postId);
+		if (!isAllowAddOptions) {
+			throw new AppException(73202, "Không thể thêm lựa chọn", HttpStatus.BAD_REQUEST);
+		}
+		if (maxVoteId >= MAXIMUM_VOTE_OPTIONS) {
+			throw new AppException(73203, "Số lượng lựa chọn không được vượt quá " + MAXIMUM_VOTE_OPTIONS,
+					HttpStatus.BAD_REQUEST);
+		}
+
+		VoteOptionPostGroupModel voteOption = new VoteOptionPostGroupModel(maxVoteId + 1, new PostGroupModel(postId),
+				reqVoteOption.getName());
+		var returnedVoteOption = voteOptionPostGroupRepository.save(voteOption);
+
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(Collections.singletonMap("vote", mapper.map(returnedVoteOption, PostGroupDto.Votes.class)));
 	}
 }

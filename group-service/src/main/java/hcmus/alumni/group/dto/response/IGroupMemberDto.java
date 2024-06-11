@@ -1,6 +1,8 @@
-package hcmus.alumni.group.dto;
+package hcmus.alumni.group.dto.response;
 
-public interface IRequestJoinGroupDto {
+import java.util.Date;
+
+public interface IGroupMemberDto {
 	interface User {
 		String getId();
 		String getFullName();
@@ -12,7 +14,8 @@ public interface IRequestJoinGroupDto {
         String getName();
         String getCoverUrl();
     }
-    
+
     User getUser();
     Group getGroup();
+    String getRole();
 }

@@ -1,4 +1,4 @@
-package hcmus.alumni.group.dto;
+package hcmus.alumni.group.dto.response;
 
 public interface IUserDto {
 	String getId();
