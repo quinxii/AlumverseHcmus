@@ -66,7 +66,7 @@ public class PostGroupModel implements Serializable {
     private String content;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "tag_post_Group", joinColumns = @JoinColumn(name = "post_Group_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    @JoinTable(name = "tag_post_Group", joinColumns = @JoinColumn(name = "post_group_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<TagModel> tags = new HashSet<>();
 
     @CreationTimestamp
@@ -133,6 +133,8 @@ public class PostGroupModel implements Serializable {
         this.updateAt = copy.updateAt;
         this.publishedAt = copy.publishedAt;
         this.status = copy.status;
+        this.allowAddOptions = copy.allowAddOptions;
+        this.allowMultipleVotes = copy.allowMultipleVotes;
         this.childrenCommentNumber = copy.childrenCommentNumber;
         this.reactionCount = copy.reactionCount;
 

@@ -142,10 +142,8 @@ public class GroupServiceController {
 		
 		HashMap<String, Object> result = new HashMap<>();
 		if (tagNames != null) {
-			if (tagNames != null) {
-				for (int i = 0; i < tagNames.size(); i++) {
-					tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
-				}
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
 			}
 		}
 		
@@ -484,6 +482,7 @@ public class GroupServiceController {
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
     
+	@PreAuthorize("hasAnyAuthority('Group.Join')")
     @PostMapping("/{id}/requests")
     public ResponseEntity<String> addRequestJoin(
     		@PathVariable String id,
@@ -579,10 +578,8 @@ public class GroupServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		if (tagNames != null) {
-			if (tagNames != null) {
-				for (int i = 0; i < tagNames.size(); i++) {
-					tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
-				}
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
 			}
 		}
 
@@ -1054,7 +1051,6 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-
 	@PostMapping("/{id}/react")
 	public ResponseEntity<String> postPostGroupReaction(@RequestHeader("userId") String creatorId,
 			@PathVariable String id,
@@ -1122,10 +1118,10 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 	
-	@GetMapping("/{id}/votes/{voteId}")
+	@GetMapping("/{postId}/votes/{voteId}")
 	public ResponseEntity<HashMap<String, Object>> getVoteUsers(
 			@RequestHeader("userId") String userId,
-			@PathVariable(name = "id") String postId,
+			@PathVariable(name = "postId") String postId,
 			@PathVariable Integer voteId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
@@ -1143,11 +1139,11 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Group.Vote')")
-	@PostMapping("/{id}/votes/{voteId}")
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#postId, #userId)")
+	@PostMapping("/{postId}/votes/{voteId}")
 	public ResponseEntity<HashMap<String, Object>> postVote(
 			@RequestHeader("userId") String userId,
-			@PathVariable(name = "id") String postId,
+			@PathVariable(name = "postId") String postId,
 			@PathVariable Integer voteId) {
 		if (!postGroupRepository.isAllowMultipleVotes(postId)
 				&& userVotePostGroupRepository.userVoteCountByPost(postId, userId) >= 1) {
@@ -1164,11 +1160,11 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Group.Vote')")
-	@PutMapping("/{id}/votes/{voteId}")
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#postId, #userId)")
+	@PutMapping("/{postId}/votes/{voteId}")
 	public ResponseEntity<HashMap<String, Object>> putVote(
 			@RequestHeader("userId") String userId,
-			@PathVariable(name = "id") String postId,
+			@PathVariable(name = "postId") String postId,
 			@PathVariable(name = "voteId") Integer oldVoteId,
 			@RequestBody HashMap<String, String> body) {
 		Integer updatedVoteId = Integer.valueOf(body.get("updatedVoteId"));
@@ -1186,21 +1182,21 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PreAuthorize("hasAnyAuthority('Group.Vote')")
-	@DeleteMapping("/{id}/votes/{voteId}")
+	@PreAuthorize("1 == @postGroupRepository.isMemberByPostId(#postId, #userId)")
+	@DeleteMapping("/{postId}/votes/{voteId}")
 	public ResponseEntity<String> deleteVote(
 			@RequestHeader("userId") String userId,
-			@PathVariable(name = "id") String postId,
+			@PathVariable(name = "postId") String postId,
 			@PathVariable Integer voteId) {
 		userVotePostGroupRepository.deleteById(new UserVotePostGroupId(userId, voteId, postId));
 		voteOptionPostGroupRepository.voteCountIncrement(voteId, postId, -1);
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
-	@PostMapping("/{id}/votes")
+	@PostMapping("/{postId}/votes")
 	public ResponseEntity<Map<String, Object>> addPostVoteOption(
 			@RequestHeader("userId") String userId,
-			@PathVariable(name = "id") String postId,
+			@PathVariable(name = "postId") String postId,
 			@RequestBody VoteRequestDto reqVoteOption) {
 		if (reqVoteOption.getName() == null || reqVoteOption.getName().isBlank()) {
 			throw new AppException(73200, "Tên lựa chọn không được để trống", HttpStatus.BAD_REQUEST);
@@ -1223,7 +1219,6 @@ public class GroupServiceController {
 				reqVoteOption.getName());
 		var returnedVoteOption = voteOptionPostGroupRepository.save(voteOption);
 
-		System.out.println(reqVoteOption);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(Collections.singletonMap("vote", mapper.map(returnedVoteOption, PostGroupDto.Votes.class)));
 	}
