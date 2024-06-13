@@ -766,7 +766,7 @@ DROP TABLE IF EXISTS inbox;
 
 CREATE TABLE
     inbox (
-        id VARCHAR(36) NOT NULL,
+        id BIGINT NOT NULL AUTO_INCREMENT,
         name TINYTEXT, -- Name of the group (only applicable if it's a group chat).
         is_group TINYINT (1) DEFAULT (0),
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
@@ -781,7 +781,7 @@ DROP TABLE IF EXISTS inbox_member;
 
 CREATE TABLE
     inbox_member (
-        inbox_id VARCHAR(36) NOT NULL,
+        inbox_id BIGINT NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         role ENUM ('ADMIN', 'MEMBER') NOT NULL,
         joined_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
@@ -798,7 +798,7 @@ DROP TABLE IF EXISTS message;
 CREATE TABLE
     message (
         id BIGINT NOT NULL AUTO_INCREMENT,
-        inbox_id VARCHAR(36) NOT NULL,
+        inbox_id BIGINT NOT NULL,
         sender_id VARCHAR(36) NOT NULL,
         content TEXT,
         message_type ENUM ('TEXT', 'IMAGE', 'FILE', 'VIDEO', 'SOUND') NOT NULL,
