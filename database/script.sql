@@ -767,7 +767,7 @@ DROP TABLE IF EXISTS inbox;
 CREATE TABLE
     inbox (
         id VARCHAR(36) NOT NULL,
-        name TINYTEXT NOT NULL, -- Name of the group (only applicable if it's a group chat).
+        name TINYTEXT, -- Name of the group (only applicable if it's a group chat).
         is_group TINYINT (1) DEFAULT (0),
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
