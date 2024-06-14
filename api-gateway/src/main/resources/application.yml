@@ -61,14 +61,28 @@ spring:
           filters:
             - name: Authentication
 
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-              allowedOrigins: "*"
-              allowedMethods: "*"
-              allowedHeaders: "*"
+        ## message service
+        - id: message
+          uri: lb://message-service
+          predicates:
+            - Path=/messages/**
+          filters:
+            - name: Authentication
+        
+        ## message service with websocket
+        - id: message-ws
+          uri: lb:ws://message-service  # Use 'ws' for websocket and service name
+          predicates:
+            - Path=/ws/**
+
+      # default-filters:
+      #   - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      # globalcors:
+      #   corsConfigurations:
+      #     '[/**]':
+      #         allowedOrigins: "*"
+      #         allowedMethods: "*"
+      #         allowedHeaders: "*"
 server:
   port: 8080
 
