@@ -30,6 +30,7 @@ import hcmus.alumni.authservice.model.PasswordHistoryModel;
 import hcmus.alumni.authservice.model.RoleModel;
 import hcmus.alumni.authservice.model.UserModel;
 import hcmus.alumni.authservice.repository.EmailActivationCodeRepository;
+import hcmus.alumni.authservice.repository.EmailResetCodeRepository;
 import hcmus.alumni.authservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.authservice.repository.PermissionRepository;
 import hcmus.alumni.authservice.repository.UserRepository;
@@ -47,6 +48,8 @@ public class AuthController {
 	private UserRepository userRepository;
 	@Autowired
 	private EmailActivationCodeRepository emailActivationCodeRepository;
+	@Autowired
+	private EmailResetCodeRepository emailResetCodeRepository;
 	@Autowired
 	private AuthenticationManager authenticationManager;
 	@Autowired
@@ -180,5 +183,55 @@ public class AuthController {
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
+	
+	@PostMapping("/forgot-password")
+	public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+	    if (email == null || email.isEmpty()) {
+			throw new AppException(10600, "Email không được để trống", HttpStatus.BAD_REQUEST);
+	    }
 
+		UserModel user = userRepository.findByEmail(email);
+		if (user == null) {
+			throw new AppException(10601, "Email không tồn tại", HttpStatus.BAD_REQUEST);
+		}
+
+		try {
+			emailSenderUtils.sendPasswordResetEmail(emailResetCodeRepository, email);
+			return ResponseEntity.status(HttpStatus.OK).body("");
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new AppException(10602, "Gửi mã xác thực thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping("/verify-reset-code")
+	public ResponseEntity<String> resetPassword(@RequestParam String email, @RequestParam String resetCode, @RequestParam String newPassword) {
+		if (email == null || email.isEmpty()) {
+			throw new AppException(10700, "Email không được để trống", HttpStatus.BAD_REQUEST);
+		}
+	
+		if (resetCode == null || resetCode.isEmpty()) {
+			throw new AppException(10701, "Mã xác thực không được để trống", HttpStatus.BAD_REQUEST);
+		}
+	
+		if (newPassword == null || newPassword.isEmpty()) {
+			throw new AppException(10702, "Mật khẩu mới không được để trống", HttpStatus.BAD_REQUEST);
+
+		}
+
+		boolean isValid = userUtils.checkResetCode(emailResetCodeRepository, email, resetCode);
+		if (!isValid) {
+			throw new AppException(10703, "Mã xác thực không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
+		}
+
+		UserModel user = userRepository.findByEmail(email);
+		if (user == null) {
+			throw new AppException(10704, "Email không tồn tại", HttpStatus.BAD_REQUEST);
+		}
+
+		user.setPass(passwordEncoder.encode(newPassword));
+		userRepository.save(user);
+
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
 }

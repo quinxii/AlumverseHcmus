@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -369,11 +370,11 @@ public class UserServiceController {
 			throw new AppException(20605, "Lỗi khi gửi email", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
-		return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+		return ResponseEntity.status(HttpStatus.CREATED).body("");
 	}
 
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
-	@PutMapping("/{id}")
+	@PutMapping("/{id}/status")
 	public ResponseEntity<String> adminUpdateUser(@PathVariable String id,
 			@RequestParam(value = "statusId", required = false) Integer statusId) {
 
@@ -389,6 +390,30 @@ public class UserServiceController {
 		}
 		userRepository.save(user);
 
-		return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
+		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
+
+	@PreAuthorize("hasAnyAuthority('User.Edit')")
+	@PutMapping("/{id}/role")
+	public ResponseEntity<String> adminUpdateUserRole(@PathVariable String id,
+			@RequestParam(value = "roleId", required = false) Integer roleId) {
+
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		if (!optionalUser.isPresent()) {
+			throw new AppException(20800, "Người dùng không tồn tại", HttpStatus.NOT_FOUND);
+		}
+
+		UserModel user = optionalUser.get();
+		if (roleId != null) {
+			RoleModel role = roleRepository.findById(roleId)
+					.orElseThrow(() -> new AppException(20801, "Vai trò không tồn tại", HttpStatus.BAD_REQUEST));
+			Set<RoleModel> roles = new HashSet<>();
+			roles.add(role);
+			user.setRoles(roles);
+		}
+		userRepository.save(user);
+
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+	
 }
