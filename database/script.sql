@@ -766,14 +766,12 @@ DROP TABLE IF EXISTS inbox;
 
 CREATE TABLE
     inbox (
-        id VARCHAR(36) NOT NULL,
-        name TINYTEXT NOT NULL,
-        typeof_inbox ENUM ('INDIVIDUAL', 'GROUP') NOT NULL,
-        last_message TEXT,
-        last_sent_user_id varchar(36),
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        name TINYTEXT, -- Name of the group (only applicable if it's a group chat).
+        is_group TINYINT (1) DEFAULT (0),
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
-        FOREIGN KEY (last_sent_user_id) REFERENCES user (id),
         PRIMARY KEY (id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
@@ -783,9 +781,10 @@ DROP TABLE IF EXISTS inbox_member;
 
 CREATE TABLE
     inbox_member (
-        inbox_id VARCHAR(36) NOT NULL,
+        inbox_id BIGINT NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         role ENUM ('ADMIN', 'MEMBER') NOT NULL,
+        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
         FOREIGN KEY (inbox_id) REFERENCES inbox (id),
         FOREIGN KEY (user_id) REFERENCES user (id),
@@ -798,33 +797,19 @@ DROP TABLE IF EXISTS message;
 
 CREATE TABLE
     message (
-        id VARCHAR(36) NOT NULL,
-        inbox_id VARCHAR(36) NOT NULL,
-        user_id VARCHAR(36) NOT NULL,
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        inbox_id BIGINT NOT NULL,
+        sender_id VARCHAR(36) NOT NULL,
         content TEXT,
-        typeof_mess ENUM ('TEXT', 'IMAGE', 'FILE', 'VIDEO', 'SOUND', 'ICON') NOT NULL,
-        children_id VARCHAR(36),
+        message_type ENUM ('TEXT', 'IMAGE', 'FILE', 'VIDEO', 'SOUND') NOT NULL,
+        parent_message_id BIGINT,
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
         FOREIGN KEY (inbox_id) REFERENCES inbox (id),
-        FOREIGN KEY (user_id) REFERENCES user (id),
-        FOREIGN KEY (children_id) REFERENCES message (id),
-        PRIMARY KEY (id, inbox_id, user_id)
-    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
-BEGIN;
-
-DROP TABLE IF EXISTS message_access;
-
-CREATE TABLE
-    message_access (
-        mess_id VARCHAR(36) NOT NULL,
-        inbox_id VARCHAR(36) NOT NULL,
-        creator VARCHAR(36) NOT NULL,
-        user_id VARCHAR(36) NOT NULL,
-        FOREIGN KEY (mess_id, inbox_id, creator) REFERENCES message (id, inbox_id, user_id),
-        FOREIGN KEY (user_id) REFERENCES user (id),
-        PRIMARY KEY (mess_id, inbox_id, creator, user_id)
+        FOREIGN KEY (sender_id) REFERENCES user (id),
+        FOREIGN KEY (parent_message_id) REFERENCES message (id),
+        PRIMARY KEY (id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 BEGIN;
