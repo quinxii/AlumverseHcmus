@@ -844,6 +844,16 @@ CREATE TABLE status_notification (
         is_delete TINYINT (1) DEFAULT (0),
         PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+DROP TABLE IF EXISTS entity_type;
+
+CREATE TABLE entity_type (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    entity_table VARCHAR(150) NOT NULL,
+    notification_type ENUM('CREATE', 'UPDATE', 'DELETE') NOT NULL,
+    description VARCHAR(100),
+    PRIMARY KEY (id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
     
 -- Notification object
 DROP TABLE IF EXISTS notification_object;
@@ -854,7 +864,8 @@ CREATE TABLE notification_object (
     entity_id INT UNSIGNED NOT NULL,
     created_on DATETIME NOT NULL,
     is_delete TINYINT (1) DEFAULT (0),
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    FOREIGN KEY (entity_type) REFERENCES entity_type(id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Notification
