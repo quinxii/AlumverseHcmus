@@ -1,7 +1,7 @@
 package hcmus.alumni.message.model;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,14 +20,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "inbox")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 public class InboxModel implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -43,11 +45,11 @@ public class InboxModel implements Serializable {
 
     @CreationTimestamp
     @Column(name = "create_at", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createAt;
+    private Date createAt;
 
     @UpdateTimestamp
     @Column(name = "update_at", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    private LocalDateTime updateAt;
+    private Date updateAt;
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isDelete = false;
@@ -55,6 +57,10 @@ public class InboxModel implements Serializable {
     @OneToMany(mappedBy = "inbox", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private Set<InboxMemberModel> members = new HashSet<>();
+
+    public InboxModel(Long id) {
+        this.id = id;
+    }
 
     public void setMembers(Set<InboxMemberModel> members) {
         if (members != null) {

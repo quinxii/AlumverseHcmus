@@ -8,7 +8,7 @@
             "mainClass": "hcmus.alumni.servicediscovery.ServiceDiscoveryApplication",
             "projectName": "service-discovery",
             "args": "",
-            "envFile": "${workspaceFolder}/.env",
+            "envFile": "${workspaceFolder}/.env"
         },
         {
             "type": "java",
@@ -18,7 +18,7 @@
             "mainClass": "hcmus.alumni.apigateway.ApiGatewayApplication",
             "projectName": "api-gateway",
             "args": "",
-            "envFile": "${workspaceFolder}/.env",
+            "envFile": "${workspaceFolder}/.env"
         },
         {
             "type": "java",
@@ -96,6 +96,16 @@
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "mainClass": "hcmus.alumni.message.MessagesServiceApplication",
+            "projectName": "message-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-MessageServiceApplication<message-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.message.MessageServiceApplication",
             "projectName": "message-service",
             "args": "",
             "envFile": "${workspaceFolder}/.env"

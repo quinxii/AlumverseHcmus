@@ -1,11 +1,12 @@
 package hcmus.alumni.message.model;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import hcmus.alumni.message.dto.request.MessageRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,14 +19,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "message")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 public class MessageModel implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -58,14 +61,21 @@ public class MessageModel implements Serializable {
 
     @CreationTimestamp
     @Column(name = "create_at", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdAt;
+    private Date createAt;
 
     @UpdateTimestamp
     @Column(name = "update_at", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    private LocalDateTime updatedAt;
+    private Date updatedAt;
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isDelete;
+
+    public MessageModel(MessageRequestDto req) {
+        this.sender = new UserModel(req.getSender().getId());
+        this.content = req.getContent();
+        this.messageType = req.getMessageType();
+        this.parentMessage = req.getParentMessage();
+    }
 
     @Override
     public boolean equals(Object o) {

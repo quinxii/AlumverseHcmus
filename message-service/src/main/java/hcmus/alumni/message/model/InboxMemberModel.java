@@ -1,7 +1,7 @@
 package hcmus.alumni.message.model;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -17,14 +17,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "inbox_member")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 public class InboxMemberModel implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -52,7 +54,7 @@ public class InboxMemberModel implements Serializable {
 
     @CreationTimestamp
     @Column(name = "joined_at", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime joinedAt;
+    private Date joinedAt;
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isDelete;
