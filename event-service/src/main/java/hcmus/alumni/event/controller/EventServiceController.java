@@ -55,6 +55,7 @@ import hcmus.alumni.event.repository.EventRepository;
 import hcmus.alumni.event.repository.ParticipantEventRepository;
 import hcmus.alumni.event.repository.TagRepository;
 import hcmus.alumni.event.utils.ImageUtils;
+import hcmus.alumni.event.utils.FirebaseService;
 import hcmus.alumni.event.exception.AppException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -75,9 +76,17 @@ public class EventServiceController {
 	private CommentEventRepository commentEventRepository;
 	@Autowired
     private ImageUtils imageUtils;
+	@Autowired
+    private FirebaseService firebaseService;
 	
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
+	
+	@GetMapping("/test")
+    public String sendNotification(@RequestHeader("userId") String userId, @RequestParam String title, @RequestParam String body) {
+        firebaseService.sendUserNotification(userId, title, body);
+        return "Notification sent successfully!";
+    }
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
