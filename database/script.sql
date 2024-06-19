@@ -873,8 +873,8 @@ DROP TABLE IF EXISTS notification_object;
 CREATE TABLE notification_object (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     entity_type INT UNSIGNED NOT NULL,
-    entity_id INT UNSIGNED NOT NULL,
-    create_at DATETIME NOT NULL,
+    entity_id VARCHAR(36) NOT NULL,
+    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
     is_delete TINYINT (1) DEFAULT (0),
     PRIMARY KEY (id),
     FOREIGN KEY (entity_type) REFERENCES entity_type(id)

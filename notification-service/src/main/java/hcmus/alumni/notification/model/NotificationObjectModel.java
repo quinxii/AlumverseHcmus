@@ -37,12 +37,12 @@ public class NotificationObjectModel implements Serializable {
 	@JoinColumn(name = "entity_type", nullable = false)
 	private EntityTypeModel entityType;
 	
-	@Column(name = "entity_id", nullable = false, columnDefinition="INT UNSIGNED")
-	private Long entityId;
+	@Column(name = "entity_id", length = 36, nullable = false)
+	private String entityId;
 	
 	@CreationTimestamp
 	@Column(name = "create_at")
-	private Date createdOn;
+	private Date createAt;
 	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
 	private Boolean isDelete = false;

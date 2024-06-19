@@ -1,4 +1,4 @@
-package hcmus.alumni.notification.dto.response;
+package hcmus.alumni.notification.dto;
 
 import java.util.Date;
 
@@ -7,6 +7,9 @@ public interface INotificationDto {
 		String getId();
 		String getFullName();
 	}
+	interface Status {
+		String getName();
+	}
 	
 	String getId(); //notification_object_id
 	User getNotifier();
@@ -14,7 +17,8 @@ public interface INotificationDto {
 	String getEntityId();
 	String getEntityTable();
 	String getNotificationType();
-	String getCreatedOn();
+	String getCreateAt();
+	Status getStatus();
 	String getUrl();
 	String getNotificationMessage();
 }

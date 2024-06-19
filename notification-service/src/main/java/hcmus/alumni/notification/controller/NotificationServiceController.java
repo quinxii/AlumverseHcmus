@@ -39,11 +39,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.notification.dto.INotificationDto;
+import hcmus.alumni.notification.repository.NotificationRepository;
+
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/notification")
 public class NotificationServiceController {
-	
+	@Autowired
+	private NotificationRepository notificationRepository;
 
 	private final static int MAXIMUM_PAGES = 50;
 
@@ -56,7 +60,14 @@ public class NotificationServiceController {
 			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		
+		Pageable pageable = PageRequest.of(page, pageSize);
+		Page<INotificationDto> notifications = notificationRepository.getNotifications(userId, pageable);
+		int totalUnreadMessages = notificationRepository.getUnreadNotificationsCount(userId);
 
+		result.put("totalUnreadMessages", totalUnreadMessages);
+		result.put("notifications", notifications.getContent());
+		
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }
