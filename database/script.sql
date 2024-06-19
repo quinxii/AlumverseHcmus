@@ -874,7 +874,7 @@ CREATE TABLE notification_object (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     entity_type INT UNSIGNED NOT NULL,
     entity_id INT UNSIGNED NOT NULL,
-    created_on DATETIME NOT NULL,
+    create_at DATETIME NOT NULL,
     is_delete TINYINT (1) DEFAULT (0),
     PRIMARY KEY (id),
     FOREIGN KEY (entity_type) REFERENCES entity_type(id)
