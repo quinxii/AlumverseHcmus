@@ -6,6 +6,8 @@ import java.util.Date;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import hcmus.alumni.message.dto.request.MessageRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -42,6 +44,7 @@ public class MessageModel implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "inbox_id", referencedColumnName = "id", nullable = false)
+    @JsonBackReference
     private InboxModel inbox;
 
     @ManyToOne
@@ -65,16 +68,20 @@ public class MessageModel implements Serializable {
 
     @UpdateTimestamp
     @Column(name = "update_at", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    private Date updatedAt;
+    private Date updateAt;
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
-    private boolean isDelete;
+    private Boolean isDelete = false;
+
+    public MessageModel(Long id) {
+        this.id = id;
+    }
 
     public MessageModel(MessageRequestDto req) {
-        this.sender = new UserModel(req.getSender().getId());
+        this.sender = new UserModel(req.getSenderId());
         this.content = req.getContent();
         this.messageType = req.getMessageType();
-        this.parentMessage = req.getParentMessage();
+        this.parentMessage = req.getParentMessageId() != null ? new MessageModel(req.getParentMessageId()) : null;
     }
 
     @Override

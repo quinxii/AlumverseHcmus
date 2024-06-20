@@ -13,10 +13,11 @@ import lombok.Setter;
 public class InboxDto {
     private Long id;
     private String name;
-    private boolean isGroup;
+    private Boolean isGroup;
     private Date createAt;
     private Date updateAt;
     @JsonManagedReference
     private Set<InboxMemberDto> members;
-
+    @JsonManagedReference
+    private MessageDto latestMessage;
 }

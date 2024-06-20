@@ -10,23 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MessageRequestDto {
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Inbox {
-        private Long id;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Sender {
-        private String id;
-    }
-
-    private Inbox inbox;
-    private Sender sender;
+    private String senderId;
     private String content;
     private MessageType messageType;
-    private MessageModel parentMessage;
+    private Long parentMessageId;
 }

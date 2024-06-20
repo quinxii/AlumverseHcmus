@@ -57,7 +57,7 @@ public class InboxMemberModel implements Serializable {
     private Date joinedAt;
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
-    private boolean isDelete;
+    private Boolean isDelete = false;
 
     public InboxMemberModel(InboxMemberId id) {
         setId(id);

@@ -24,5 +24,5 @@ public class InboxMemberDto {
     private UserDto user;
     private Role role;
     private Date joinedAt;
-    private boolean isDelete;
+    private Boolean isDelete;
 }

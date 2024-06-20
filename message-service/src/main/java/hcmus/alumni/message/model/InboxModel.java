@@ -3,7 +3,6 @@ package hcmus.alumni.message.model;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import hcmus.alumni.message.model.MessageModel.MessageType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +19,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,7 +42,7 @@ public class InboxModel implements Serializable {
     private String name;
 
     @Column(name = "is_group", columnDefinition = "TINYINT(1) DEFAULT 0")
-    private boolean isGroup = false;
+    private Boolean isGroup = false;
 
     @CreationTimestamp
     @Column(name = "create_at", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
@@ -52,11 +53,15 @@ public class InboxModel implements Serializable {
     private Date updateAt;
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
-    private boolean isDelete = false;
+    private Boolean isDelete = false;
 
     @OneToMany(mappedBy = "inbox", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private Set<InboxMemberModel> members = new HashSet<>();
+
+    @Transient
+    @JsonManagedReference
+    private MessageModel latestMessage;
 
     public InboxModel(Long id) {
         this.id = id;
