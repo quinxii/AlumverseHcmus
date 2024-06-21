@@ -61,9 +61,11 @@ public class NotificationServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
+		int totalUnreadMessages = notificationRepository.getUnreadNotificationsCount(userId);
+		
 		Pageable pageable = PageRequest.of(page, pageSize);
 		Page<INotificationDto> notifications = notificationRepository.getNotifications(userId, pageable);
-		int totalUnreadMessages = notificationRepository.getUnreadNotificationsCount(userId);
+		
 
 		result.put("totalUnreadMessages", totalUnreadMessages);
 		result.put("notifications", notifications.getContent());

@@ -841,7 +841,6 @@ CREATE TABLE user_subscription_token (
         id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         token TEXT NOT NULL,
-        device_name VARCHAR(100) NOT NULL,
         is_delete TINYINT (1) DEFAULT (0),
         PRIMARY KEY (id),
         FOREIGN KEY (user_id) REFERENCES user(id)

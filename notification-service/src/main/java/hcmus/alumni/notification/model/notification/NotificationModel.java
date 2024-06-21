@@ -1,4 +1,4 @@
-package hcmus.alumni.notification.model;
+package hcmus.alumni.notification.model.notification;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -10,21 +10,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 
 import java.io.Serializable;
 
-import hcmus.alumni.notification.common.NotificationType;
+import hcmus.alumni.notification.model.user.UserModel;
 
 @Entity
-@Table(name = "entity_type")
+@Table(name = "notification")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class EntityTypeModel implements Serializable {
+public class NotificationModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	@Id
@@ -32,13 +30,15 @@ public class EntityTypeModel implements Serializable {
 	@Column(name = "id", nullable = false, columnDefinition="INT UNSIGNED")
 	private Long id;
 	
-	@Column(name = "entity_table", length = 150, nullable = false)
-	private String entityTable;
+	@ManyToOne
+	@JoinColumn(name = "notification_object_id", nullable = false)
+	private NotificationObjectModel notificationObject;
 	
-	@Enumerated(EnumType.STRING)
-	@Column(name = "notification_type", nullable = false)
-	private NotificationType notificationType;
+	@ManyToOne
+	@JoinColumn(name = "notifier_id", nullable = false)
+	private UserModel notifier;
 	
-	@Column(name = "description", length = 100)
-	private String description;
+	@ManyToOne
+	@JoinColumn(name = "status_id", nullable = false)
+	private StatusNotificationModel status;
 }

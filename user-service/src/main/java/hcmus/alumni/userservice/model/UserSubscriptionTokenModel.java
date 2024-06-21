@@ -29,15 +29,11 @@ public class UserSubscriptionTokenModel implements Serializable {
 	@Column(name = "token", columnDefinition = "TEXT")
 	private String token;
 	
-	@Column(name = "device_name", length = 100)
-	private String deviceName;
-	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
 	
 	public UserSubscriptionTokenModel(UserSubscriptionTokenModel copy, String userId) {
 		this.userId = userId;
 		this.token = copy.token;
-		this.deviceName = copy.deviceName;
 	}
 }

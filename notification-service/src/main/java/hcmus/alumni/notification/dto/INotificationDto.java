@@ -6,7 +6,8 @@ public interface INotificationDto {
 	interface User {
 		String getId();
 		String getFullName();
-	}
+		String getAvatarUrl()
+;	}
 	interface Status {
 		String getName();
 	}
@@ -19,6 +20,7 @@ public interface INotificationDto {
 	String getNotificationType();
 	String getCreateAt();
 	Status getStatus();
-	String getUrl();
+	String getNotificationImageUrl();
 	String getNotificationMessage();
+	String getParentId(); //optional
 }

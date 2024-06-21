@@ -1,4 +1,4 @@
-package hcmus.alumni.notification.model;
+package hcmus.alumni.notification.model.user;
 
 import java.io.Serializable;
 import java.util.Date;

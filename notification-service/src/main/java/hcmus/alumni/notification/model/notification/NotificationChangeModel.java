@@ -1,4 +1,4 @@
-package hcmus.alumni.notification.model;
+package hcmus.alumni.notification.model.notification;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -15,12 +15,14 @@ import jakarta.persistence.GenerationType;
 
 import java.io.Serializable;
 
+import hcmus.alumni.notification.model.user.UserModel;
+
 @Entity
-@Table(name = "notification")
+@Table(name = "notification_change")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class NotificationModel implements Serializable {
+public class NotificationChangeModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	@Id
@@ -33,10 +35,9 @@ public class NotificationModel implements Serializable {
 	private NotificationObjectModel notificationObject;
 	
 	@ManyToOne
-	@JoinColumn(name = "notifier_id", nullable = false)
-	private UserModel notifier;
+	@JoinColumn(name = "actor_id", nullable = false)
+	private UserModel actor;
 	
-	@ManyToOne
-	@JoinColumn(name = "status_id", nullable = false)
-	private StatusNotificationModel status;
+	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
+	private Boolean isDelete = false;
 }

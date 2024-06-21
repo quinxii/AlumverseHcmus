@@ -1,4 +1,4 @@
-package hcmus.alumni.notification.model;
+package hcmus.alumni.notification.model.notification;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;

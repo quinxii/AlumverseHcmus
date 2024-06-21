@@ -1,4 +1,4 @@
-package hcmus.alumni.notification.model;
+package hcmus.alumni.notification.model.notification;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -10,17 +10,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 
 import java.io.Serializable;
 
+import hcmus.alumni.notification.common.NotificationType;
+
 @Entity
-@Table(name = "notification_change")
+@Table(name = "entity_type")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class NotificationChangeModel implements Serializable {
+public class EntityTypeModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	@Id
@@ -28,14 +32,13 @@ public class NotificationChangeModel implements Serializable {
 	@Column(name = "id", nullable = false, columnDefinition="INT UNSIGNED")
 	private Long id;
 	
-	@ManyToOne
-	@JoinColumn(name = "notification_object_id", nullable = false)
-	private NotificationObjectModel notificationObject;
+	@Column(name = "entity_table", length = 150, nullable = false)
+	private String entityTable;
 	
-	@ManyToOne
-	@JoinColumn(name = "actor_id", nullable = false)
-	private UserModel actor;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "notification_type", nullable = false)
+	private NotificationType notificationType;
 	
-	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
-	private Boolean isDelete = false;
+	@Column(name = "description", length = 100)
+	private String description;
 }

@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import hcmus.alumni.notification.model.NotificationModel;
+import hcmus.alumni.notification.model.notification.NotificationModel;
 import hcmus.alumni.notification.dto.INotificationDto;
 
 public interface NotificationRepository extends JpaRepository<NotificationModel, String> {
