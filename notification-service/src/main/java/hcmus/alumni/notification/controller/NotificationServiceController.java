@@ -39,13 +39,28 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import hcmus.alumni.notification.dto.INotificationDto;
+import hcmus.alumni.notification.dto.NotificationDto;
+
+import hcmus.alumni.notification.model.notification.NotificationModel;
+import hcmus.alumni.notification.model.group.GroupModel;
+import hcmus.alumni.notification.model.group.PostGroupModel;
+import hcmus.alumni.notification.model.counsel.PostAdviseModel;
+import hcmus.alumni.notification.model.event.CommentEventModel;
+import hcmus.alumni.notification.model.news.CommentNewsModel;
+import hcmus.alumni.notification.model.group.CommentPostGroupModel;
+import hcmus.alumni.notification.model.counsel.CommentPostAdviseModel;
+
 import hcmus.alumni.notification.repository.NotificationRepository;
+
+import hcmus.alumni.notification.common.NotificationType;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/notification")
 public class NotificationServiceController {
+	@Autowired
+	private final ModelMapper mapper = new ModelMapper();
+	
 	@Autowired
 	private NotificationRepository notificationRepository;
 
@@ -64,11 +79,75 @@ public class NotificationServiceController {
 		int totalUnreadMessages = notificationRepository.getUnreadNotificationsCount(userId);
 		
 		Pageable pageable = PageRequest.of(page, pageSize);
-		Page<INotificationDto> notifications = notificationRepository.getNotifications(userId, pageable);
-		
+		Page<NotificationModel> notificationsPages = notificationRepository.getNotifications(userId, pageable);
+		List<NotificationModel> notifications = notificationsPages.getContent();
+
+	    for (NotificationModel notification : notifications) {
+			if ("request_friend".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
+			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã gửi một lời mời kết bạn");
+			}
+			if ("comment_event".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
+			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
+			    Optional<CommentEventModel> optionalComment = notificationRepository.findCommentEventById(notification.getEntityId());
+			    if (!optionalComment.isPresent()) {
+			    	notification.setParentId(optionalComment.get().getEventId());
+			    }
+			}
+			if ("comment_news".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
+			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
+			    Optional<CommentNewsModel> optionalComment = notificationRepository.findCommentNewsById(notification.getEntityId());
+			    if (!optionalComment.isPresent()) {
+			    	notification.setParentId(optionalComment.get().getNewsId());
+			    }
+			}
+			if ("group".equals(notification.getEntityTable()) && (NotificationType.UPDATE).equals(notification.getNotificationType())) {
+				Optional<GroupModel> optionalGroup = notificationRepository.findGroupById(notification.getEntityId());
+			    if (!optionalGroup.isPresent()) {
+			    	notification.setNotificationImageUrl(optionalGroup.get().getCoverUrl());
+			        notification.setNotificationMessage("Nhóm " + optionalGroup.get().getName() + " mà bạn tham gia đã được cập nhật thông tin");
+			    }
+			}
+			if ("interact_post_group".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
+				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+				Optional<PostGroupModel> optionalPost = notificationRepository.findPostGroupById(notification.getEntityId());
+			    if (!optionalPost.isPresent()) {
+			    	notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
+			    			(optionalPost.get().getReactionCount() - 1) + " người khác đã bày tỏ cảm xúc về bài viết của bạn");
+			    }
+			}
+			if ("comment_post_group".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
+				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+				Optional<CommentPostGroupModel> optionalComment = notificationRepository.findCommentPostGroupById(notification.getEntityId());
+			    if (!optionalComment.isPresent()) {
+			    	notification.setParentId(optionalComment.get().getPostGroupId());
+			    	notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
+			    			((optionalComment.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
+			    }
+			}
+			if ("interact_post_advise".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
+				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+				Optional<PostAdviseModel> optionalPost = notificationRepository.findPostAdviseById(notification.getEntityId());
+			    if (!optionalPost.isPresent()) {
+			    	notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
+			    			(optionalPost.get().getReactionCount() - 1) + " người khác đã bày tỏ cảm xúc về bài viết của bạn");
+			    }
+			}
+			if ("comment_post_advise".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
+				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+				Optional<CommentPostAdviseModel> optionalComment = notificationRepository.findCommentPostAdviseById(notification.getEntityId());
+			    if (!optionalComment.isPresent()) {
+			    	notification.setParentId(optionalComment.get().getPostAdviseId());
+			    	notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
+			    			((optionalComment.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
+			    }
+			}
+	    }
 
 		result.put("totalUnreadMessages", totalUnreadMessages);
-		result.put("notifications", notifications.getContent());
+		result.put("notifications", notifications.stream().map(n -> mapper.map(n, NotificationDto.class)).toList());
 		
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}

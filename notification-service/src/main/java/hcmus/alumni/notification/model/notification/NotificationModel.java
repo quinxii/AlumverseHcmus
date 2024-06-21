@@ -12,10 +12,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Transient;
 
 import java.io.Serializable;
 
 import hcmus.alumni.notification.model.user.UserModel;
+
+import hcmus.alumni.notification.common.NotificationType;
 
 @Entity
 @Table(name = "notification")
@@ -41,4 +44,47 @@ public class NotificationModel implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "status_id", nullable = false)
 	private StatusNotificationModel status;
+	
+	@Transient
+	private UserModel actor;
+	
+	@Transient
+	String notificationImageUrl;
+	
+	@Transient
+	String notificationMessage;
+	
+	@Transient
+	String parentId;
+	
+	public String getEntityId() {
+		return notificationObject.getEntityId();
+	}
+	
+	public String getEntityTable() {
+		return notificationObject.getEntityType().getEntityTable();
+	}
+	
+	public NotificationType getNotificationType() {
+		return notificationObject.getEntityType().getNotificationType();
+	}
+	
+	public NotificationModel(NotificationModel n, NotificationChangeModel nc) {
+		this.id = n.id;
+		this.notificationObject = n.notificationObject;
+		this.notifier = n.notifier;
+		this.status = n.status;
+		this.actor = nc.getActor();
+	}
+	
+	public NotificationModel(NotificationModel copy, String notificationImageUrl, String notificationMessage, String parentId) {
+        this.id = copy.id;
+        this.notificationObject = copy.notificationObject;
+        this.notifier = copy.notifier;
+        this.status = copy.status;
+        this.actor = copy.actor;
+        this.notificationImageUrl = notificationImageUrl;
+        this.notificationMessage = notificationMessage;
+        this.parentId = parentId;
+    }
 }

@@ -13,7 +13,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.notification.model.notification.NotificationModel;
-import hcmus.alumni.notification.dto.INotificationDto;
+import hcmus.alumni.notification.model.group.GroupModel;
+import hcmus.alumni.notification.model.group.PostGroupModel;
+import hcmus.alumni.notification.model.counsel.PostAdviseModel;
+import hcmus.alumni.notification.model.event.CommentEventModel;
+import hcmus.alumni.notification.model.news.CommentNewsModel;
+import hcmus.alumni.notification.model.group.CommentPostGroupModel;
+import hcmus.alumni.notification.model.counsel.CommentPostAdviseModel;
 
 public interface NotificationRepository extends JpaRepository<NotificationModel, String> {
 	@Query(value = "select distinct p.name from role_permission rp " +
@@ -28,9 +34,7 @@ public interface NotificationRepository extends JpaRepository<NotificationModel,
 		"AND n.notifier.id = :userId")
 	int getUnreadNotificationsCount(@Param("userId") String userId);
 	
-	@Query("SELECT no.id AS id, n.notifier AS notifier, nc.actor AS actor, " +
-		"no.entityId AS entityId, et.entityTable AS entityTable, et.notificationType AS notificationType, " + 
-		"no.createAt AS createAt, n.status AS status " +
+	@Query("SELECT new NotificationModel(n, nc) " +
 		"FROM NotificationModel n " +
 		"JOIN n.notificationObject no " +
 		"JOIN no.entityType et " +
@@ -39,5 +43,26 @@ public interface NotificationRepository extends JpaRepository<NotificationModel,
 		"AND n.status.id != 3 " +
 		"AND n.notifier.id = :userId " + 
 		"ORDER BY no.createAt DESC")
-	Page<INotificationDto> getNotifications(@Param("userId") String userId, Pageable pageable);
+	Page<NotificationModel> getNotifications(@Param("userId") String userId, Pageable pageable);
+	
+	@Query("SELECT g FROM GroupModel g WHERE g.id = :groupId")
+	Optional<GroupModel> findGroupById(@Param("groupId") String groupId);
+	
+    @Query("SELECT p FROM PostGroupModel p WHERE p.id = :postId")
+    Optional<PostGroupModel> findPostGroupById(@Param("postId") String postId);
+    
+    @Query("SELECT p FROM PostAdviseModel p WHERE p.id = :postId")
+    Optional<PostAdviseModel> findPostAdviseById(@Param("postId") String postId);
+    
+    @Query("SELECT c FROM CommentEventModel c WHERE c.id = :commentId")
+    Optional<CommentEventModel> findCommentEventById(@Param("commentId") String commentId);
+    
+    @Query("SELECT c FROM CommentNewsModel c WHERE c.id = :commentId")
+    Optional<CommentNewsModel> findCommentNewsById(@Param("commentId") String commentId);
+    
+    @Query("SELECT c FROM CommentPostGroupModel c WHERE c.id = :commentId")
+    Optional<CommentPostGroupModel> findCommentPostGroupById(@Param("commentId") String commentId);
+    
+    @Query("SELECT c FROM CommentPostAdviseModel c WHERE c.id = :commentId")
+    Optional<CommentPostAdviseModel> findCommentPostAdviseById(@Param("commentId") String commentId);
 }
