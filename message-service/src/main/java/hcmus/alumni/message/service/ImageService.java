@@ -1,8 +1,13 @@
-package hcmus.alumni.counsel.utils;
+package hcmus.alumni.message.service;
 
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.UUID;
+
 import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,15 +22,15 @@ import lombok.Getter;
 
 @Service
 @Getter
-public class ImageUtils {
+public class ImageService {
 	@Autowired
-	private GCPConnectionUtils gcp;
+	private GCPConnectionService gcp;
 	@Autowired
-	private ImageCompression imageCompression;
+	private ImageCompressionService imageCompression;
 
 	private final int resizeMaxWidth = 2000;
 	private final int resizeMaxHeight = 2000;
-	private final String counselPath = "images/counsel/";
+	public final static String messagesPath = "messages/";
 	public static int saltLength = 16;
 
 	// Save MultipartFile Image
@@ -72,8 +77,28 @@ public class ImageUtils {
 
 	}
 
+	public BufferedImage convertPngToJpeg(BufferedImage pngImage) {
+		BufferedImage jpegImage = new BufferedImage(pngImage.getWidth(), pngImage.getHeight(),
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = jpegImage.createGraphics();
+		g.drawImage(pngImage, 0, 0, Color.WHITE, null);
+		g.dispose();
+		return jpegImage;
+	}
 
-	public String getCounselPath(String id) {
-		return this.counselPath + id + "/";
+	public static String generateUniqueImageName(Long inboxId) {
+		String timestamp = String.valueOf(System.currentTimeMillis());
+		String uniqueName = inboxId + "_" + timestamp + "_" + UUID.randomUUID().toString();
+		return uniqueName;
+	}
+
+	public static boolean isJpegOrPng(MultipartFile imageFile) {
+		String contentType = imageFile.getContentType();
+		return contentType != null && (contentType.equals("image/jpeg") || contentType.equals("image/png"));
+	}
+
+	public static boolean isPng(MultipartFile imageFile) {
+		String contentType = imageFile.getContentType();
+		return contentType != null && contentType.equals("image/png");
 	}
 }

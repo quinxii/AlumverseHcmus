@@ -20,8 +20,8 @@ public class ImageUtils {
 	@Autowired
 	private ImageCompression imageCompression;
 
-	private final int resizeMaxWidth = 1000;
-	private final int resizeMaxHeight = 1000;
+	private final int resizeMaxWidth = 2000;
+	private final int resizeMaxHeight = 2000;
 	private final String eventPath = "images/events/";
 	public static int saltLength = 16;
 

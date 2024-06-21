@@ -1,5 +1,6 @@
 package hcmus.alumni.message.controller;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,14 +23,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.message.dto.request.InboxRequestDto;
 import hcmus.alumni.message.dto.request.MessageRequestDto;
 import hcmus.alumni.message.dto.response.InboxDto;
 import hcmus.alumni.message.dto.response.MessageDto;
 import hcmus.alumni.message.exception.AppException;
+import hcmus.alumni.message.model.InboxMemberId;
 import hcmus.alumni.message.model.InboxModel;
 import hcmus.alumni.message.model.MessageModel;
+import hcmus.alumni.message.model.MessageModel.MessageType;
+import hcmus.alumni.message.service.ImageService;
 import hcmus.alumni.message.service.InboxMemberService;
 import hcmus.alumni.message.service.InboxService;
 import hcmus.alumni.message.service.MessageService;
@@ -58,7 +63,7 @@ public class MessageServiceController {
     private static final int MAXIMUM_PAGES = 50;
 
     @GetMapping("/inbox")
-    public ResponseEntity<HashMap<String, Object>> getInboxes(
+    public ResponseEntity<Map<String, Object>> getInboxes(
             @RequestHeader("userId") String userId,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -80,7 +85,7 @@ public class MessageServiceController {
 
     @PreAuthorize("@inboxMemberRepository.existsById(new hcmus.alumni.message.model.InboxMemberId(#inboxId, #userId))")
     @GetMapping("/inbox/{inboxId}")
-    public ResponseEntity<HashMap<String, Object>> getMessagesByInbox(
+    public ResponseEntity<Map<String, Object>> getMessagesByInbox(
             @RequestHeader("userId") String userId,
             @PathVariable Long inboxId,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
@@ -100,7 +105,7 @@ public class MessageServiceController {
     }
 
     @PostMapping("/inbox")
-    public ResponseEntity<HashMap<String, Object>> createInbox(
+    public ResponseEntity<Map<String, Object>> createInbox(
             @RequestHeader("userId") String userId,
             @RequestBody InboxRequestDto req) {
         // Only create if there are no messages between the two users
@@ -143,13 +148,62 @@ public class MessageServiceController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("@inboxMemberRepository.existsById(new hcmus.alumni.message.model.InboxMemberId(#inboxId, #senderId))")
+    @PostMapping("/inbox/{inboxId}/media")
+    public ResponseEntity<Map<String, Object>> sendMediaMessage(
+            @RequestHeader("userId") String senderId,
+            @PathVariable Long inboxId,
+            @RequestParam MultipartFile media,
+            @RequestParam String messageType,
+            @RequestParam(required = false) Long parentMessageId) {
+        if (media.isEmpty()) {
+            throw new AppException(90400, "Phương tiện không được để trống", HttpStatus.BAD_REQUEST);
+        }
+        if (!ImageService.isJpegOrPng(media)) {
+            throw new AppException(90401, "Ảnh phải là png hoặc jpeg", HttpStatus.BAD_REQUEST);
+        }
+
+        MessageType type = null;
+        try {
+            type = MessageType.valueOf(messageType.toUpperCase());
+            if (type != MessageType.IMAGE) {
+                throw new AppException(90402, "Phương tiện không được hỗ trợ", HttpStatus.BAD_REQUEST);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new AppException(90402, "Phương tiện không được hỗ trợ", HttpStatus.BAD_REQUEST);
+        }
+
+        MessageModel savedMsg;
+        try {
+            // Handle saving the message to the database
+            savedMsg = messageService.saveMediaTypeMsg(inboxId, senderId, media, type, parentMessageId);
+        } catch (IOException e) {
+            throw new AppException(90403, "Lỗi khi lưu phương tiện", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        // Get other members' userId in inbox
+        List<String> userIds = inboxService.extractUserIdsExcludeSelf(savedMsg.getInbox(), senderId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("inbox", mapper.map(savedMsg.getInbox(), InboxDto.class));
+        response.put("message", mapper.map(savedMsg, MessageDto.class));
+
+        for (String userId : userIds) {
+            messagingTemplate.convertAndSendToUser(
+                    userId,
+                    "/queue/messages",
+                    response);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/inbox/individual/{otherUserId}")
-    public ResponseEntity<HashMap<String, Object>> getMethodName(
+    public ResponseEntity<Map<String, Object>> getMethodName(
             @RequestHeader("userId") String userId,
             @PathVariable String otherUserId) {
         Long inboxId = inboxService.getIndividualInboxId(userId, otherUserId);
         if (inboxId == null) {
-            throw new AppException(90405, "Không tìm thấy cuộc trò chuyện cá nhân", HttpStatus.NOT_FOUND);
+            throw new AppException(90505, "Không tìm thấy cuộc trò chuyện cá nhân", HttpStatus.NOT_FOUND);
         }
         HashMap<String, Object> response = new HashMap<>();
         response.put("inboxId", inboxId);
@@ -158,10 +212,19 @@ public class MessageServiceController {
     }
 
     @Transactional
+    // @PreAuthorize("@inboxMemberRepository.existsById(new
+    // hcmus.alumni.message.model.InboxMemberId(#inboxId, #req.getSenderId()))")
     @MessageMapping("/send-message/{inboxId}")
     public void sendMessage(
             @DestinationVariable Long inboxId,
             @Payload MessageRequestDto req) {
+        if (!req.getMessageType().equals(MessageType.TEXT)) {
+            return;
+        }
+        if (inboxMemberService.existsById(new InboxMemberId(inboxId, req.getSenderId())) == false) {
+            return;
+        }
+
         // Handle saving the message to the database
         MessageModel savedMsg = messageService.saveFromReq(req, inboxId);
 

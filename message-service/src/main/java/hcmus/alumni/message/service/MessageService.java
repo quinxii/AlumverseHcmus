@@ -1,5 +1,6 @@
 package hcmus.alumni.message.service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -9,10 +10,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.message.dto.request.MessageRequestDto;
 import hcmus.alumni.message.model.InboxModel;
 import hcmus.alumni.message.model.MessageModel;
+import hcmus.alumni.message.model.MessageModel.MessageType;
 import hcmus.alumni.message.model.UserModel;
 import hcmus.alumni.message.repostiory.MessageRepository;
 import jakarta.persistence.EntityManager;
@@ -26,6 +29,8 @@ public class MessageService {
     private EntityManager entityManager;
     @Autowired
     private MessageRepository messageRepository;
+    @Autowired
+    private ImageService imageService;
 
     /**
      * Processes the latest inboxes by retrieving the latest messages for each inbox
@@ -72,6 +77,25 @@ public class MessageService {
         // Handle saving the message to the database
         MessageModel msg = new MessageModel(req);
         msg.setInbox(new InboxModel(inboxId));
+
+        MessageModel savedMsg = messageRepository.saveAndFlush(msg);
+        entityManager.refresh(savedMsg);
+
+        return savedMsg;
+    }
+
+    @Transactional
+    public MessageModel saveMediaTypeMsg(Long inboxId, String senderId, MultipartFile file, MessageType messageType,
+            Long parentMessageId) throws IOException {
+        String mediaUrl = imageService.saveImageToStorage(ImageService.messagesPath, file,
+                ImageService.generateUniqueImageName(inboxId));
+
+        MessageModel msg = new MessageModel();
+        msg.setInbox(new InboxModel(inboxId));
+        msg.setSender(new UserModel(senderId));
+        msg.setContent(mediaUrl);
+        msg.setMessageType(messageType);
+        msg.setParentMessage(parentMessageId != null ? new MessageModel(parentMessageId) : null);
 
         MessageModel savedMsg = messageRepository.saveAndFlush(msg);
         entityManager.refresh(savedMsg);
