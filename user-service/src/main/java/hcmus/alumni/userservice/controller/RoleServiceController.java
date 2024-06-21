@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000") // Allow requests from Web
 @RequestMapping("/roles")
 public class RoleServiceController {
     @Autowired

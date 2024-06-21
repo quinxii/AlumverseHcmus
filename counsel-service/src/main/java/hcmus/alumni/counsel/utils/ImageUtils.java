@@ -1,5 +1,7 @@
 package hcmus.alumni.counsel.utils;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,13 +39,16 @@ public class ImageUtils {
 
 		String newFilename = uploadDirectory + imageName;
 
-		// Resize then compress image
+		// Convert to jpeg (if png), resize then compress image
 		BufferedImage bufferedImage = ImageIO.read(imageFile.getInputStream());
+		if (isPng(imageFile)) {
+			bufferedImage = convertPngToJpeg(bufferedImage);
+		}
 		bufferedImage = imageCompression.resizeImage(bufferedImage, resizeMaxWidth, resizeMaxHeight);
-		byte[] imageBytes = imageCompression.compressImage(bufferedImage, imageFile.getContentType(), 0.8f);
+		byte[] imageBytes = imageCompression.compressImage(bufferedImage, "image/jpeg", 0.8f);
 
 		BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
-				.setContentType(imageFile.getContentType()).setCacheControl("no-cache").build();
+				.setContentType("image/jpeg").setCacheControl("no-cache").build();
 
 		// Upload the image from the local file path
 		try {
@@ -72,6 +77,24 @@ public class ImageUtils {
 
 	}
 
+	public BufferedImage convertPngToJpeg(BufferedImage pngImage) {
+		BufferedImage jpegImage = new BufferedImage(pngImage.getWidth(), pngImage.getHeight(),
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = jpegImage.createGraphics();
+		g.drawImage(pngImage, 0, 0, Color.WHITE, null);
+		g.dispose();
+		return jpegImage;
+	}
+
+	public static boolean isJpegOrPng(MultipartFile imageFile) {
+		String contentType = imageFile.getContentType();
+		return contentType != null && (contentType.equals("image/jpeg") || contentType.equals("image/png"));
+	}
+
+	public static boolean isPng(MultipartFile imageFile) {
+		String contentType = imageFile.getContentType();
+		return contentType != null && contentType.equals("image/png");
+	}
 
 	public String getCounselPath(String id) {
 		return this.counselPath + id + "/";

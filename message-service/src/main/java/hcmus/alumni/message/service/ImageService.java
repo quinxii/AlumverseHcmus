@@ -1,7 +1,6 @@
 package hcmus.alumni.message.service;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
@@ -42,13 +41,16 @@ public class ImageService {
 
 		String newFilename = uploadDirectory + imageName;
 
-		// Resize then compress image
+		// Convert to jpeg (if png), resize then compress image
 		BufferedImage bufferedImage = ImageIO.read(imageFile.getInputStream());
+		if (isPng(imageFile)) {
+			bufferedImage = convertPngToJpeg(bufferedImage);
+		}
 		bufferedImage = imageCompression.resizeImage(bufferedImage, resizeMaxWidth, resizeMaxHeight);
-		byte[] imageBytes = imageCompression.compressImage(bufferedImage, imageFile.getContentType(), 0.8f);
+		byte[] imageBytes = imageCompression.compressImage(bufferedImage, "image/jpeg", 0.8f);
 
 		BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
-				.setContentType(imageFile.getContentType()).setCacheControl("no-cache").build();
+				.setContentType("image/jpeg").setCacheControl("no-cache").build();
 
 		// Upload the image from the local file path
 		try {

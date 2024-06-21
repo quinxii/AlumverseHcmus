@@ -75,14 +75,14 @@ spring:
           predicates:
             - Path=/ws/**
 
-      # default-filters:
-      #   - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-      # globalcors:
-      #   corsConfigurations:
-      #     '[/**]':
-      #         allowedOrigins: "*"
-      #         allowedMethods: "*"
-      #         allowedHeaders: "*"
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+              allowedOriginPatterns: "http://localhost:[*],https://alumverse.vercel.app/"
+              allowedMethods: "*"
+              allowedHeaders: "*"
 server:
   port: 8080
 
