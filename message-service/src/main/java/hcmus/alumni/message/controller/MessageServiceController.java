@@ -142,7 +142,7 @@ public class MessageServiceController {
             Long savedInboxId = inboxService.createInbox(req);
             response.put("inboxId", savedInboxId);
         } catch (JpaObjectRetrievalFailureException e) {
-            throw new AppException(90301, "Người dùng không tồn tại", HttpStatus.BAD_REQUEST);
+            throw new AppException(90304, "Người dùng không tồn tại", HttpStatus.BAD_REQUEST);
         }
 
         return ResponseEntity.ok(response);
@@ -198,7 +198,7 @@ public class MessageServiceController {
     }
 
     @GetMapping("/inbox/individual/{otherUserId}")
-    public ResponseEntity<Map<String, Object>> getMethodName(
+    public ResponseEntity<Map<String, Object>> getIndividualInboxId(
             @RequestHeader("userId") String userId,
             @PathVariable String otherUserId) {
         Long inboxId = inboxService.getIndividualInboxId(userId, otherUserId);
