@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -24,8 +23,12 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,6 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.userservice.config.UserConfig;
+import hcmus.alumni.userservice.dto.ISearchDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.FacultyModel;
@@ -52,6 +56,7 @@ import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
+import hcmus.alumni.userservice.repository.StatusUserGroupRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
@@ -74,6 +79,9 @@ public class UserServiceController {
 	private VerifyAlumniRepository verifyAlumniRepository;
 
 	@Autowired
+	private StatusUserGroupRepository statusUserGroupRepository;
+
+	@Autowired
 	private ImageUtils imageUtils;
 
 	@Autowired
@@ -82,25 +90,27 @@ public class UserServiceController {
 	private PasswordHistoryRepository passwordHistoryRepository;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
+	
+	private final static int MAXIMUM_PAGES = 50;
 
 	@PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
 	@GetMapping("/alumni-verification/count")
 	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam String status) {
 		switch (status) {
-			case "pending":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.PENDING));
-			case "resolved":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusNot(false, VerifyAlumniModel.Status.PENDING));
-			case "approved":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.APPROVED));
-			case "denied":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.DENIED));
-			default:
-				throw new AppException(20100, "status không hợp lệ", HttpStatus.BAD_REQUEST);
+		case "pending":
+			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.PENDING));
+		case "resolved":
+			return ResponseEntity.status(HttpStatus.OK).body(
+					verifyAlumniRepository.countByIsDeleteEqualsAndStatusNot(false, VerifyAlumniModel.Status.PENDING));
+		case "approved":
+			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.APPROVED));
+		case "denied":
+			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.DENIED));
+		default:
+			throw new AppException(20100, "status không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -146,20 +156,20 @@ public class UserServiceController {
 		// Where
 		Predicate statusPredication = null;
 		switch (status) {
-			case "pending":
-				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.PENDING);
-				break;
-			case "resolved":
-				statusPredication = cb.notEqual(root.get("status"), VerifyAlumniModel.Status.PENDING);
-				break;
-			case "approved":
-				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.APPROVED);
-				break;
-			case "denied":
-				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.DENIED);
-				break;
-			default:
-				throw new AppException(20200, "status không hợp lệ", HttpStatus.BAD_REQUEST);
+		case "pending":
+			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.PENDING);
+			break;
+		case "resolved":
+			statusPredication = cb.notEqual(root.get("status"), VerifyAlumniModel.Status.PENDING);
+			break;
+		case "approved":
+			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.APPROVED);
+			break;
+		case "denied":
+			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.DENIED);
+			break;
+		default:
+			throw new AppException(20200, "status không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		Predicate isDeletePredicate = cb.equal(root.get("isDelete"), false);
 		Predicate criteriaPredicate = null;
@@ -375,9 +385,8 @@ public class UserServiceController {
 
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
 	@PutMapping("/{id}/status")
-	public ResponseEntity<String> adminUpdateUser(@PathVariable String id,
+	public ResponseEntity<String> adminUpdateUserStatus(@PathVariable String id,
 			@RequestParam(value = "statusId", required = false) Integer statusId) {
-
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (!optionalUser.isPresent()) {
 			throw new AppException(20700, "Người dùng không tồn tại", HttpStatus.NOT_FOUND);
@@ -385,9 +394,16 @@ public class UserServiceController {
 
 		UserModel user = optionalUser.get();
 
-		if (statusId != null) {
-			user.setStatusId(statusId);
+		if (statusId == null) {
+			throw new AppException(20701, "Trạng thái tài khoản không được để trống", HttpStatus.BAD_REQUEST);
 		}
+
+		boolean statusExists = statusUserGroupRepository.existsById(statusId);
+		if (!statusExists) {
+			throw new AppException(20702, "Trạng thái tài khoản không tồn tại", HttpStatus.BAD_REQUEST);
+		}
+
+		user.setStatusId(statusId);
 		userRepository.save(user);
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
@@ -404,16 +420,59 @@ public class UserServiceController {
 		}
 
 		UserModel user = optionalUser.get();
-		if (roleId != null) {
-			RoleModel role = roleRepository.findById(roleId)
-					.orElseThrow(() -> new AppException(20801, "Vai trò không tồn tại", HttpStatus.BAD_REQUEST));
-			Set<RoleModel> roles = new HashSet<>();
-			roles.add(role);
-			user.setRoles(roles);
+		if (roleId == null) {
+			throw new AppException(20801, "Vai trò không được để trống", HttpStatus.BAD_REQUEST);
 		}
+
+		RoleModel role = roleRepository.findById(roleId)
+				.orElseThrow(() -> new AppException(20802, "Vai trò không tồn tại", HttpStatus.BAD_REQUEST));
+		Set<RoleModel> roles = new HashSet<>();
+		roles.add(role);
+		user.setRoles(roles);
 		userRepository.save(user);
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 	
+	@GetMapping("/count/role")
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "roleId", defaultValue = "0") Integer roleId) {
+		try {
+			if (roleId.equals(0)) {
+				return ResponseEntity.status(HttpStatus.OK).body(userRepository.countAllUsers());
+			}
+            return ResponseEntity.status(HttpStatus.OK).body(userRepository.countUsersByRoleId(roleId));
+        } catch (Exception e) {
+        	throw new AppException(20903, "Lỗi khi lấy số lượng người dùng. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
+        }
+	}
+
+	@GetMapping("")
+	public ResponseEntity<HashMap<String, Object>> getSearchResult(
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "lastLogin") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "fullName", required = false) String fullName,
+			@RequestParam(value = "email", required = false) String email,
+			@RequestParam(value = "roleId", required = false) Integer roleId) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize);
+			Page<ISearchDto> searchResult = null;
+
+            searchResult = userRepository.searchUsers(fullName, email, roleId, pageable);
+
+			result.put("totalPages", searchResult.getTotalPages());
+			result.put("searchResult", searchResult.getContent());
+		} catch (IllegalArgumentException e) {
+			throw new AppException(21001, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			throw new AppException(21002, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 }

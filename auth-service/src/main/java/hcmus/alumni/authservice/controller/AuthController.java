@@ -1,6 +1,5 @@
 package hcmus.alumni.authservice.controller;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -226,12 +225,12 @@ public class AuthController {
 		
 		UserModel user = userRepository.findByEmail(email);
 		if (user == null) {
-			throw new AppException(10704, "Email không tồn tại", HttpStatus.BAD_REQUEST);
+			throw new AppException(10703, "Email không tồn tại", HttpStatus.BAD_REQUEST);
 		}
 
 		boolean isValid = userUtils.checkResetCode(emailResetCodeRepository, email, resetCode);
 		if (!isValid) {
-			throw new AppException(10703, "Mã xác thực không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
+			throw new AppException(10704, "Mã xác thực không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
 		}
 
 		user.setPass(passwordEncoder.encode(newPassword));
