@@ -13,9 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.group.model.GroupMemberModel;
 import hcmus.alumni.group.common.GroupMemberRole;
-import hcmus.alumni.group.dto.IGroupMemberDto;
+import hcmus.alumni.group.dto.response.IGroupMemberDto;
 import hcmus.alumni.group.model.GroupUserId;
-import hcmus.alumni.group.dto.IUserDto;
+import hcmus.alumni.group.dto.response.IUserDto;
 
 public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, GroupUserId> {
 	@Query(value = "select count(*) > 0 from group_member where group_id = :groupId and user_id = :userId and role = :role and is_delete = 0", nativeQuery = true)

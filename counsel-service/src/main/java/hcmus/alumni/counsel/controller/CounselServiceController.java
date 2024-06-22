@@ -4,9 +4,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +41,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto;
 import hcmus.alumni.counsel.dto.request.ReactRequestDto;
+import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.TagRequestDto;
+import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.VoteRequestDto;
 import hcmus.alumni.counsel.dto.response.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.response.IInteractPostAdviseDto;
 import hcmus.alumni.counsel.dto.response.IUserVotePostAdviseDto;
@@ -53,6 +55,7 @@ import hcmus.alumni.counsel.model.PicturePostAdviseModel;
 import hcmus.alumni.counsel.model.PostAdviseModel;
 import hcmus.alumni.counsel.model.ReactModel;
 import hcmus.alumni.counsel.model.StatusPostModel;
+import hcmus.alumni.counsel.model.TagModel;
 import hcmus.alumni.counsel.model.UserModel;
 import hcmus.alumni.counsel.model.UserVotePostAdviseId;
 import hcmus.alumni.counsel.model.UserVotePostAdviseModel;
@@ -60,6 +63,7 @@ import hcmus.alumni.counsel.model.VoteOptionPostAdviseModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
 import hcmus.alumni.counsel.repository.InteractPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
+import hcmus.alumni.counsel.repository.TagRepository;
 import hcmus.alumni.counsel.repository.UserVotePostAdviseRepository;
 import hcmus.alumni.counsel.repository.VoteOptionPostAdviseRepository;
 import hcmus.alumni.counsel.utils.ImageUtils;
@@ -81,10 +85,15 @@ public class CounselServiceController {
 	private VoteOptionPostAdviseRepository voteOptionPostAdviseRepository;
 	@Autowired
 	private UserVotePostAdviseRepository userVotePostAdviseRepository;
+	@Autowired
+	private TagRepository tagRepository;
 
 	@Autowired
 	private ImageUtils imageUtils;
 
+	private final static int MAXIMUM_PAGES = 50;
+	private final static int MAXIMUM_TAGS = 5;
+	private final static int MAXIMUM_VOTE_OPTIONS = 10;
 	private final int MAX_IMAGE_SIZE_PER_POST = 5;
 
 	@GetMapping("")
@@ -96,11 +105,16 @@ public class CounselServiceController {
 			@RequestParam(value = "title", required = false) String title,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-			@RequestParam(value = "tagsId", required = false) List<Integer> tagsId) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (tagNames != null) {
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
+			}
+		}
 
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
@@ -110,7 +124,7 @@ public class CounselServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<PostAdviseModel> postsPage = postAdviseRepository.searchPostAdvise(title, userId, canDelete, tagsId,
+			Page<PostAdviseModel> postsPage = postAdviseRepository.searchPostAdvise(title, userId, canDelete, tagNames,
 					pageable);
 
 			result.put("totalPages", postsPage.getTotalPages());
@@ -182,15 +196,38 @@ public class CounselServiceController {
 	@PostMapping("")
 	public ResponseEntity<Map<String, Object>> createPostAdvise(@RequestHeader("userId") String creator,
 			@RequestBody PostAdviseRequestDto reqPostAdvise) {
-		if (reqPostAdvise.getTitle() == null || reqPostAdvise.getTitle().isEmpty()) {
+		if (reqPostAdvise.getTitle() == null || reqPostAdvise.getTitle().isBlank()) {
 			throw new AppException(60300, "Tiêu đề không được để trống", HttpStatus.BAD_REQUEST);
 		}
-		if (reqPostAdvise.getContent() == null || reqPostAdvise.getContent().isEmpty()) {
+		if (reqPostAdvise.getContent() == null || reqPostAdvise.getContent().isBlank()) {
 			throw new AppException(60301, "Nội dung không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		if (reqPostAdvise.getTags() != null && reqPostAdvise.getTags().size() > MAXIMUM_TAGS) {
+			throw new AppException(60302, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
+		if (reqPostAdvise.getVotes() != null && reqPostAdvise.getVotes().size() > MAXIMUM_VOTE_OPTIONS) {
+			throw new AppException(60303, "Số lượng lựa chọn không được vượt quá " + MAXIMUM_VOTE_OPTIONS,
+					HttpStatus.BAD_REQUEST);
+		}
+
+		// Handle tags
+		Set<TagModel> tags = new HashSet<TagModel>();
+		if (reqPostAdvise.getTags() != null) {
+			for (TagRequestDto reqTag : reqPostAdvise.getTags()) {
+				String sanitizedTagName = TagModel.sanitizeTagName(reqTag.getName());
+				if (sanitizedTagName.isBlank()) {
+					continue;
+				}
+				TagModel tag = tagRepository.findByName(sanitizedTagName);
+				if (tag == null) {
+					tag = new TagModel(sanitizedTagName);
+				}
+				tags.add(tag);
+			}
 		}
 
 		PostAdviseModel postAdvise = new PostAdviseModel(creator, reqPostAdvise);
-		postAdvise.setPublishedAt(new Date());
+		postAdvise.setTags(tags);
 		postAdviseRepository.save(postAdvise);
 		return ResponseEntity.status(HttpStatus.CREATED).body(Collections.singletonMap("id", postAdvise.getId()));
 	}
@@ -201,19 +238,52 @@ public class CounselServiceController {
 			@RequestHeader("userId") String userId,
 			@PathVariable String id,
 			@RequestBody PostAdviseRequestDto updatedPostAdvise) {
+		if (updatedPostAdvise.getTags() != null && updatedPostAdvise.getTags().size() > MAXIMUM_TAGS) {
+			throw new AppException(60401, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
 		PostAdviseModel postAdvise = postAdviseRepository.findById(id).orElse(null);
 		if (postAdvise == null) {
 			throw new AppException(60400, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
+		if (postAdvise.getVotes().size() > 0) {
+			throw new AppException(60402, "Không thể cập nhật bài viết đã có lựa chọn bình chọn",
+					HttpStatus.BAD_REQUEST);
+		}
 
-		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isEmpty()) {
+		if (updatedPostAdvise.getTitle() != null && !updatedPostAdvise.getTitle().isBlank()) {
 			postAdvise.setTitle(updatedPostAdvise.getTitle());
 		}
-		if (updatedPostAdvise.getContent() != null && !updatedPostAdvise.getContent().isEmpty()) {
+		if (updatedPostAdvise.getContent() != null && !updatedPostAdvise.getContent().isBlank()) {
 			postAdvise.setContent(updatedPostAdvise.getContent());
 		}
 		if (updatedPostAdvise.getTags() != null) {
-			postAdvise.updateTags(updatedPostAdvise.getTags());
+			Set<TagModel> currentTags = postAdvise.getTags();
+			Set<TagModel> updatedTags = new HashSet<TagModel>();
+
+			for (var updatedTag : updatedPostAdvise.getTags()) {
+				var sanitizedTagName = TagModel.sanitizeTagName(updatedTag.getName());
+				if (sanitizedTagName.isBlank()) {
+					continue;
+				}
+				updatedTags.add(new TagModel(sanitizedTagName));
+			}
+			// Remove tags
+			for (Iterator<TagModel> iterator = currentTags.iterator(); iterator.hasNext();) {
+				TagModel tag = iterator.next();
+				if (!updatedTags.contains(tag)) {
+					iterator.remove();
+				}
+			}
+			// Add tags
+			for (TagModel tag : updatedTags) {
+				if (!currentTags.contains(tag)) {
+					TagModel find = tagRepository.findByName(tag.getName());
+					if (find == null) {
+						find = new TagModel(tag.getName());
+					}
+					currentTags.add(find);
+				}
+			}
 		}
 
 		postAdviseRepository.save(postAdvise);
@@ -231,13 +301,16 @@ public class CounselServiceController {
 		}
 
 		Optional<PostAdviseModel> optionalPostAdvise = postAdviseRepository.findById(id);
+		if (optionalPostAdvise.isEmpty()) {
+			throw new AppException(60500, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
 		PostAdviseModel postAdvise = optionalPostAdvise.get();
 
 		List<PicturePostAdviseModel> images = postAdvise.getPictures();
 
 		if (addedImages != null && deletedImageIds != null
 				&& images.size() + addedImages.size() - deletedImageIds.size() > MAX_IMAGE_SIZE_PER_POST) {
-			throw new AppException(60500, "Vượt quá giới hạn " + MAX_IMAGE_SIZE_PER_POST + " ảnh mỗi bài viết",
+			throw new AppException(60501, "Vượt quá giới hạn " + MAX_IMAGE_SIZE_PER_POST + " ảnh mỗi bài viết",
 					HttpStatus.BAD_REQUEST);
 
 		}
@@ -252,14 +325,14 @@ public class CounselServiceController {
 						if (successful) {
 							deletedImages.add(image);
 						} else {
-							throw new AppException(60501, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
+							throw new AppException(60502, "Ảnh không tồn tại", HttpStatus.NOT_FOUND);
 						}
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
-						throw new AppException(60502, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+						throw new AppException(60503, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					} catch (IOException e) {
 						e.printStackTrace();
-						throw new AppException(60502, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+						throw new AppException(60503, "Lỗi xóa ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 					}
 
 				}
@@ -289,7 +362,7 @@ public class CounselServiceController {
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
-				throw new AppException(60503, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new AppException(60504, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
 
@@ -337,8 +410,8 @@ public class CounselServiceController {
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -365,8 +438,8 @@ public class CounselServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -492,8 +565,8 @@ public class CounselServiceController {
 			@RequestParam Integer reactId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -582,8 +655,8 @@ public class CounselServiceController {
 			@PathVariable Integer voteId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize) {
-		if (pageSize == 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
@@ -602,7 +675,8 @@ public class CounselServiceController {
 			@RequestHeader("userId") String userId,
 			@PathVariable(name = "id") String postId,
 			@PathVariable Integer voteId) {
-		if (userVotePostAdviseRepository.userVoteCountByPost(postId, userId) >= 1) {
+		if (!postAdviseRepository.isAllowMultipleVotes(postId)
+				&& userVotePostAdviseRepository.userVoteCountByPost(postId, userId) >= 1) {
 			throw new AppException(61700, "Chỉ được bình chọn tối đa 1 lựa chọn", HttpStatus.BAD_REQUEST);
 		}
 
@@ -649,4 +723,108 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
+	@PostMapping("/{id}/votes")
+	public ResponseEntity<Map<String, Object>> addPostVoteOption(
+			@RequestHeader("userId") String userId,
+			@PathVariable(name = "id") String postId,
+			@RequestBody VoteRequestDto reqVoteOption) {
+		if (reqVoteOption.getName() == null || reqVoteOption.getName().isBlank()) {
+			throw new AppException(62000, "Tên lựa chọn không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
+		Integer maxVoteId = voteOptionPostAdviseRepository.getMaxVoteId(postId);
+		if (maxVoteId == null) {
+			throw new AppException(62001, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
+		boolean isAllowAddOptions = postAdviseRepository.isAllowAddOptions(postId);
+		if (!isAllowAddOptions) {
+			throw new AppException(62002, "Không thể thêm lựa chọn", HttpStatus.BAD_REQUEST);
+		}
+		if (maxVoteId >= MAXIMUM_VOTE_OPTIONS) {
+			throw new AppException(62003, "Số lượng lựa chọn không được vượt quá " + MAXIMUM_VOTE_OPTIONS,
+					HttpStatus.BAD_REQUEST);
+		}
+
+		VoteOptionPostAdviseModel voteOption = new VoteOptionPostAdviseModel(maxVoteId + 1, new PostAdviseModel(postId),
+				reqVoteOption.getName());
+		var returnedVoteOption = voteOptionPostAdviseRepository.save(voteOption);
+
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(Collections.singletonMap("vote", mapper.map(returnedVoteOption, PostAdviseDto.Votes.class)));
+	}
+
+	@GetMapping("/users/{userId}")
+	public ResponseEntity<HashMap<String, Object>> getPostsOfUser(
+			Authentication authentication,
+			@RequestHeader("userId") String reqUserId,
+			@PathVariable String userId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames) {
+		if (!userId.equals(reqUserId)) {
+			throw new AppException(62102, "Không thể xem bài viết của người khác", HttpStatus.FORBIDDEN);
+		}
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		if (tagNames != null) {
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
+			}
+		}
+
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Delete"))) {
+			canDelete = true;
+		}
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<PostAdviseModel> postsPage = postAdviseRepository.searchPostAdviseOfUser(userId, title, reqUserId,
+					canDelete,
+					tagNames, pageable);
+
+			result.put("totalPages", postsPage.getTotalPages());
+			List<PostAdviseModel> postList = postsPage.getContent();
+			List<Object[]> resultList = userVotePostAdviseRepository.getVoteIdsByUserAndPosts(reqUserId,
+					postList.stream().map(PostAdviseModel::getId).toList());
+
+			// Create a map with key is post id and value is a set of vote ids
+			HashMap<String, Set<Integer>> voteIdsMap = new HashMap<String, Set<Integer>>();
+			for (Object[] obj : resultList) {
+				Set<Integer> voteIds = voteIdsMap.get(String.valueOf(obj[0]));
+				if (voteIds == null) {
+					voteIds = new HashSet<Integer>();
+				}
+				voteIds.add(Integer.valueOf(String.valueOf(obj[1])));
+				voteIdsMap.put(String.valueOf(obj[0]), voteIds);
+			}
+
+			// Set isVoted for each vote option
+			for (PostAdviseModel post : postList) {
+				Set<Integer> voteIds = voteIdsMap.get(post.getId());
+				if (voteIds == null) {
+					continue;
+				}
+				for (VoteOptionPostAdviseModel vote : post.getVotes()) {
+					if (voteIds.contains(vote.getId().getVoteId())) {
+						vote.setIsVoted(true);
+					}
+				}
+			}
+
+			result.put("posts", postList.stream().map(p -> mapper.map(p, PostAdviseDto.class)).toList());
+		} catch (IllegalArgumentException e) {
+			throw new AppException(62100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (InvalidDataAccessApiUsageException e) {
+			throw new AppException(62101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 }

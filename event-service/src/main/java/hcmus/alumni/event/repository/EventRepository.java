@@ -36,12 +36,12 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
         "       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
         "       ELSE true " +
         "   END) " +
-        "AND (:tagsId IS NULL OR t.id IN :tagsId)")
+        "AND (:tagNames IS NULL OR t.name IN :tagNames)")
 	Page<IEventDto> searchEvents(
 			@Param("title") String title,
 			@Param("statusId") Integer statusId,
 			@Param("facultyId") Integer facultyId,
-			@Param("tagsId") List<Integer> tagsId,
+			@Param("tagNames") List<String> tagNames,
 			@Param("startDate") Date startDate,
 			@Param("mode") Integer mode,
 			Pageable pageable);

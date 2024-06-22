@@ -1,4 +1,4 @@
-package hcmus.alumni.counsel.dto.response;
+package hcmus.alumni.group.dto.response;
 
 import lombok.Data;
 import java.util.Date;
@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-public class PostAdviseDto {
-    @Data
+public class PostGroupDto {
+	@Data
     public static class User {
         private String id;
         private String fullName;
@@ -53,6 +53,7 @@ public class PostAdviseDto {
     private String id;
     private String title;
     private List<Pictures> pictures;
+    private String groupId;
     private List<Votes> votes;
     private String content;
     private Integer childrenCommentNumber;

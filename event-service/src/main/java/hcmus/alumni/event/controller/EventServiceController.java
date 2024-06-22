@@ -5,10 +5,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.Iterator;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -40,6 +44,7 @@ import hcmus.alumni.event.dto.IEventDto;
 import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPostModel;
+import hcmus.alumni.event.model.TagModel;
 import hcmus.alumni.event.model.FacultyModel;
 import hcmus.alumni.event.model.ParticipantEventId;
 import hcmus.alumni.event.model.ParticipantEventModel;
@@ -48,6 +53,7 @@ import hcmus.alumni.event.model.CommentEventModel;
 import hcmus.alumni.event.repository.CommentEventRepository;
 import hcmus.alumni.event.repository.EventRepository;
 import hcmus.alumni.event.repository.ParticipantEventRepository;
+import hcmus.alumni.event.repository.TagRepository;
 import hcmus.alumni.event.utils.ImageUtils;
 import hcmus.alumni.event.exception.AppException;
 import jakarta.persistence.EntityManager;
@@ -62,11 +68,16 @@ public class EventServiceController {
 	@Autowired
 	private EventRepository eventRepository;
 	@Autowired
+	private TagRepository tagRepository;
+	@Autowired
 	private ParticipantEventRepository participantEventRepository;
 	@Autowired
 	private CommentEventRepository commentEventRepository;
 	@Autowired
     private ImageUtils imageUtils;
+	
+	private final static int MAXIMUM_PAGES = 50;
+	private final static int MAXIMUM_TAGS = 5;
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
@@ -76,13 +87,18 @@ public class EventServiceController {
 	        @RequestParam(value = "orderBy", required = false, defaultValue = "organizationTime") String orderBy,
 	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
-	        @RequestParam(value = "tagsId", required = false) List<Integer> tagsId,
+	        @RequestParam(value = "tagNames", required = false) List<String> tagNames,
 	        @RequestParam(value = "statusId", required = false) Integer statusId,
 	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
-	    if (pageSize <= 0 || pageSize > 50) {
-	    	pageSize = 50;
+	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+	    	pageSize = MAXIMUM_PAGES;
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
+	    if (tagNames != null) {
+			for (int i = 0; i < tagNames.size(); i++) {
+				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
+			}
+		}
 
 	    try {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
@@ -90,7 +106,7 @@ public class EventServiceController {
 	        
 	        Calendar cal = Calendar.getInstance();
 	        Date startDate = cal.getTime();
-	        events = eventRepository.searchEvents(title, statusId, facultyId, tagsId, startDate, mode, pageable);
+	        events = eventRepository.searchEvents(title, statusId, facultyId, tagNames, startDate, mode, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -124,7 +140,7 @@ public class EventServiceController {
 	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
 	        @RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
-	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+	        @RequestParam(value = "tagNames", required = false) List<String> tagNames,
 	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
@@ -135,6 +151,9 @@ public class EventServiceController {
 		if (thumbnail.isEmpty()) {
 			throw new AppException(50301, "thumbnail không được để trống", HttpStatus.BAD_REQUEST);
         }
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
+			throw new AppException(50303, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
 		
 	    String id = UUID.randomUUID().toString();
 
@@ -151,9 +170,21 @@ public class EventServiceController {
 	        event.setOrganizationLocation(organizationLocation);
 	        event.setOrganizationTime(organizationTime);
 	        event.setPublishedAt(new Date());
-	        if (tagsId != null) {
-	            event.setTags(tagsId);
-	        }
+	        if (tagNames != null && !tagNames.isEmpty()) {
+				Set<TagModel> tags = new HashSet<TagModel>();
+				for (String tagName : tagNames) {
+					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
+					if (sanitizedTagName.isBlank()) {
+						continue;
+					}
+					TagModel tag = tagRepository.findByName(sanitizedTagName);
+					if (tag == null) {
+						tag = new TagModel(sanitizedTagName);
+					}
+					tags.add(tag);
+				}
+				event.setTags(tags);
+			}
 	        if (!facultyId.equals(0)) {
 	            event.setFaculty(new FacultyModel(facultyId));
 	        }
@@ -178,13 +209,16 @@ public class EventServiceController {
 	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
 	        @RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
 	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
-	        @RequestParam(value = "tagsId[]", required = false, defaultValue = "") Integer[] tagsId,
+	        @RequestParam(value = "tagNames", required = false) List<String> tagNames,
 	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
 	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 	    boolean isPut = false;
-
+	    if (tagNames.size() > MAXIMUM_TAGS) {
+			throw new AppException(50401, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
+		}
+	    
 	    try {
 	        // Find event
 	        Optional<EventModel> optionalEvent = eventRepository.findById(id);
@@ -211,10 +245,37 @@ public class EventServiceController {
 	            event.setOrganizationTime(organizationTime);
 	            isPut = true;
 	        }
-	        if (tagsId != null) {
-	            event.setTags(tagsId);
-	            isPut = true;
-	        }
+	        if (tagNames != null) {
+				Set<TagModel> currentTags = event.getTags();
+				Set<TagModel> updatedTags = new HashSet<TagModel>();
+
+				for (String tagName : tagNames) {
+					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
+					if (sanitizedTagName.isBlank()) {
+						continue;
+					}
+					updatedTags.add(new TagModel(sanitizedTagName));
+				}
+				// Remove tags
+				for (Iterator<TagModel> iterator = currentTags.iterator(); iterator.hasNext();) {
+					TagModel tag = iterator.next();
+					if (!updatedTags.contains(tag)) {
+						iterator.remove();
+					}
+				}
+				// Add tags
+				for (TagModel tag : updatedTags) {
+					if (!currentTags.contains(tag)) {
+						TagModel find = tagRepository.findByName(tag.getName());
+						if (find == null) {
+							find = new TagModel(tag.getName());
+						}
+						currentTags.add(find);
+					}
+				}
+				event.setTags(currentTags);
+				isPut = true;
+			}
 	        if (!facultyId.equals(0)) {
 	            event.setFaculty(new FacultyModel(facultyId));
 	            isPut = true;
@@ -281,8 +342,8 @@ public class EventServiceController {
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
-	    if (pageSize <= 0 || pageSize > 50) {
-	    	pageSize = 50;
+	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+	    	pageSize = MAXIMUM_PAGES;
 	    }
 	    HashMap<String, Object> result = new HashMap<>();
 
@@ -319,8 +380,8 @@ public class EventServiceController {
 			@PathVariable String id,
 	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
 	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-	    if (pageSize <= 0 || pageSize > 50) {
-	    	pageSize = 50;
+	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+	    	pageSize = MAXIMUM_PAGES;
 	    }
 	    
 	    Optional<EventModel> optionalEvent = eventRepository.findById(id);
@@ -386,8 +447,8 @@ public class EventServiceController {
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
@@ -411,8 +472,8 @@ public class EventServiceController {
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-		if (pageSize <= 0 || pageSize > 50) {
-			pageSize = 50;
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 

@@ -34,10 +34,23 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 			"JOIN pa.status s " +
 			"LEFT JOIN pa.tags t " +
 			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :userId " +
-			"WHERE (:tagsId IS NULL OR t.id IN :tagsId) " +
+			"WHERE (:tagNames IS NULL OR t.name IN :tagNames) " +
 			"AND s.id = 2 " +
 			"AND (:title IS NULL OR pa.title like %:title%)")
-	Page<PostAdviseModel> searchPostAdvise(String title, String userId, boolean canDelete, List<Integer> tagsId,
+	Page<PostAdviseModel> searchPostAdvise(String title, String userId, boolean canDelete, List<String> tagNames,
+			Pageable pageable);
+
+	@Query("SELECT DISTINCT new PostAdviseModel(pa, ipa.isDelete, :reqUserId, :canDelete) " +
+			"FROM PostAdviseModel pa " +
+			"JOIN pa.status s " +
+			"LEFT JOIN pa.tags t " +
+			"LEFT JOIN InteractPostAdviseModel ipa ON pa.id = ipa.id.postAdviseId AND ipa.id.creator = :reqUserId " +
+			"WHERE (:tagNames IS NULL OR t.name IN :tagNames) " +
+			"AND s.id = 2 " +
+			"AND (:title IS NULL OR pa.title like %:title%) " +
+			"AND pa.creator.id = :ofUserId")
+	Page<PostAdviseModel> searchPostAdviseOfUser(String ofUserId, String title, String reqUserId, boolean canDelete,
+			List<String> tagNames,
 			Pageable pageable);
 
 	@Query("SELECT COUNT(pa) FROM PostAdviseModel pa JOIN pa.status s WHERE s.id = :statusId")
@@ -58,6 +71,12 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Modifying
 	@Query("UPDATE PostAdviseModel pa SET pa.reactionCount = pa.reactionCount + :count WHERE pa.id = :id")
 	int reactionCountIncrement(String id, @Param("count") Integer count);
+
+	@Query(value = "select allow_multiple_votes from post_advise where id = :postId", nativeQuery = true)
+	boolean isAllowMultipleVotes(String postId);
+
+	@Query(value = "select allow_add_options from post_advise where id = :postId", nativeQuery = true)
+	boolean isAllowAddOptions(String postId);
 
 	@Query(value = "select distinct p.name from role_permission rp " +
 			"join role r on r.id = rp.role_id and r.is_delete = false " +

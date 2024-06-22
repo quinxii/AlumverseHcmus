@@ -1,5 +1,6 @@
 package hcmus.alumni.group.repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,7 +13,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.group.model.PostGroupModel;
-import hcmus.alumni.group.dto.IPostGroupDto;
 
 public interface PostGroupRepository extends JpaRepository<PostGroupModel, String> {
 	@Query(value = "select count(*) > 0 from post_group where id = :postId and creator = :userId", nativeQuery = true)
@@ -39,17 +39,16 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	        "LEFT JOIN p.tags t " + 
 	        "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
 	        "WHERE (:title IS NULL OR p.title LIKE %:title%) " +
-	        "AND (:tagsId IS NULL OR t.id IN :tagsId) " + 
-	        "AND (:statusId IS NULL OR s.id = :statusId) " +
+	        "AND (:tagNames IS NULL OR t.name IN :tagNames) " +
+	        "AND s.id = 2 " +
 	        "AND p.groupId = :groupId")
-	Page<IPostGroupDto> searchGroupPosts(
-			@Param("groupId") String groupId,
-	        @Param("title") String title,
-	        @Param("userId") String userId,
-	        @Param("tagsId") List<Integer> tagsId,
-	        @Param("statusId") Integer statusId,
-	        boolean canDelete,
-	        Pageable pageable);
+	Page<PostGroupModel> searchPostGroup(
+			String groupId,
+			String title,
+			String userId,
+			List<String> tagNames,
+			boolean canDelete,
+			Pageable pageable);
 
 
     @Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
@@ -58,7 +57,7 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
             "LEFT JOIN p.tags " +
             "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
             "WHERE p.id = :postId")
-    Optional<IPostGroupDto> findPostById(@Param("postId") String postId, @Param("userId") String userId, boolean canDelete);
+    Optional<PostGroupModel> findPostGroupById(@Param("postId") String postId, @Param("userId") String userId, boolean canDelete);
     
     @Transactional
 	@Modifying
@@ -69,4 +68,10 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 	@Modifying
 	@Query("UPDATE PostGroupModel p SET p.reactionCount = p.reactionCount + :count WHERE p.id = :id")
 	int reactionCountIncrement(String id, @Param("count") Integer count);
+    
+    @Query(value = "select allow_multiple_votes from post_group where id = :postId", nativeQuery = true)
+	boolean isAllowMultipleVotes(String postId);
+
+	@Query(value = "select allow_add_options from post_group where id = :postId", nativeQuery = true)
+	boolean isAllowAddOptions(String postId);
 }

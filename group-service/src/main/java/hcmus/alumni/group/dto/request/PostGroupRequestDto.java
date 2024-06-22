@@ -1,4 +1,4 @@
-package hcmus.alumni.counsel.dto.request;
+package hcmus.alumni.group.dto.request;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostAdviseRequestDto {
+public class PostGroupRequestDto {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
