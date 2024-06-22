@@ -723,6 +723,7 @@ public class CounselServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
+	@PreAuthorize("hasAnyAuthority('Counsel.Vote')")
 	@PostMapping("/{id}/votes")
 	public ResponseEntity<Map<String, Object>> addPostVoteOption(
 			@RequestHeader("userId") String userId,
