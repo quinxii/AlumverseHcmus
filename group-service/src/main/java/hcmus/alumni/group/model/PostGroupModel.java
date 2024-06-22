@@ -124,6 +124,7 @@ public class PostGroupModel implements Serializable {
     // Copy constructor for responses
     public PostGroupModel(PostGroupModel copy, Boolean isReactionDelete, String userId, Boolean canDelete) {
         this.id = copy.id;
+        this.groupId = copy.groupId;
         this.creator = copy.creator;
         this.title = copy.title;
         this.pictures = copy.pictures;
