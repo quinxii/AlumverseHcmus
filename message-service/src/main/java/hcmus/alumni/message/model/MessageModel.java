@@ -56,7 +56,7 @@ public class MessageModel implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "message_type", nullable = false)
-    private MessageType messageType;
+    private MessageType messageType = MessageType.TEXT;
 
     @OneToOne
     @JoinColumn(name = "parent_message_id", referencedColumnName = "id")
@@ -80,7 +80,6 @@ public class MessageModel implements Serializable {
     public MessageModel(MessageRequestDto req) {
         this.sender = new UserModel(req.getSenderId());
         this.content = req.getContent();
-        this.messageType = req.getMessageType();
         this.parentMessage = req.getParentMessageId() != null ? new MessageModel(req.getParentMessageId()) : null;
     }
 

@@ -218,7 +218,10 @@ public class MessageServiceController {
     public void sendMessage(
             @DestinationVariable Long inboxId,
             @Payload MessageRequestDto req) {
-        if (!req.getMessageType().equals(MessageType.TEXT)) {
+        if (req.getSenderId() == null || req.getSenderId().isBlank()) {
+            return;
+        }
+        if (req.getContent() == null || req.getContent().isBlank()) {
             return;
         }
         if (inboxMemberService.existsById(new InboxMemberId(inboxId, req.getSenderId())) == false) {
