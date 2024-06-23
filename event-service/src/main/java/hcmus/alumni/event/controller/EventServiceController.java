@@ -544,25 +544,27 @@ public class EventServiceController {
 			// Fetch the parent comment
 			CommentEventModel parentComment = commentEventRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(51402, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
 			
-			// Create NotificationObject
-			EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_event", NotificationType.CREATE)
-			        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_event", NotificationType.CREATE, null)));
-			NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
-			notificationObject = notificationObjectRepository.save(notificationObject);
-			
-			// Create NotificationChange
-			NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
-			notificationChangeRepository.save(notificationChange);
-			
-			// Create Notification
-			NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
-			notificationRepository.save(notification);
-			
-			firebaseService.sendCommentNotification(
-					notification, notificationChange, notificationObject, 
-					notificationChange.getActor().getAvatarUrl(), 
-					notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
-					comment.getEvent().getId());
+			if (!parentComment.getCreator().getId().equals(creator)) {
+				// Create NotificationObject
+				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_event", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_event", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+				
+				// Create NotificationChange
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				notificationChangeRepository.save(notificationChange);
+				
+				// Create Notification
+				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				notificationRepository.save(notification);
+				
+				firebaseService.sendCommentNotification(
+						notification, notificationChange, notificationObject, 
+						notificationChange.getActor().getAvatarUrl(), 
+						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						comment.getEvent().getId());
+			}
 	    } else {
 	    	eventRepository.commentCountIncrement(id, 1);
 	    }
