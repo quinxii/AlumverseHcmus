@@ -42,6 +42,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.group.common.Privacy;
+import hcmus.alumni.group.repository.notification.EntityTypeRepository;
+import hcmus.alumni.group.repository.notification.NotificationChangeRepository;
+import hcmus.alumni.group.repository.notification.NotificationObjectRepository;
+import hcmus.alumni.group.repository.notification.NotificationRepository;
+import hcmus.alumni.group.utils.FirebaseService;
 import hcmus.alumni.group.common.GroupMemberRole;
 import hcmus.alumni.group.exception.AppException;
 import hcmus.alumni.group.model.GroupModel;
@@ -63,6 +68,12 @@ import hcmus.alumni.group.model.UserVotePostGroupId;
 import hcmus.alumni.group.model.UserVotePostGroupModel;
 import hcmus.alumni.group.model.VoteOptionPostGroupModel;
 import hcmus.alumni.group.utils.ImageUtils;
+import hcmus.alumni.group.common.NotificationType;
+import hcmus.alumni.group.model.notification.EntityTypeModel;
+import hcmus.alumni.group.model.notification.NotificationChangeModel;
+import hcmus.alumni.group.model.notification.NotificationModel;
+import hcmus.alumni.group.model.notification.NotificationObjectModel;
+import hcmus.alumni.group.model.notification.StatusNotificationModel;
 import hcmus.alumni.group.dto.response.IGroupDto;
 import hcmus.alumni.group.dto.response.IGroupMemberDto;
 import hcmus.alumni.group.dto.response.IRequestJoinGroupDto;
@@ -115,7 +126,17 @@ public class GroupServiceController {
 	@Autowired
 	private UserVotePostGroupRepository userVotePostGroupRepository;
 	@Autowired
+	private EntityTypeRepository entityTypeRepository;  
+	@Autowired
+	private NotificationObjectRepository notificationObjectRepository; 
+	@Autowired
+	private NotificationChangeRepository notificationChangeRepository;
+	@Autowired
+	private NotificationRepository notificationRepository;
+	@Autowired
 	private ImageUtils imageUtils;
+	@Autowired
+	private FirebaseService firebaseService;
 	
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -958,8 +979,57 @@ public class GroupServiceController {
 
 		if (comment.getParentId() != null) {
 			commentPostGroupRepository.commentCountIncrement(comment.getParentId(), 1);
+			// Fetch the parent comment
+			CommentPostGroupModel parentComment = commentPostGroupRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(72102, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
+			
+			if (!parentComment.getCreator().getId().equals(creator)) {
+				// Create NotificationObject
+				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_post_group", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_post_group", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+				
+				// Create NotificationChange
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				notificationChangeRepository.save(notificationChange);
+				
+				// Create Notification
+				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				notificationRepository.save(notification);
+				
+				firebaseService.sendCommentNotification(
+						notification, notificationChange, notificationObject, 
+						notificationChange.getActor().getAvatarUrl(), 
+						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						comment.getPostGroup().getId());
+			}
 		} else {
 			postGroupRepository.commentCountIncrement(id, 1);
+			
+			// Fetch the parent post
+			PostGroupModel parentPost = postGroupRepository.findById(comment.getPostGroup().getId()).get();
+			
+			if (!parentPost.getCreator().getId().equals(creator)) {
+				// Create NotificationObject
+				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_post_group", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_post_group", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+				
+				// Create NotificationChange
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				notificationChangeRepository.save(notificationChange);
+				
+				// Create Notification
+				NotificationModel notification = new NotificationModel(null, notificationObject, parentPost.getCreator(), new StatusNotificationModel(1));
+				notificationRepository.save(notification);
+				
+				firebaseService.sendCommentNotification(
+						notification, notificationChange, notificationObject, 
+						notificationChange.getActor().getAvatarUrl(), 
+						notificationChange.getActor().getFullName() + " đã bình luận về bài viết của bạn",
+						comment.getPostGroup().getId());
+			}
 		}
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
@@ -1070,6 +1140,38 @@ public class GroupServiceController {
 			throw new AppException(72501, "postId hoặc reactId không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		postGroupRepository.reactionCountIncrement(id, 1);
+		
+		// Notification creation logic
+	    PostGroupModel postGroup = postGroupRepository.findById(id).get();
+	    
+	    if (!creatorId.equals(postGroup.getCreator().getId())) {
+	        EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("interact_post_group", NotificationType.CREATE)
+	                .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "interact_post_group", NotificationType.CREATE, null)));
+	        
+	        Optional<NotificationObjectModel> optionalNotificationObject = notificationObjectRepository
+	                .findByEntityTypeAndEntityId(entityType, postGroup.getId());
+	        
+	        if (optionalNotificationObject.isPresent()) {
+	            NotificationObjectModel notificationObject = optionalNotificationObject.get();
+	            notificationChangeRepository.updateActorIdByNotificationObject(notificationObject.getId(), creatorId);
+	            notificationRepository.updateStatusByNotificationObject(notificationObject.getId(), 1);
+	        } else {
+	            NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, postGroup.getId(), new Date(), false);
+	            notificationObject = notificationObjectRepository.save(notificationObject);
+
+	            NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creatorId), false);
+	            notificationChangeRepository.save(notificationChange);
+
+	            NotificationModel notification = new NotificationModel(null, notificationObject, postGroup.getCreator(), new StatusNotificationModel((byte) 1));
+	            notificationRepository.save(notification);
+
+	            firebaseService.sendCommentNotification(
+	                    notification, notificationChange, notificationObject,
+	                    notificationChange.getActor().getAvatarUrl(),
+	                    notificationChange.getActor().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
+	                    null);
+	        }
+	    }
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
