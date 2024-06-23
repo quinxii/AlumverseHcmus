@@ -42,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.notification.dto.NotificationDto;
 
 import hcmus.alumni.notification.model.notification.NotificationModel;
+import hcmus.alumni.notification.model.notification.StatusNotificationModel;
 import hcmus.alumni.notification.model.group.GroupModel;
 import hcmus.alumni.notification.model.group.PostGroupModel;
 import hcmus.alumni.notification.model.counsel.PostAdviseModel;
@@ -51,7 +52,7 @@ import hcmus.alumni.notification.model.group.CommentPostGroupModel;
 import hcmus.alumni.notification.model.counsel.CommentPostAdviseModel;
 
 import hcmus.alumni.notification.repository.NotificationRepository;
-
+import hcmus.alumni.notification.exception.AppException;
 import hcmus.alumni.notification.common.NotificationType;
 
 @RestController
@@ -91,7 +92,7 @@ public class NotificationServiceController {
 			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
 			    Optional<CommentEventModel> optionalComment = notificationRepository.findCommentEventById(notification.getEntityId());
-			    if (!optionalComment.isPresent()) {
+			    if (optionalComment.isPresent()) {
 			    	notification.setParentId(optionalComment.get().getEventId());
 			    }
 			}
@@ -99,13 +100,13 @@ public class NotificationServiceController {
 			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
 			    Optional<CommentNewsModel> optionalComment = notificationRepository.findCommentNewsById(notification.getEntityId());
-			    if (!optionalComment.isPresent()) {
+			    if (optionalComment.isPresent()) {
 			    	notification.setParentId(optionalComment.get().getNewsId());
 			    }
 			}
 			if ("group".equals(notification.getEntityTable()) && (NotificationType.UPDATE).equals(notification.getNotificationType())) {
 				Optional<GroupModel> optionalGroup = notificationRepository.findGroupById(notification.getEntityId());
-			    if (!optionalGroup.isPresent()) {
+			    if (optionalGroup.isPresent()) {
 			    	notification.setNotificationImageUrl(optionalGroup.get().getCoverUrl());
 			        notification.setNotificationMessage("Nhóm " + optionalGroup.get().getName() + " mà bạn tham gia đã được cập nhật thông tin");
 			    }
@@ -113,7 +114,7 @@ public class NotificationServiceController {
 			if ("interact_post_group".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
 				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 				Optional<PostGroupModel> optionalPost = notificationRepository.findPostGroupById(notification.getEntityId());
-			    if (!optionalPost.isPresent()) {
+			    if (optionalPost.isPresent()) {
 			    	notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
 			    			(optionalPost.get().getReactionCount() - 1) + " người khác đã bày tỏ cảm xúc về bài viết của bạn");
 			    }
@@ -121,7 +122,7 @@ public class NotificationServiceController {
 			if ("comment_post_group".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
 				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 				Optional<CommentPostGroupModel> optionalComment = notificationRepository.findCommentPostGroupById(notification.getEntityId());
-			    if (!optionalComment.isPresent()) {
+			    if (optionalComment.isPresent()) {
 			    	notification.setParentId(optionalComment.get().getPostGroupId());
 			    	notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
 			    			((optionalComment.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
@@ -130,7 +131,7 @@ public class NotificationServiceController {
 			if ("interact_post_advise".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
 				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 				Optional<PostAdviseModel> optionalPost = notificationRepository.findPostAdviseById(notification.getEntityId());
-			    if (!optionalPost.isPresent()) {
+			    if (optionalPost.isPresent()) {
 			    	notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
 			    			(optionalPost.get().getReactionCount() - 1) + " người khác đã bày tỏ cảm xúc về bài viết của bạn");
 			    }
@@ -138,7 +139,7 @@ public class NotificationServiceController {
 			if ("comment_post_advise".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
 				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 				Optional<CommentPostAdviseModel> optionalComment = notificationRepository.findCommentPostAdviseById(notification.getEntityId());
-			    if (!optionalComment.isPresent()) {
+			    if (optionalComment.isPresent()) {
 			    	notification.setParentId(optionalComment.get().getPostAdviseId());
 			    	notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
 			    			((optionalComment.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
@@ -150,5 +151,21 @@ public class NotificationServiceController {
 		result.put("notifications", notifications.stream().map(n -> mapper.map(n, NotificationDto.class)).toList());
 		
 		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+	
+	@PutMapping("/{id}")
+	public ResponseEntity<String> updateNotificationStatus(
+	        @PathVariable Long id) {
+	    Optional<NotificationModel> optionalNotification = notificationRepository.findById(id);
+	    
+	    if (!optionalNotification.isPresent()) {
+	    	throw new AppException(100200, "Không tìm thấy thông báo", HttpStatus.NOT_FOUND);
+	    }
+	
+	    NotificationModel notification = optionalNotification.get();
+	    notification.setStatus(new StatusNotificationModel(2));
+	    notificationRepository.save(notification);
+	    
+	    return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 }

@@ -26,7 +26,7 @@ public class StatusNotificationModel implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", nullable = false)
-	private Byte id;
+	private int id;
 	
 	@Column(name = "name", length = 100, nullable = false, unique = true)
 	private String name;
@@ -36,4 +36,8 @@ public class StatusNotificationModel implements Serializable {
 	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT 0")
 	private Boolean isDelete = false;
+	
+	public StatusNotificationModel(int id) {
+		this.id = id;
+	}
 }

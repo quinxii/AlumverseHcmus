@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Transient;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import hcmus.alumni.notification.model.user.UserModel;
 
@@ -49,6 +50,9 @@ public class NotificationModel implements Serializable {
 	private UserModel actor;
 	
 	@Transient
+	private Date createAt;
+	
+	@Transient
 	String notificationImageUrl;
 	
 	@Transient
@@ -75,6 +79,7 @@ public class NotificationModel implements Serializable {
 		this.notifier = n.notifier;
 		this.status = n.status;
 		this.actor = nc.getActor();
+		this.createAt = nc.getNotificationObject().getCreateAt();
 	}
 	
 	public NotificationModel(NotificationModel copy, String notificationImageUrl, String notificationMessage, String parentId) {

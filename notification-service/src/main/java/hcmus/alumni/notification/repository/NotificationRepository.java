@@ -21,7 +21,7 @@ import hcmus.alumni.notification.model.news.CommentNewsModel;
 import hcmus.alumni.notification.model.group.CommentPostGroupModel;
 import hcmus.alumni.notification.model.counsel.CommentPostAdviseModel;
 
-public interface NotificationRepository extends JpaRepository<NotificationModel, String> {
+public interface NotificationRepository extends JpaRepository<NotificationModel, Long> {
 	@Query(value = "select distinct p.name from role_permission rp " +
 		"join role r on r.id = rp.role_id and r.is_delete = false " +
 		"join permission p on p.id = rp.permission_id and p.is_delete = false " +
@@ -48,21 +48,26 @@ public interface NotificationRepository extends JpaRepository<NotificationModel,
 	@Query("SELECT g FROM GroupModel g WHERE g.id = :groupId")
 	Optional<GroupModel> findGroupById(@Param("groupId") String groupId);
 	
-    @Query("SELECT p FROM PostGroupModel p WHERE p.id = :postId")
-    Optional<PostGroupModel> findPostGroupById(@Param("postId") String postId);
-    
-    @Query("SELECT p FROM PostAdviseModel p WHERE p.id = :postId")
-    Optional<PostAdviseModel> findPostAdviseById(@Param("postId") String postId);
-    
-    @Query("SELECT c FROM CommentEventModel c WHERE c.id = :commentId")
-    Optional<CommentEventModel> findCommentEventById(@Param("commentId") String commentId);
-    
-    @Query("SELECT c FROM CommentNewsModel c WHERE c.id = :commentId")
-    Optional<CommentNewsModel> findCommentNewsById(@Param("commentId") String commentId);
-    
-    @Query("SELECT c FROM CommentPostGroupModel c WHERE c.id = :commentId")
-    Optional<CommentPostGroupModel> findCommentPostGroupById(@Param("commentId") String commentId);
-    
-    @Query("SELECT c FROM CommentPostAdviseModel c WHERE c.id = :commentId")
-    Optional<CommentPostAdviseModel> findCommentPostAdviseById(@Param("commentId") String commentId);
+	@Query("SELECT p FROM PostGroupModel p WHERE p.id = :postId")
+	Optional<PostGroupModel> findPostGroupById(@Param("postId") String postId);
+	
+	@Query("SELECT p FROM PostAdviseModel p WHERE p.id = :postId")
+	Optional<PostAdviseModel> findPostAdviseById(@Param("postId") String postId);
+	
+	@Query("SELECT c FROM CommentEventModel c WHERE c.id = :commentId")
+	Optional<CommentEventModel> findCommentEventById(@Param("commentId") String commentId);
+	
+	@Query("SELECT c FROM CommentNewsModel c WHERE c.id = :commentId")
+	Optional<CommentNewsModel> findCommentNewsById(@Param("commentId") String commentId);
+	
+	@Query("SELECT c FROM CommentPostGroupModel c WHERE c.id = :commentId")
+	Optional<CommentPostGroupModel> findCommentPostGroupById(@Param("commentId") String commentId);
+	
+	@Query("SELECT c FROM CommentPostAdviseModel c WHERE c.id = :commentId")
+	Optional<CommentPostAdviseModel> findCommentPostAdviseById(@Param("commentId") String commentId);
+	
+	@Modifying
+	@Transactional
+	@Query("UPDATE NotificationModel n SET n.status.id = :status WHERE n.id = :notificationId")
+	void updateNotificationStatus(@Param("notificationId") Long notificationId, @Param("status") int status);
 }
