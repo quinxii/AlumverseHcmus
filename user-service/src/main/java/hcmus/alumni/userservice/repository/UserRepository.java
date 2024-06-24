@@ -52,9 +52,9 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 
 	@Query("SELECT DISTINCT u " + "FROM UserModel u " + "LEFT JOIN u.roles r "
 			+ "WHERE (:fullName IS NULL OR u.fullName LIKE :fullName%) "
-			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleId IS NULL OR r.id = :roleId)")
+			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleIds IS NULL OR r.id = :roleIds)")
 	Page<UserSearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
-			@Param("roleId") List<Integer> roleIds, Pageable pageable);
+			@Param("roleIds") List<Integer> roleIds, Pageable pageable);
 
 	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.roles r WHERE r.id = :roleIds")
     Long countUsersByRoleId(@Param("roleIds") List<Integer> roleIds);

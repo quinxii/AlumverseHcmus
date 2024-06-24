@@ -437,7 +437,7 @@ public class UserServiceController {
 	}
 	
 	@GetMapping("/count/role")
-	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "roleId", defaultValue = "0") List<Integer> roleIds) {
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "roleId") List<Integer> roleIds) {
 		try {
 			if (roleIds == null || roleIds.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.OK).body(userRepository.countAllUsers());
@@ -456,7 +456,7 @@ public class UserServiceController {
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "fullName", required = false) String fullName,
 			@RequestParam(value = "email", required = false) String email,
-			@RequestParam(value = "roleId", required = false) List<Integer> roleIds) {
+			@RequestParam(value = "roleIds", required = false) List<Integer> roleIds) {
 		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
