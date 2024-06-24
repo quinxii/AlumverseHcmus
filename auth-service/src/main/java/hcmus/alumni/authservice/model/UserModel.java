@@ -85,7 +85,7 @@ public class UserModel implements Serializable {
     private String coverUrl;
 
     @Column(name = "status_id")
-    private Integer statusId;
+    private Integer statusId = 2;
 
 	@CreationTimestamp
     @Column(name = "create_at")

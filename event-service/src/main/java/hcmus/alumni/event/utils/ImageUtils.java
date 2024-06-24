@@ -1,5 +1,7 @@
 package hcmus.alumni.event.utils;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -20,8 +22,8 @@ public class ImageUtils {
 	@Autowired
 	private ImageCompression imageCompression;
 
-	private final int resizeMaxWidth = 1000;
-	private final int resizeMaxHeight = 1000;
+	private final int resizeMaxWidth = 2000;
+	private final int resizeMaxHeight = 2000;
 	private final String eventPath = "images/events/";
 	public static int saltLength = 16;
 
@@ -34,13 +36,16 @@ public class ImageUtils {
 
 		String newFilename = uploadDirectory;
 
-		// Resize then compress image
+		// Convert to jpeg (if png), resize then compress image
 		BufferedImage bufferedImage = ImageIO.read(imageFile.getInputStream());
+		if (isPng(imageFile)) {
+			bufferedImage = convertPngToJpeg(bufferedImage);
+		}
 		bufferedImage = imageCompression.resizeImage(bufferedImage, resizeMaxWidth, resizeMaxHeight);
-		byte[] imageBytes = imageCompression.compressImage(bufferedImage, imageFile.getContentType(), 0.8f);
+		byte[] imageBytes = imageCompression.compressImage(bufferedImage, "image/jpeg", 0.8f);
 
 		BlobInfo blobInfo = BlobInfo.newBuilder(gcp.getBucketName(), newFilename)
-				.setContentType(imageFile.getContentType()).setCacheControl("no-cache").build();
+				.setContentType("image/jpeg").setCacheControl("no-cache").build();
 
 		// Upload the image from the local file path
 		try {
@@ -75,7 +80,26 @@ public class ImageUtils {
 
 		return;
 	}
-	
+
+	public BufferedImage convertPngToJpeg(BufferedImage pngImage) {
+		BufferedImage jpegImage = new BufferedImage(pngImage.getWidth(), pngImage.getHeight(),
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = jpegImage.createGraphics();
+		g.drawImage(pngImage, 0, 0, Color.WHITE, null);
+		g.dispose();
+		return jpegImage;
+	}
+
+	public static boolean isJpegOrPng(MultipartFile imageFile) {
+		String contentType = imageFile.getContentType();
+		return contentType != null && (contentType.equals("image/jpeg") || contentType.equals("image/png"));
+	}
+
+	public static boolean isPng(MultipartFile imageFile) {
+		String contentType = imageFile.getContentType();
+		return contentType != null && contentType.equals("image/png");
+	}
+
 	public String getEventPath(String id) {
 		return eventPath + id;
 	}
