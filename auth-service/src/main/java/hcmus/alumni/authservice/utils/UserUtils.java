@@ -14,6 +14,7 @@ import hcmus.alumni.authservice.repository.UserRepository;
 
 public class UserUtils {
 	private static volatile UserUtils instance  = null;
+	private static final int TIME_LIMIT_MINUTES = 1;
 	
 	@Autowired
 	private UserRepository userRepository;
@@ -48,7 +49,7 @@ public class UserUtils {
 	    if (existingCode != null) {
 	        // Update the existing email activation code
 	        existingCode.setActivationCode(activationCode);
-	        existingCode.setCreateAt(currentTime); 
+	        existingCode.setCreatedAt(currentTime); 
 	        emailActivationCodeRepository.save(existingCode);
 	        System.out.println("Activation code updated for email: " + email);
 	        return true;
@@ -57,7 +58,7 @@ public class UserUtils {
 	        EmailActivationCodeModel newActivationCode = new EmailActivationCodeModel();
 	        newActivationCode.setEmail(email);
 	        newActivationCode.setActivationCode(activationCode);
-	        newActivationCode.setCreateAt(currentTime);
+	        newActivationCode.setCreatedAt(currentTime);
 	        emailActivationCodeRepository.save(newActivationCode);
 	        System.out.println("New activation code saved for email: " + email);
 	        return true;
@@ -78,7 +79,7 @@ public class UserUtils {
 
 	    if (existingCode != null) {
 	        existingCode.setResetCode(resetCode);
-	        existingCode.setCreateAt(currentTime); 
+	        existingCode.setCreatedAt(currentTime); 
 	        emailResetCodeRepository.save(existingCode);
 	        System.out.println("Reset code updated for email: " + email);
 	        return true;
@@ -86,7 +87,7 @@ public class UserUtils {
 	        EmailResetCodeModel newActivationCode = new EmailResetCodeModel();
 	        newActivationCode.setEmail(email);
 	        newActivationCode.setResetCode(resetCode);
-	        newActivationCode.setCreateAt(currentTime);
+	        newActivationCode.setCreatedAt(currentTime);
 	        emailResetCodeRepository.save(newActivationCode);
 	        System.out.println("New reset code saved for email: " + email);
 	        return true;
@@ -104,7 +105,7 @@ public class UserUtils {
 	    Date createdAt;
 	    long diffInMinutes = 0; 
 		try {
-			createdAt = sdf.parse(expectedActivateCode.getCreateAt());
+			createdAt = sdf.parse(expectedActivateCode.getCreatedAt());
 			long diffInMilliseconds = Math.abs(new Date().getTime() - createdAt.getTime());
 			diffInMinutes = diffInMilliseconds / (1000 * 60);
 		} catch (ParseException pe) {
@@ -112,7 +113,7 @@ public class UserUtils {
 			return false;
 		}
 	    
-	    return email.equals(expectedActivateCode.getEmail()) && activationCode.equals(expectedActivateCode.getActivationCode()) && diffInMinutes < 1;
+	    return email.equals(expectedActivateCode.getEmail()) && activationCode.equals(expectedActivateCode.getActivationCode()) && diffInMinutes < TIME_LIMIT_MINUTES;
 	}
 
 	public boolean checkResetCode(EmailResetCodeRepository emailResetCodeRepository, String email, String resetCode) {
@@ -126,7 +127,7 @@ public class UserUtils {
 	    Date createdAt;
 	    long diffInMinutes = 0; 
 		try {
-			createdAt = sdf.parse(expectedActivateCode.getCreateAt());
+			createdAt = sdf.parse(expectedActivateCode.getCreatedAt());
 			long diffInMilliseconds = Math.abs(new Date().getTime() - createdAt.getTime());
 			diffInMinutes = diffInMilliseconds / (1000 * 60);
 		} catch (ParseException pe) {
@@ -134,7 +135,7 @@ public class UserUtils {
 			return false;
 		}
 	    
-	    return email.equals(expectedActivateCode.getEmail()) && resetCode.equals(expectedActivateCode.getResetCode()) && diffInMinutes < 1;
+	    return email.equals(expectedActivateCode.getEmail()) && resetCode.equals(expectedActivateCode.getResetCode()) && diffInMinutes < TIME_LIMIT_MINUTES;
 	}
 
 }

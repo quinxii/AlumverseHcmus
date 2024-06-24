@@ -1,17 +1,17 @@
 package hcmus.alumni.userservice.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import hcmus.alumni.userservice.dto.ISearchDto;
+import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 
@@ -53,15 +53,15 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	@Query("SELECT DISTINCT u " + "FROM UserModel u " + "LEFT JOIN u.roles r "
 			+ "WHERE (:fullName IS NULL OR u.fullName LIKE :fullName%) "
 			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleId IS NULL OR r.id = :roleId)")
-	Page<ISearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
-			@Param("roleId") Integer roleId, Pageable pageable);
+	Page<UserSearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
+			@Param("roleId") List<Integer> roleIds, Pageable pageable);
 
-	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.roles r WHERE r.id = :roleId")
-    Long countUsersByRoleId(@Param("roleId") Integer roleId);
+	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.roles r WHERE r.id = :roleIds")
+    Long countUsersByRoleId(@Param("roleIds") List<Integer> roleIds);
 	
 	@Query("SELECT COUNT(u) FROM UserModel u")
     Long countAllUsers();
 	
 	@Query("SELECT u FROM UserModel u")
-	Page<ISearchDto> findAllUsers(Pageable pageable);
+	Page<UserSearchDto> findAllUsers(Pageable pageable);
 }
