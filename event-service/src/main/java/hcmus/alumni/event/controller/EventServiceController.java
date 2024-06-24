@@ -72,7 +72,6 @@ import hcmus.alumni.event.repository.notification.NotificationObjectRepository;
 import hcmus.alumni.event.repository.notification.NotificationRepository;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/events")
 public class EventServiceController {
 	@PersistenceContext

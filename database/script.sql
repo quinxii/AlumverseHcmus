@@ -834,99 +834,91 @@ CREATE TABLE
             KEY `user_id` (`user_id`),
             CONSTRAINT `passwo_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-    
+
 DROP TABLE IF EXISTS user_subscription_token;
 
-CREATE TABLE user_subscription_token (
+CREATE TABLE
+    user_subscription_token (
         id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         token TEXT NOT NULL,
         is_delete TINYINT (1) DEFAULT (0),
         PRIMARY KEY (id),
-        FOREIGN KEY (user_id) REFERENCES user(id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+        FOREIGN KEY (user_id) REFERENCES user (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS status_notification;
 
-CREATE TABLE status_notification (
+CREATE TABLE
+    status_notification (
         id TINYINT NOT NULL AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL UNIQUE,
         description TINYTEXT,
         is_delete TINYINT (1) DEFAULT (0),
         PRIMARY KEY (id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS entity_type;
 
-CREATE TABLE entity_type (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    entity_table VARCHAR(150) NOT NULL,
-    notification_type ENUM('CREATE', 'UPDATE', 'DELETE') NOT NULL,
-    description VARCHAR(100),
-    PRIMARY KEY (id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-    
+CREATE TABLE
+    entity_type (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        entity_table VARCHAR(150) NOT NULL,
+        notification_type ENUM ('CREATE', 'UPDATE', 'DELETE') NOT NULL,
+        description VARCHAR(100),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
 -- Notification object
 DROP TABLE IF EXISTS notification_object;
 
-CREATE TABLE notification_object (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    entity_type INT UNSIGNED NOT NULL,
-    entity_id VARCHAR(36) NOT NULL,
-    create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-    is_delete TINYINT (1) DEFAULT (0),
-    PRIMARY KEY (id),
-    FOREIGN KEY (entity_type) REFERENCES entity_type(id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+CREATE TABLE 
+    notification_object (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        entity_type INT UNSIGNED NOT NULL,
+        entity_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id),
+        FOREIGN KEY (entity_type) REFERENCES entity_type(id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Notification
 DROP TABLE IF EXISTS notification;
 
-CREATE TABLE notification (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    notification_object_id INT UNSIGNED NOT NULL,
-    notifier_id VARCHAR(36) NOT NULL,
-    status_id TINYINT NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (notifier_id) REFERENCES user (id),
-    FOREIGN KEY (status_id) REFERENCES status_notification (id),
-    INDEX fk_notification_object_idx (notification_object_id ASC),
-    INDEX fk_notification_notifier_id_idx (notifier_id ASC),
-    CONSTRAINT fk_notification_object
-        FOREIGN KEY (notification_object_id)
-        REFERENCES notification_object (id)
-        ON DELETE NO ACTION
-        ON UPDATE NO ACTION,
-    CONSTRAINT fk_notification_notifier_id
-        FOREIGN KEY (notifier_id)
-        REFERENCES user (id)
-        ON DELETE NO ACTION
-        ON UPDATE NO ACTION
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+CREATE TABLE
+    notification (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        notification_object_id INT UNSIGNED NOT NULL,
+        notifier_id VARCHAR(36) NOT NULL,
+        status_id TINYINT NOT NULL,
+        PRIMARY KEY (id),
+        FOREIGN KEY (notifier_id) REFERENCES user (id),
+        FOREIGN KEY (status_id) REFERENCES status_notification (id),
+        INDEX fk_notification_object_idx (notification_object_id ASC),
+        INDEX fk_notification_notifier_id_idx (notifier_id ASC),
+        CONSTRAINT fk_notification_object FOREIGN KEY (notification_object_id) REFERENCES notification_object (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+        CONSTRAINT fk_notification_notifier_id FOREIGN KEY (notifier_id) REFERENCES user (id) ON DELETE NO ACTION ON UPDATE NO ACTION
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Notification change
 DROP TABLE IF EXISTS notification_change;
 
-CREATE TABLE notification_change (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    notification_object_id INT UNSIGNED NOT NULL,
-    actor_id VARCHAR(36) NOT NULL,
-    is_delete TINYINT (1) DEFAULT (0),
-    PRIMARY KEY (id),
-    FOREIGN KEY (actor_id) REFERENCES user (id),
-    INDEX fk_notification_object_idx_2 (notification_object_id ASC),
-    INDEX fk_notification_actor_id_idx (actor_id ASC),
-    CONSTRAINT fk_notification_object_2
-        FOREIGN KEY (notification_object_id)
-        REFERENCES notification_object (id)
-        ON DELETE NO ACTION
-        ON UPDATE NO ACTION,
-    CONSTRAINT fk_notification_actor_id_idx
-        FOREIGN KEY (actor_id)
-        REFERENCES user (id)
-        ON DELETE NO ACTION
-        ON UPDATE NO ACTION
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+CREATE TABLE
+    notification_change (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        notification_object_id INT UNSIGNED NOT NULL,
+        actor_id VARCHAR(36) NOT NULL,
+        is_delete TINYINT (1) DEFAULT (0),
+        PRIMARY KEY (id),
+        FOREIGN KEY (actor_id) REFERENCES user (id),
+        INDEX fk_notification_object_idx_2 (notification_object_id ASC),
+        INDEX fk_notification_actor_id_idx (actor_id ASC),
+        CONSTRAINT fk_notification_object_2 FOREIGN KEY (notification_object_id) REFERENCES notification_object (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+        CONSTRAINT fk_notification_actor_id_idx FOREIGN KEY (actor_id) REFERENCES user (id) ON DELETE NO ACTION ON UPDATE NO ACTION
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+BEGIN;
 
 -- INDEX
 ALTER TABLE `group` ADD INDEX idx_creator (creator);
@@ -962,7 +954,6 @@ VALUES
         'User.Edit',
         'Chỉnh sửa tài khoản (gồm khoá tài khoản)'
     ),
-    ('User.Delete', 'Xóa tài khoản'),
     ('User.Role.Create', 'Tạo vai trò mới'),
     (
         'User.Role.Edit',
@@ -1018,7 +1009,7 @@ VALUES
     ),
     (
         'Counsel.Vote',
-        'Bình chọn cuộc thăm dò ý kiến trong bài viết (gồm tạo, sửa và xóa)'
+        'Bình chọn cuộc thăm dò ý kiến trong bài viết (gồm tạo, sửa và xóa) và thêm lựa chọn mới trong cuộc thăm dò (nếu có)'
     ),
     ('Group.Create', 'Tạo nhóm'),
     ('Group.Delete', 'Xóa nhóm'),
@@ -1026,8 +1017,7 @@ VALUES
     (
         'Profile.Edit',
         'Chỉnh sửa thông tin cá nhân/Thay đổi mật khẩu'
-    ),
-    ('Message.Create', 'Gửi/Nhận tin nhắn');
+    );
 
 INSERT into
     role (name)
@@ -1048,19 +1038,26 @@ VALUES
     (1, 5, 0),
     (1, 6, 0),
     (1, 7, 0),
-    (1, 8, 0),
+    (1, 9, 0),
     (1, 10, 0),
     (1, 11, 0),
     (1, 12, 0),
+    (1, 13, 0),
     (1, 14, 0),
     (1, 15, 0),
     (1, 16, 0),
     (1, 17, 0),
+    (1, 18, 0),
+    (1, 19, 0),
+    (1, 20, 0),
     (1, 21, 0),
     (1, 22, 0),
     (1, 23, 0),
     (1, 24, 0),
+    (1, 25, 0),
     (1, 26, 0),
+    (1, 27, 0),
+    (1, 28, 0),
     (1, 29, 0),
     (1, 30, 0),
     (1, 31, 0),
@@ -1105,7 +1102,7 @@ INSERT into
     react (name)
 VALUES
     ('Like');
-    
+
 INSERT into
     status_notification (name)
 VALUES
