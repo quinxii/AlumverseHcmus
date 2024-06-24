@@ -182,7 +182,7 @@ public class MessageServiceController {
         }
 
         // Get other members' userId in inbox
-        List<String> userIds = inboxService.extractUserIdsExcludeSelf(savedMsg.getInbox(), senderId);
+        List<String> userIds = inboxService.extractUserIds(savedMsg.getInbox());
         Map<String, Object> response = new HashMap<>();
         response.put("inbox", mapper.map(savedMsg.getInbox(), InboxDto.class));
         response.put("message", mapper.map(savedMsg, MessageDto.class));
@@ -194,7 +194,7 @@ public class MessageServiceController {
                     response);
         }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(null);
     }
 
     @GetMapping("/inbox/individual/{otherUserId}")
@@ -232,7 +232,7 @@ public class MessageServiceController {
         MessageModel savedMsg = messageService.saveFromReq(req, inboxId);
 
         // Get other members' userId in inbox
-        List<String> userIds = inboxService.extractUserIdsExcludeSelf(savedMsg.getInbox(), req.getSenderId());
+        List<String> userIds = inboxService.extractUserIds(savedMsg.getInbox());
         Map<String, Object> response = new HashMap<>();
         response.put("inbox", mapper.map(savedMsg.getInbox(), InboxDto.class));
         response.put("message", mapper.map(savedMsg, MessageDto.class));
