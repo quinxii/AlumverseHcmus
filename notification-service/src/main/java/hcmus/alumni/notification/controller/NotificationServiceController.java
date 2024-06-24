@@ -107,7 +107,7 @@ public class NotificationServiceController {
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
-		int totalUnreadMessages = notificationRepository.getUnreadNotificationsCount(userId);
+		int totalUnreadNotification = notificationRepository.getUnreadNotificationsCount(userId);
 		
 		Pageable pageable = PageRequest.of(page, pageSize);
 		Page<NotificationModel> notificationsPages = notificationRepository.getNotifications(userId, pageable);
@@ -177,7 +177,7 @@ public class NotificationServiceController {
 			}
 	    }
 
-		result.put("totalUnreadMessages", totalUnreadMessages);
+		result.put("totalUnreadNotification", totalUnreadNotification);
 		result.put("notifications", notifications.stream().map(n -> mapper.map(n, NotificationDto.class)).toList());
 		
 		return ResponseEntity.status(HttpStatus.OK).body(result);
