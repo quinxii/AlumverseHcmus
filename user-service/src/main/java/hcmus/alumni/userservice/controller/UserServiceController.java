@@ -369,7 +369,7 @@ public class UserServiceController {
 			throw new AppException(20605, "Lỗi khi gửi email", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
-		return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+		return ResponseEntity.status(HttpStatus.CREATED).body("");
 	}
 
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
@@ -389,6 +389,34 @@ public class UserServiceController {
 		}
 		userRepository.save(user);
 
-		return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+	
+	@GetMapping("/profile/{id}")
+	public ResponseEntity<Map<String, Object>> getProfileInfo(@PathVariable String id) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21101, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		UserModel user = optionalUser.get();
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("userId", user.getId());
+		response.put("fullName", userRepository.findFullNameByUserId(id));
+		response.put("avatarUrl", userRepository.findAvatarUrlByUserId(id));
+		response.put("facultyId", user.getFaculty());
+		response.put("sexId", user.getSex());
+		response.put("dob", user.getDob());
+		response.put("socialMediaLink", user.getSocialMediaLink());
+		
+		
+		response.put("email", user.getEmail());
+		response.put("phone", user.getPhone());
+		response.put("aboutMe", user.getAboutMe());
+		response.put("createAt", user.getCreateAt());
+		
+		return ResponseEntity.ok(response);
 	}
 }
