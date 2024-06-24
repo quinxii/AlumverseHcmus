@@ -1,6 +1,6 @@
-package hcmus.alumni.userservice.dto;
+package hcmus.alumni.notification.dto;
 
 public interface IUserSubscriptionTokenDto {
 	String getId();
-	String getDeviceName();
+	String getToken();
 }

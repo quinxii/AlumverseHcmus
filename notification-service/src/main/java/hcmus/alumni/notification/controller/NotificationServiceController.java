@@ -39,8 +39,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.notification.dto.IUserSubscriptionTokenDto;
 import hcmus.alumni.notification.dto.NotificationDto;
 
+import hcmus.alumni.notification.model.user.UserSubscriptionTokenModel;
 import hcmus.alumni.notification.model.notification.NotificationModel;
 import hcmus.alumni.notification.model.notification.StatusNotificationModel;
 import hcmus.alumni.notification.model.group.GroupModel;
@@ -51,7 +53,9 @@ import hcmus.alumni.notification.model.news.CommentNewsModel;
 import hcmus.alumni.notification.model.group.CommentPostGroupModel;
 import hcmus.alumni.notification.model.counsel.CommentPostAdviseModel;
 
+import hcmus.alumni.notification.repository.UserSubscriptionTokenRepository;
 import hcmus.alumni.notification.repository.NotificationRepository;
+
 import hcmus.alumni.notification.exception.AppException;
 import hcmus.alumni.notification.common.NotificationType;
 
@@ -63,9 +67,35 @@ public class NotificationServiceController {
 	private final ModelMapper mapper = new ModelMapper();
 	
 	@Autowired
+    private UserSubscriptionTokenRepository userSubscriptionTokenRepository;
+	@Autowired
 	private NotificationRepository notificationRepository;
 
 	private final static int MAXIMUM_PAGES = 50;
+	
+	@GetMapping("/subscription")
+    public ResponseEntity<List<IUserSubscriptionTokenDto>> getUserSubscriptionToken(
+    		@RequestHeader("userId") String userId) {
+        List<IUserSubscriptionTokenDto> userSubscriptionTokens = 
+        		userSubscriptionTokenRepository.getUserSubscriptionTokenByUserId(userId);
+        return new ResponseEntity<>(userSubscriptionTokens, HttpStatus.OK);
+    }
+	
+	@PostMapping("/subscription")
+    public ResponseEntity<String> addUserSubscriptionToken(
+    		@RequestHeader("userId") String userId, 
+    		@RequestBody UserSubscriptionTokenModel userSubscriptionToken) {
+        UserSubscriptionTokenModel createdToken = new UserSubscriptionTokenModel(userSubscriptionToken, userId);
+        userSubscriptionTokenRepository.save(createdToken);
+        return new ResponseEntity<>(createdToken.getId(), HttpStatus.CREATED);
+    }
+
+	@DeleteMapping("/subscription/{userSubscriptionTokenId}")
+    public ResponseEntity<Void> deleteUserSubscriptionToken(
+    		@PathVariable("userSubscriptionTokenId") String id) {
+    	userSubscriptionTokenRepository.deleteUserSubscriptionTokenById(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getNotifications(
@@ -159,7 +189,7 @@ public class NotificationServiceController {
 	    Optional<NotificationModel> optionalNotification = notificationRepository.findById(id);
 	    
 	    if (!optionalNotification.isPresent()) {
-	    	throw new AppException(100200, "Không tìm thấy thông báo", HttpStatus.NOT_FOUND);
+	    	throw new AppException(100500, "Không tìm thấy thông báo", HttpStatus.NOT_FOUND);
 	    }
 	
 	    NotificationModel notification = optionalNotification.get();

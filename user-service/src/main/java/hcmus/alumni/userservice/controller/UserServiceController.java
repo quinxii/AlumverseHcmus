@@ -43,19 +43,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.userservice.config.UserConfig;
-import hcmus.alumni.userservice.dto.IUserSubscriptionTokenDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
 import hcmus.alumni.userservice.model.UserModel;
-import hcmus.alumni.userservice.model.UserSubscriptionTokenModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
-import hcmus.alumni.userservice.repository.UserSubscriptionTokenRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
@@ -85,9 +82,6 @@ public class UserServiceController {
 	private PasswordHistoryRepository passwordHistoryRepository;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
-	
-	@Autowired
-    private UserSubscriptionTokenRepository userSubscriptionTokenRepository;
 
 	@PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
 	@GetMapping("/alumni-verification/count")
@@ -398,28 +392,4 @@ public class UserServiceController {
 
 		return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
 	}
-	
-	@GetMapping("/subscription-token")
-    public ResponseEntity<List<IUserSubscriptionTokenDto>> getUserSubscriptionToken(
-    		@RequestHeader("userId") String userId) {
-        List<IUserSubscriptionTokenDto> userSubscriptionTokens = 
-        		userSubscriptionTokenRepository.getUserSubscriptionTokenByUserId(userId);
-        return new ResponseEntity<>(userSubscriptionTokens, HttpStatus.OK);
-    }
-	
-	@PostMapping("/subscription-token")
-    public ResponseEntity<String> addUserSubscriptionToken(
-    		@RequestHeader("userId") String userId, 
-    		@RequestBody UserSubscriptionTokenModel userSubscriptionToken) {
-        UserSubscriptionTokenModel createdToken = new UserSubscriptionTokenModel(userSubscriptionToken, userId);
-        userSubscriptionTokenRepository.save(createdToken);
-        return new ResponseEntity<>(createdToken.getId(), HttpStatus.CREATED);
-    }
-
-	@DeleteMapping("/subscription-token/{userSubscriptionTokenId}")
-    public ResponseEntity<Void> deleteUserSubscriptionToken(
-    		@PathVariable("userSubscriptionTokenId") String id) {
-    	userSubscriptionTokenRepository.deleteUserSubscriptionTokenById(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
 }
