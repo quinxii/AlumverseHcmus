@@ -78,15 +78,13 @@ public class InboxService {
     }
 
     /**
-     * Extracts user IDs from the given inbox, excluding the self user ID.
+     * Extracts user IDs from the given inbox.
      *
-     * @param inbox      The inbox model containing the members.
-     * @param selfUserId The user ID to exclude.
-     * @return A list of user IDs excluding the self user ID.
+     * @param inbox The inbox model containing the members.
+     * @return A list of user IDs.
      */
-    public List<String> extractUserIdsExcludeSelf(InboxModel inbox, String selfUserId) {
+    public List<String> extractUserIds(InboxModel inbox) {
         return inbox.getMembers().stream()
-                .filter(member -> !member.getId().getUserId().equals(selfUserId))
                 .map(member -> member.getId().getUserId())
                 .collect(Collectors.toList());
     }
