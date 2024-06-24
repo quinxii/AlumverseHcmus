@@ -91,7 +91,7 @@ public class AuthController {
 
 				return ResponseEntity.status(HttpStatus.OK).body(response);
 			} else {
-				throw new AppException(10101, "Tài khoản đã bị khoá", HttpStatus.UNAUTHORIZED);
+				throw new AppException(10101, "Hệ thống đang gặp gián đoạn. Vui lòng thử lại", HttpStatus.UNAUTHORIZED);
 			}
 		} catch (Exception e) {
 			throw new AppException(10102, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
