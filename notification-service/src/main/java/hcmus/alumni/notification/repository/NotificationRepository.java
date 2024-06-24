@@ -48,6 +48,9 @@ public interface NotificationRepository extends JpaRepository<NotificationModel,
 	@Query("SELECT g FROM GroupModel g WHERE g.id = :groupId")
 	Optional<GroupModel> findGroupById(@Param("groupId") String groupId);
 	
+	@Query("SELECT COUNT(r) FROM RequestJoinGroupModel r WHERE r.id.groupId = :groupId AND r.isDelete = false")
+	int getRequestJoinCount(@Param("groupId") String groupId);
+	
 	@Query("SELECT p FROM PostGroupModel p WHERE p.id = :postId")
 	Optional<PostGroupModel> findPostGroupById(@Param("postId") String postId);
 	

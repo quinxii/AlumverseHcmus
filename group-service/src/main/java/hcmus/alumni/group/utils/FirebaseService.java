@@ -20,7 +20,7 @@ public class FirebaseService {
 	@Autowired
     private UserSubscriptionTokenRepository userSubscriptionTokenRepository;
 	
-	public void sendCommentNotification(
+	public void sendNotification(
 			NotificationModel notification, 
 			NotificationChangeModel notificationChange, 
 			NotificationObjectModel notificationObject, 

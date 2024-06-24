@@ -112,68 +112,87 @@ public class NotificationServiceController {
 		Pageable pageable = PageRequest.of(page, pageSize);
 		Page<NotificationModel> notificationsPages = notificationRepository.getNotifications(userId, pageable);
 		List<NotificationModel> notifications = notificationsPages.getContent();
-
-	    for (NotificationModel notification : notifications) {
-			if ("request_friend".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
-			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
-			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã gửi một lời mời kết bạn");
-			}
-			if ("comment_event".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
-			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
-			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
-			    Optional<CommentEventModel> optionalComment = notificationRepository.findCommentEventById(notification.getEntityId());
-			    if (optionalComment.isPresent()) {
-			    	notification.setParentId(optionalComment.get().getEventId());
-			    }
-			}
-			if ("comment_news".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
-			    notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
-			    notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
-			    Optional<CommentNewsModel> optionalComment = notificationRepository.findCommentNewsById(notification.getEntityId());
-			    if (optionalComment.isPresent()) {
-			    	notification.setParentId(optionalComment.get().getNewsId());
-			    }
-			}
-			if ("group".equals(notification.getEntityTable()) && (NotificationType.UPDATE).equals(notification.getNotificationType())) {
-				Optional<GroupModel> optionalGroup = notificationRepository.findGroupById(notification.getEntityId());
-			    if (optionalGroup.isPresent()) {
-			    	notification.setNotificationImageUrl(optionalGroup.get().getCoverUrl());
-			        notification.setNotificationMessage("Nhóm " + optionalGroup.get().getName() + " mà bạn tham gia đã được cập nhật thông tin");
-			    }
-			}
-			if ("interact_post_group".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
-				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
-				Optional<PostGroupModel> optionalPost = notificationRepository.findPostGroupById(notification.getEntityId());
-			    if (optionalPost.isPresent()) {
-			    	notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
-			    			(optionalPost.get().getReactionCount() - 1) + " người khác đã bày tỏ cảm xúc về bài viết của bạn");
-			    }
-			}
-			if ("comment_post_group".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
-				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
-				Optional<CommentPostGroupModel> optionalComment = notificationRepository.findCommentPostGroupById(notification.getEntityId());
-			    if (optionalComment.isPresent()) {
-			    	notification.setParentId(optionalComment.get().getPostGroupId());
-			    	notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
-			    			((optionalComment.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
-			    }
-			}
-			if ("interact_post_advise".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
-				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
-				Optional<PostAdviseModel> optionalPost = notificationRepository.findPostAdviseById(notification.getEntityId());
-			    if (optionalPost.isPresent()) {
-			    	notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
-			    			(optionalPost.get().getReactionCount() - 1) + " người khác đã bày tỏ cảm xúc về bài viết của bạn");
-			    }
-			}
-			if ("comment_post_advise".equals(notification.getEntityTable()) && (NotificationType.CREATE).equals(notification.getNotificationType())) {
-				notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
-				Optional<CommentPostAdviseModel> optionalComment = notificationRepository.findCommentPostAdviseById(notification.getEntityId());
-			    if (optionalComment.isPresent()) {
-			    	notification.setParentId(optionalComment.get().getPostAdviseId());
-			    	notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
-			    			((optionalComment.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
-			    }
+		
+		for (NotificationModel notification : notifications) {
+			if (NotificationType.CREATE.equals(notification.getNotificationType())) {
+				switch (notification.getEntityTable()) {
+					case "request_friend":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						notification.setNotificationMessage(notification.getActor().getFullName() + " đã gửi một lời mời kết bạn");
+						break;
+					case "comment_event":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
+						Optional<CommentEventModel> optionalEventComment = notificationRepository.findCommentEventById(notification.getEntityId());
+						if (optionalEventComment.isPresent()) {
+							notification.setParentId(optionalEventComment.get().getEventId());
+						}
+						break;
+					case "comment_news":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
+						Optional<CommentNewsModel> optionalNewsComment = notificationRepository.findCommentNewsById(notification.getEntityId());
+						if (optionalNewsComment.isPresent()) {
+							notification.setParentId(optionalNewsComment.get().getNewsId());
+						}
+						break;
+					case "request_join_group":
+						Optional<GroupModel> optionalGroup = notificationRepository.findGroupById(notification.getEntityId());
+						int requestCount = notificationRepository.getRequestJoinCount(notification.getEntityId());
+						if (optionalGroup.isPresent()) {
+						    notification.setNotificationImageUrl(optionalGroup.get().getCoverUrl());
+						    notification.setNotificationMessage(notification.getActor().getFullName() + 
+						    		(requestCount - 1 == 0 ? "" : (" và " + (requestCount - 1) + " người khác")) + 
+						    		" đã yêu cầu tham gia nhóm " + optionalGroup.get().getName());
+						}
+						break;
+					case "interact_post_group":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						Optional<PostGroupModel> optionalPostGroup = notificationRepository.findPostGroupById(notification.getEntityId());
+						if (optionalPostGroup.isPresent()) {
+							notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
+									(optionalPostGroup.get().getReactionCount() - 1 == 0 ? "" : (" và " + (optionalPostGroup.get().getReactionCount() - 1) + " người khác")) + 
+									" đã bày tỏ cảm xúc về bài viết của bạn");
+						}
+						break;
+					case "comment_post_group":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						Optional<CommentPostGroupModel> optionalCommentPostGroup = notificationRepository.findCommentPostGroupById(notification.getEntityId());
+						if (optionalCommentPostGroup.isPresent()) {
+							notification.setParentId(optionalCommentPostGroup.get().getPostGroupId());
+							notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
+									((optionalCommentPostGroup.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
+						}
+						break;
+					case "interact_post_advise":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						Optional<PostAdviseModel> optionalPostAdvise = notificationRepository.findPostAdviseById(notification.getEntityId());
+						if (optionalPostAdvise.isPresent()) {
+							notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
+									(optionalPostAdvise.get().getReactionCount() - 1 == 0 ? "" : (" và " + (optionalPostAdvise.get().getReactionCount() - 1) + " người khác")) + 
+									" đã bày tỏ cảm xúc về bài viết của bạn");
+						}
+						break;
+					case "comment_post_advise":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						Optional<CommentPostAdviseModel> optionalCommentPostAdvise = notificationRepository.findCommentPostAdviseById(notification.getEntityId());
+						if (optionalCommentPostAdvise.isPresent()) {
+							notification.setParentId(optionalCommentPostAdvise.get().getPostAdviseId());
+							notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
+									((optionalCommentPostAdvise.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
+						}
+						break;
+	            }
+			} else if (NotificationType.UPDATE.equals(notification.getNotificationType())) {
+				switch (notification.getEntityTable()) {
+					case "group":
+						Optional<GroupModel> optionalGroup = notificationRepository.findGroupById(notification.getEntityId());
+						if (optionalGroup.isPresent()) {
+							notification.setNotificationImageUrl(optionalGroup.get().getCoverUrl());
+						    notification.setNotificationMessage("Nhóm " + optionalGroup.get().getName() + " mà bạn tham gia đã được cập nhật thông tin");
+						}
+						break;
+				}
 			}
 	    }
 
