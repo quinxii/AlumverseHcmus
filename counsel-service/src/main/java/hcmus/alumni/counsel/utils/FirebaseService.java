@@ -9,6 +9,7 @@ import hcmus.alumni.counsel.model.notification.NotificationChangeModel;
 import hcmus.alumni.counsel.model.notification.NotificationModel;
 import hcmus.alumni.counsel.model.notification.NotificationObjectModel;
 import hcmus.alumni.counsel.repository.UserSubscriptionTokenRepository;
+import lombok.AllArgsConstructor;
 
 import java.util.List;
 
@@ -57,43 +58,32 @@ public class FirebaseService {
         }
     }
 
-    public static class NotificationPayload {
-        private String id;
-        private String notifierId;
-        private String actorId;
-        private String entityId;
-        private String entityTable;
-        private String notificationType;
-        private String notificationImageUrl;
-        private String notificationMessage;
-        private String parentId;
-
-        public NotificationPayload(String id, String notifierId, String actorId, String entityId, String entityTable, String notificationType, String notificationImageUrl, String notificationMessage, String parentId) {
-            this.id = id;
-            this.notifierId = notifierId;
-            this.actorId = actorId;
-            this.entityId = entityId;
-            this.entityTable = entityTable;
-            this.notificationType = notificationType;
-            this.notificationImageUrl = notificationImageUrl;
-            this.notificationMessage = notificationMessage;
-            this.parentId = parentId;
-        }
-
-        @Override
-        public String toString() {
-            return "{" +
-                    "\"id\":\"" + id + "\"," +
-                    "\"notifierId\":\"" + notifierId + "\"," +
-                    "\"actorId\":\"" + actorId + "\"," +
-                    "\"entityId\":\"" + entityId + "\"," +
-                    "\"entityTable\":\"" + entityTable + "\"," +
-                    "\"notificationType\":\"" + notificationType + "\"," +
-                    "\"notificationImageUrl\":\"" + notificationImageUrl + "\"," +
-                    "\"notificationMessage\":\"" + notificationMessage + "\"," +
-                    "\"parentId\":\"" + parentId + "\"" +
-                    "}";
-        }
-    }
+	@AllArgsConstructor
+	public static class NotificationPayload {
+	    private String id;
+	    private String notifierId;
+	    private String actorId;
+	    private String entityId;
+	    private String entityTable;
+	    private String notificationType;
+	    private String notificationImageUrl;
+	    private String notificationMessage;
+	    private String parentId;
+	
+	    @Override
+	    public String toString() {
+	        return "{" +
+	                "\"id\":\"" + id + "\"," +
+	                "\"notifierId\":\"" + notifierId + "\"," +
+	                "\"actorId\":\"" + actorId + "\"," +
+	                "\"entityId\":\"" + entityId + "\"," +
+	                "\"entityTable\":\"" + entityTable + "\"," +
+	                "\"notificationType\":\"" + notificationType + "\"," +
+	                "\"notificationImageUrl\":\"" + notificationImageUrl + "\"," +
+	                "\"notificationMessage\":\"" + notificationMessage + "\"," +
+	                "\"parentId\":\"" + parentId + "\"" +
+	                "}";
+	    }
+	}
 }
 

@@ -84,6 +84,7 @@ import hcmus.alumni.group.dto.request.PostGroupRequestDto;
 import hcmus.alumni.group.dto.request.ReactRequestDto;
 import hcmus.alumni.group.dto.request.PostGroupRequestDto.TagRequestDto;
 import hcmus.alumni.group.dto.request.PostGroupRequestDto.VoteRequestDto;
+import hcmus.alumni.group.repository.UserRepository;
 import hcmus.alumni.group.repository.GroupRepository;
 import hcmus.alumni.group.repository.GroupMemberRepository;
 import hcmus.alumni.group.repository.RequestJoinGroupRepository;
@@ -104,6 +105,8 @@ public class GroupServiceController {
 	private final ModelMapper mapper = new ModelMapper();
 	@PersistenceContext
 	private EntityManager em;
+	@Autowired
+	private UserRepository userRepository;
 	@Autowired
 	private GroupRepository groupRepository;
 	@Autowired
@@ -591,13 +594,10 @@ public class GroupServiceController {
 			            return entityTypeRepository.save(newEntityType);
 			        });
 			
-			NotificationObjectModel notificationObject = notificationObjectRepository.findByEntityTypeAndEntityId(entityType, id)
-			        .orElseGet(() -> {
-			            NotificationObjectModel newNotificationObject = new NotificationObjectModel();
-			            newNotificationObject.setEntityType(entityType);
-			            newNotificationObject.setEntityId(id);
-			            return notificationObjectRepository.save(newNotificationObject);
-			        });
+			NotificationObjectModel notificationObject = new NotificationObjectModel();
+			notificationObject.setEntityType(entityType);
+			notificationObject.setEntityId(id);
+			notificationObjectRepository.save(notificationObject);
 			
 			// Create Notification Change
 			NotificationChangeModel notificationChange = new NotificationChangeModel();
@@ -606,6 +606,7 @@ public class GroupServiceController {
 			notificationChangeRepository.save(notificationChange);
 			
 			// Create notifications for each group admin/creator
+			Optional<UserModel> optionalUser = userRepository.findById(userId);
 			for (GroupMemberModel member : groupAdminsAndCreators.getContent()) {
 			    NotificationModel notification = new NotificationModel();
 			    notification.setNotificationObject(notificationObject);
@@ -614,7 +615,7 @@ public class GroupServiceController {
 			    notificationRepository.save(notification);
 			
 			    // Send push notification
-			    String notificationMessage = userId + " đã yêu cầu tham gia nhóm " + group.getName();
+			    String notificationMessage = optionalUser.get().getFullName() + " đã yêu cầu tham gia nhóm " + group.getName();
 			    firebaseService.sendNotification(
 			            notification, notificationChange, notificationObject,
 			            group.getCoverUrl(),
@@ -662,9 +663,46 @@ public class GroupServiceController {
 			member.setRole(GroupMemberRole.MEMBER);
 			groupMemberRepository.save(member);
 			groupRepository.participantCountIncrement(id, 1);
-		} 
+		}
 		
 		requestJoinGroupRepository.deleteRequestJoin(id, userId);
+		
+		// Ensure Notification Object for join request exists
+		EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("request_join_group", NotificationType.UPDATE)
+		        .orElseGet(() -> {
+		            EntityTypeModel newEntityType = new EntityTypeModel();
+		            newEntityType.setEntityTable("request_join_group");
+		            newEntityType.setNotificationType(NotificationType.UPDATE);
+		            return entityTypeRepository.save(newEntityType);
+		        });
+		
+		NotificationObjectModel notificationObject = new NotificationObjectModel();
+		notificationObject.setEntityType(entityType);
+		notificationObject.setEntityId(id);
+		notificationObjectRepository.save(notificationObject);
+		
+		// Create Notification Change
+		NotificationChangeModel notificationChange = new NotificationChangeModel();
+		notificationChange.setNotificationObject(notificationObject);
+		notificationChange.setActor(new UserModel(requestingUserId));
+		notificationChangeRepository.save(notificationChange);
+		
+		NotificationModel notification = new NotificationModel();
+		notification.setNotificationObject(notificationObject);
+		notification.setNotifier(new UserModel(userId));
+		notification.setStatus(new StatusNotificationModel(1));
+		notificationRepository.save(notification);
+	
+		// Send push notification
+		Optional<GroupModel> optionalGroup = groupRepository.findById(id);
+		GroupModel group = optionalGroup.get();
+		String notificationMessage = "Yêu cầu tham gia nhóm " + group.getName() + " đã " + 
+				(status.equalsIgnoreCase("approved") ? "được chấp thuận" : "bị từ chối");
+		firebaseService.sendNotification(
+		        notification, notificationChange, notificationObject,
+		        group.getCoverUrl(),
+		        notificationMessage,
+		        null);
 		
 		return ResponseEntity.status(HttpStatus.OK).body(null);
     }

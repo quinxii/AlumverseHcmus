@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.notification.model.notification.NotificationModel;
 import hcmus.alumni.notification.model.group.GroupModel;
+import hcmus.alumni.notification.model.group.GroupMemberModel;
 import hcmus.alumni.notification.model.group.PostGroupModel;
 import hcmus.alumni.notification.model.counsel.PostAdviseModel;
 import hcmus.alumni.notification.model.event.CommentEventModel;
@@ -50,6 +51,9 @@ public interface NotificationRepository extends JpaRepository<NotificationModel,
 	
 	@Query("SELECT COUNT(r) FROM RequestJoinGroupModel r WHERE r.id.groupId = :groupId AND r.isDelete = false")
 	int getRequestJoinCount(@Param("groupId") String groupId);
+	
+	@Query("SELECT gm FROM GroupMemberModel gm WHERE gm.id.userId = :userId AND gm.id.groupId = :groupId AND gm.isDelete = false")
+	Optional<GroupMemberModel> findGroupMemberById(@Param("userId") String userId, @Param("groupId") String groupId);
 	
 	@Query("SELECT p FROM PostGroupModel p WHERE p.id = :postId")
 	Optional<PostGroupModel> findPostGroupById(@Param("postId") String postId);

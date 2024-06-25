@@ -46,6 +46,7 @@ import hcmus.alumni.notification.model.user.UserSubscriptionTokenModel;
 import hcmus.alumni.notification.model.notification.NotificationModel;
 import hcmus.alumni.notification.model.notification.StatusNotificationModel;
 import hcmus.alumni.notification.model.group.GroupModel;
+import hcmus.alumni.notification.model.group.GroupMemberModel;
 import hcmus.alumni.notification.model.group.PostGroupModel;
 import hcmus.alumni.notification.model.counsel.PostAdviseModel;
 import hcmus.alumni.notification.model.event.CommentEventModel;
@@ -142,7 +143,6 @@ public class NotificationServiceController {
 						if (optionalGroup.isPresent()) {
 						    notification.setNotificationImageUrl(optionalGroup.get().getCoverUrl());
 						    notification.setNotificationMessage(notification.getActor().getFullName() + 
-						    		(requestCount - 1 == 0 ? "" : (" và " + (requestCount - 1) + " người khác")) + 
 						    		" đã yêu cầu tham gia nhóm " + optionalGroup.get().getName());
 						}
 						break;
@@ -191,6 +191,15 @@ public class NotificationServiceController {
 							notification.setNotificationImageUrl(optionalGroup.get().getCoverUrl());
 						    notification.setNotificationMessage("Nhóm " + optionalGroup.get().getName() + " mà bạn tham gia đã được cập nhật thông tin");
 						}
+						break;
+					case "request_join_group":
+						Optional<GroupModel> group = notificationRepository.findGroupById(notification.getEntityId());
+						if (group.isPresent()) 
+							notification.setNotificationImageUrl(group.get().getCoverUrl());
+						Optional<GroupMemberModel> optionalGroupMember = 
+								notificationRepository.findGroupMemberById(notification.getNotifier().getId(), notification.getEntityId());
+						notification.setNotificationMessage("Yêu cầu tham gia nhóm " + group.get().getName() + " đã " + 
+								(optionalGroupMember.isPresent() ? "được chấp thuận" : "bị từ chối"));
 						break;
 				}
 			}
