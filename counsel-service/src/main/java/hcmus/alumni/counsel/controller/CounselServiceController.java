@@ -873,5 +873,4 @@ public class CounselServiceController {
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
-
 }

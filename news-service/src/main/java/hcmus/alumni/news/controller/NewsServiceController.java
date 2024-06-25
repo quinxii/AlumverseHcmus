@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -506,5 +507,31 @@ public class NewsServiceController {
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+
+	// Get a specific comment of a post
+	@GetMapping("/{newsId}/comments/{commentId}")
+	public ResponseEntity<Map<String, Object>> getSingleCommentOfAPost(
+			Authentication authentication,
+			@RequestHeader("userId") String userId,
+			@PathVariable String newsId,
+			@PathVariable String commentId) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+			canDelete = true;
+		}
+
+		ICommentNewsDto comment = commentNewsRepository.getComment(newsId, commentId, userId, canDelete)
+				.orElse(null);
+		if (comment == null) {
+			throw new AppException(41500, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+		}
+
+		result.put("comment", comment);
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }
