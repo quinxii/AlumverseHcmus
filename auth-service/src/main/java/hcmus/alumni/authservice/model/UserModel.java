@@ -122,14 +122,14 @@ public class UserModel implements Serializable {
     
     public UserModel() {
     	id = UUID.randomUUID().toString();
-    	roles.add(new RoleModel(1));
+    	roles.add(new RoleModel(5));
 	}
     
     public UserModel(String email, String pass) {
     	id = UUID.randomUUID().toString();
     	this.email = email;
     	this.pass = pass;
-    	roles.add(new RoleModel(1));
+    	roles.add(new RoleModel(5));
 	}
     
     public ArrayList<String> getRolesName() {

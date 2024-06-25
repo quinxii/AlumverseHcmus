@@ -11,26 +11,26 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Entity
-@Table(name = "email_activation_code")
+@Table(name = "email_reset_code")
 @Data
 @AllArgsConstructor
-public class EmailActivationCodeModel implements Serializable {
+public class EmailResetCodeModel implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
     @Id
     @Column(name = "email", nullable = false, length = 200)
     private String email;
 
-    @Column(name = "activation_code", nullable = false, length = 8)
-    private String activationCode;
+
+	@Column(name = "reset_code", nullable = false, length = 8)
+    private String resetCode;
 
     @Column(name = "created_at", nullable = false)
     private String createdAt;
 
-
-    public EmailActivationCodeModel() {
-    }
-
+    public EmailResetCodeModel() {
+		// TODO Auto-generated constructor stub
+	}
 }
 
