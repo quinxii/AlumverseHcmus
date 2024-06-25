@@ -60,13 +60,35 @@ spring:
             - Path=/counsel/**
           filters:
             - name: Authentication
+            
+        ## notification service
+        - id: notification
+          uri: lb://notification-service
+          predicates:
+            - Path=/notification/**
+          filters:
+            - name: Authentication
+
+        ## message service
+        - id: message
+          uri: lb://message-service
+          predicates:
+            - Path=/messages/**
+          filters:
+            - name: Authentication
+        
+        ## message service with websocket
+        - id: message-ws
+          uri: lb:ws://message-service  # Use 'ws' for websocket and service name
+          predicates:
+            - Path=/ws/**
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
       globalcors:
         corsConfigurations:
           '[/**]':
-              allowedOrigins: "*"
+              allowedOriginPatterns: "http://localhost:[*],https://alumverse.vercel.app/"
               allowedMethods: "*"
               allowedHeaders: "*"
 server:

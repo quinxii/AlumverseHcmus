@@ -85,7 +85,7 @@ public class UserModel implements Serializable {
     private String coverUrl;
 
     @Column(name = "status_id")
-    private Integer statusId;
+    private Integer statusId = 2;
 
 	@CreationTimestamp
     @Column(name = "create_at")
@@ -122,14 +122,14 @@ public class UserModel implements Serializable {
     
     public UserModel() {
     	id = UUID.randomUUID().toString();
-    	roles.add(new RoleModel(1));
+    	roles.add(new RoleModel(5));
 	}
     
     public UserModel(String email, String pass) {
     	id = UUID.randomUUID().toString();
     	this.email = email;
     	this.pass = pass;
-    	roles.add(new RoleModel(1));
+    	roles.add(new RoleModel(5));
 	}
     
     public ArrayList<String> getRolesName() {

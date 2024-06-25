@@ -1,13 +1,17 @@
 package hcmus.alumni.userservice.repository;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 
@@ -37,7 +41,7 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 
 	@Transactional
 	@Modifying
-	@Query(value = "UPDATE user_role SET role_id = 3 WHERE user_id = :userId AND role_id = 1", nativeQuery = true)
+	@Query(value = "UPDATE user_role SET role_id = 4 WHERE user_id = :userId AND role_id = 5", nativeQuery = true)
 	int updateRoleFromGuestToAlumni(String userId);
 
 	@Query("SELECT u.fullName FROM UserModel u WHERE u.id = :userId")

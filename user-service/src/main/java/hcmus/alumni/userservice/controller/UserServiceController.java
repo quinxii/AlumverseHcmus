@@ -32,6 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,6 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.userservice.config.UserConfig;
+import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.AlumniModel;
@@ -56,13 +58,13 @@ import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.AlumniRepository;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
+import hcmus.alumni.userservice.repository.StatusUserGroupRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000") // Allow requests from Web
 @RequestMapping("/user")
 public class UserServiceController {
 	@PersistenceContext
@@ -78,11 +80,13 @@ public class UserServiceController {
 	private VerifyAlumniRepository verifyAlumniRepository;
 
 	@Autowired
+	private StatusUserGroupRepository statusUserGroupRepository;
+
+	@Autowired
 	private ImageUtils imageUtils;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-
 	@Autowired
 	private PasswordHistoryRepository passwordHistoryRepository;
 
@@ -90,6 +94,8 @@ public class UserServiceController {
 	private AlumniRepository alumniRepository;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
+	
+	private final static int MAXIMUM_PAGES = 50;
 
 	@PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
 	@GetMapping("/alumni-verification/count")
@@ -382,10 +388,9 @@ public class UserServiceController {
 	}
 
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
-	@PutMapping("/{id}")
-	public ResponseEntity<String> adminUpdateUser(@PathVariable String id,
+	@PutMapping("/{id}/status")
+	public ResponseEntity<String> adminUpdateUserStatus(@PathVariable String id,
 			@RequestParam(value = "statusId", required = false) Integer statusId) {
-
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (!optionalUser.isPresent()) {
 			throw new AppException(20700, "Người dùng không tồn tại", HttpStatus.NOT_FOUND);
@@ -393,9 +398,16 @@ public class UserServiceController {
 
 		UserModel user = optionalUser.get();
 
-		if (statusId != null) {
-			user.setStatusId(statusId);
+		if (statusId == null) {
+			throw new AppException(20701, "Trạng thái tài khoản không được để trống", HttpStatus.BAD_REQUEST);
 		}
+
+		boolean statusExists = statusUserGroupRepository.existsById(statusId);
+		if (!statusExists) {
+			throw new AppException(20702, "Trạng thái tài khoản không tồn tại", HttpStatus.BAD_REQUEST);
+		}
+
+		user.setStatusId(statusId);
 		userRepository.save(user);
 
 		return ResponseEntity.status(HttpStatus.OK).body("");

@@ -2,6 +2,7 @@ package hcmus.alumni.group.repository;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,4 +64,10 @@ public interface GroupMemberRepository extends JpaRepository<GroupMemberModel, G
 	        "JOIN GroupMemberModel gm ON gm.id.user.id = u.id " +
 	        "WHERE gm.id.group.id = :groupId AND gm.isDelete = false AND f.isDelete = false")
 	Set<IUserDto> findJoinedFriends(@Param("groupId") String groupId, @Param("requestingUserId") String requestingUserId);
+	
+	@Query("SELECT gm FROM GroupMemberModel gm " + 
+			"WHERE gm.id.group.id = :groupId " +
+			"AND (:roles IS NULL OR gm.role IN :roles)" + 
+			"AND isDelete = false")
+	Page<GroupMemberModel> getMembers(@Param("groupId") String groupId, @Param("roles") List<GroupMemberRole> roles, Pageable pageable);
 }

@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import hcmus.alumni.counsel.model.PostAdviseModel;
 
 public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, String> {
-	@Query(value = "select count(*) > 0 from post_advise where id = :postId and creator = :userId", nativeQuery = true)
+	@Query(value = "select count(*) > 0 from post_advise where " +
+			"id = :postId and creator = :userId", nativeQuery = true)
 	Long isPostOwner(String postId, String userId);
 
 	Optional<PostAdviseModel> findById(String id);
@@ -72,10 +73,12 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 	@Query("UPDATE PostAdviseModel pa SET pa.reactionCount = pa.reactionCount + :count WHERE pa.id = :id")
 	int reactionCountIncrement(String id, @Param("count") Integer count);
 
-	@Query(value = "select allow_multiple_votes from post_advise where id = :postId", nativeQuery = true)
+	@Query(value = "select allow_multiple_votes from post_advise " +
+			"where id = :postId", nativeQuery = true)
 	boolean isAllowMultipleVotes(String postId);
 
-	@Query(value = "select allow_add_options from post_advise where id = :postId", nativeQuery = true)
+	@Query(value = "select allow_add_options from post_advise " +
+			"where id = :postId", nativeQuery = true)
 	boolean isAllowAddOptions(String postId);
 
 	@Query(value = "select distinct p.name from role_permission rp " +

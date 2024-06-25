@@ -4,13 +4,16 @@ import java.io.Serializable;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 @Entity
 @Table(name = "email_activation_code")
+@Data
+@AllArgsConstructor
 public class EmailActivationCodeModel implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -25,33 +28,9 @@ public class EmailActivationCodeModel implements Serializable {
     @Column(name = "created_at", nullable = false)
     private String createdAt;
 
-    // Constructors, getters, and setters
-    // Constructor
+
     public EmailActivationCodeModel() {
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getActivationCode() {
-        return activationCode;
-    }
-
-    public void setActivationCode(String activationCode) {
-        this.activationCode = activationCode;
-    }
-
-    public String getCreateAt() {
-        return createdAt;
-    }
-
-    public void setCreateAt(String currentTime) {
-        this.createdAt = currentTime;
-    }
 }
 

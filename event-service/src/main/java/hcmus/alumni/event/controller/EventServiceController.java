@@ -55,12 +55,23 @@ import hcmus.alumni.event.repository.EventRepository;
 import hcmus.alumni.event.repository.ParticipantEventRepository;
 import hcmus.alumni.event.repository.TagRepository;
 import hcmus.alumni.event.utils.ImageUtils;
+import hcmus.alumni.event.utils.FirebaseService;
 import hcmus.alumni.event.exception.AppException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import hcmus.alumni.event.common.NotificationType;
+import hcmus.alumni.event.model.notification.EntityTypeModel;
+import hcmus.alumni.event.model.notification.NotificationChangeModel;
+import hcmus.alumni.event.model.notification.NotificationModel;
+import hcmus.alumni.event.model.notification.NotificationObjectModel;
+import hcmus.alumni.event.model.notification.StatusNotificationModel;
+import hcmus.alumni.event.repository.notification.EntityTypeRepository;
+import hcmus.alumni.event.repository.notification.NotificationChangeRepository;
+import hcmus.alumni.event.repository.notification.NotificationObjectRepository;
+import hcmus.alumni.event.repository.notification.NotificationRepository;
+
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/events")
 public class EventServiceController {
 	@PersistenceContext
@@ -74,7 +85,17 @@ public class EventServiceController {
 	@Autowired
 	private CommentEventRepository commentEventRepository;
 	@Autowired
-    private ImageUtils imageUtils;
+	private EntityTypeRepository entityTypeRepository;  
+	@Autowired
+	private NotificationObjectRepository notificationObjectRepository; 
+	@Autowired
+	private NotificationChangeRepository notificationChangeRepository;
+	@Autowired
+	private NotificationRepository notificationRepository;
+	@Autowired
+	private ImageUtils imageUtils;
+	@Autowired
+	private FirebaseService firebaseService;
 	
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -518,7 +539,31 @@ public class EventServiceController {
 		}
 		
 		if (comment.getParentId() != null) {
-	        commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
+			commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
+			// Fetch the parent comment
+			CommentEventModel parentComment = commentEventRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(51402, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
+			
+			if (!parentComment.getCreator().getId().equals(creator)) {
+				// Create NotificationObject
+				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_event", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_event", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+				
+				// Create NotificationChange
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				notificationChangeRepository.save(notificationChange);
+				
+				// Create Notification
+				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				notificationRepository.save(notification);
+				
+				firebaseService.sendCommentNotification(
+						notification, notificationChange, notificationObject, 
+						notificationChange.getActor().getAvatarUrl(), 
+						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						comment.getEvent().getId());
+			}
 	    } else {
 	    	eventRepository.commentCountIncrement(id, 1);
 	    }

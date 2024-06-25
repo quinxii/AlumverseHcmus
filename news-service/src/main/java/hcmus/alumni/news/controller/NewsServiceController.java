@@ -25,7 +25,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,6 +37,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.news.utils.FirebaseService;
+import hcmus.alumni.news.repository.notification.EntityTypeRepository;
+import hcmus.alumni.news.repository.notification.NotificationChangeRepository;
+import hcmus.alumni.news.repository.notification.NotificationObjectRepository;
+import hcmus.alumni.news.repository.notification.NotificationRepository;
+import hcmus.alumni.news.common.NotificationType;
+import hcmus.alumni.news.model.notification.EntityTypeModel;
+import hcmus.alumni.news.model.notification.NotificationChangeModel;
+import hcmus.alumni.news.model.notification.NotificationModel;
+import hcmus.alumni.news.model.notification.NotificationObjectModel;
+import hcmus.alumni.news.model.notification.StatusNotificationModel;
 import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.exception.AppException;
@@ -53,7 +63,6 @@ import hcmus.alumni.news.repository.TagRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/news")
 public class NewsServiceController {
 	@Autowired
@@ -63,7 +72,17 @@ public class NewsServiceController {
 	@Autowired
 	private CommentNewsRepository commentNewsRepository;
 	@Autowired
+	private EntityTypeRepository entityTypeRepository;  
+	@Autowired
+	private NotificationObjectRepository notificationObjectRepository; 
+	@Autowired
+	private NotificationChangeRepository notificationChangeRepository;
+	@Autowired
+	private NotificationRepository notificationRepository;
+	@Autowired
 	private ImageUtils imageUtils;
+	@Autowired
+	private FirebaseService firebaseService;
 
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -440,6 +459,30 @@ public class NewsServiceController {
 
 		if (comment.getParentId() != null) {
 			commentNewsRepository.commentCountIncrement(comment.getParentId(), 1);
+			// Fetch the parent comment
+			CommentNewsModel parentComment = commentNewsRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(41202, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
+			
+			if (!parentComment.getCreator().getId().equals(creator)) {
+				// Create NotificationObject
+				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_news", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_news", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+				
+				// Create NotificationChange
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				notificationChangeRepository.save(notificationChange);
+				
+				// Create Notification
+				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				notificationRepository.save(notification);
+				
+				firebaseService.sendCommentNotification(
+						notification, notificationChange, notificationObject, 
+						notificationChange.getActor().getAvatarUrl(), 
+						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						comment.getNews().getId());
+			}
 		} else {
 			newsRepository.commentCountIncrement(id, 1);
 		}
