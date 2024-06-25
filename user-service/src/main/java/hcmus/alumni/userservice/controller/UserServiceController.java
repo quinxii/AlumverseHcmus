@@ -23,8 +23,10 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,11 +46,14 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.userservice.config.UserConfig;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.exception.AppException;
+import hcmus.alumni.userservice.model.AlumniModel;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
+import hcmus.alumni.userservice.model.SexModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
+import hcmus.alumni.userservice.repository.AlumniRepository;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
@@ -77,8 +82,12 @@ public class UserServiceController {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
 	@Autowired
 	private PasswordHistoryRepository passwordHistoryRepository;
+
+	@Autowired
+	private AlumniRepository alumniRepository;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
@@ -86,20 +95,20 @@ public class UserServiceController {
 	@GetMapping("/alumni-verification/count")
 	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam String status) {
 		switch (status) {
-			case "pending":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.PENDING));
-			case "resolved":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusNot(false, VerifyAlumniModel.Status.PENDING));
-			case "approved":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.APPROVED));
-			case "denied":
-				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.DENIED));
-			default:
-				throw new AppException(20100, "status không hợp lệ", HttpStatus.BAD_REQUEST);
+		case "pending":
+			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.PENDING));
+		case "resolved":
+			return ResponseEntity.status(HttpStatus.OK).body(
+					verifyAlumniRepository.countByIsDeleteEqualsAndStatusNot(false, VerifyAlumniModel.Status.PENDING));
+		case "approved":
+			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.APPROVED));
+		case "denied":
+			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.DENIED));
+		default:
+			throw new AppException(20100, "status không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -145,20 +154,20 @@ public class UserServiceController {
 		// Where
 		Predicate statusPredication = null;
 		switch (status) {
-			case "pending":
-				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.PENDING);
-				break;
-			case "resolved":
-				statusPredication = cb.notEqual(root.get("status"), VerifyAlumniModel.Status.PENDING);
-				break;
-			case "approved":
-				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.APPROVED);
-				break;
-			case "denied":
-				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.DENIED);
-				break;
-			default:
-				throw new AppException(20200, "status không hợp lệ", HttpStatus.BAD_REQUEST);
+		case "pending":
+			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.PENDING);
+			break;
+		case "resolved":
+			statusPredication = cb.notEqual(root.get("status"), VerifyAlumniModel.Status.PENDING);
+			break;
+		case "approved":
+			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.APPROVED);
+			break;
+		case "denied":
+			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.DENIED);
+			break;
+		default:
+			throw new AppException(20200, "status không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		Predicate isDeletePredicate = cb.equal(root.get("isDelete"), false);
 		Predicate criteriaPredicate = null;
@@ -391,32 +400,142 @@ public class UserServiceController {
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	
+
 	@GetMapping("/profile/{id}")
 	public ResponseEntity<Map<String, Object>> getProfileInfo(@PathVariable String id) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
-		
+
 		if (optionalUser.isEmpty()) {
 			throw new AppException(21101, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		UserModel user = optionalUser.get();
+		Optional<AlumniModel> optionalAlumni = alumniRepository.findByUserId(id);
 
 		Map<String, Object> response = new HashMap<>();
 		response.put("userId", user.getId());
-		response.put("fullName", userRepository.findFullNameByUserId(id));
-		response.put("avatarUrl", userRepository.findAvatarUrlByUserId(id));
-		response.put("facultyId", user.getFaculty());
-		response.put("sexId", user.getSex());
+		response.put("avatarUrl", user.getAvatarUrl());
+		response.put("coverUrl", user.getCoverUrl());
+
+		response.put("fullName", user.getFullName());
+		response.put("faculty", user.getFaculty());
+		response.put("sex", user.getSex());
 		response.put("dob", user.getDob());
 		response.put("socialMediaLink", user.getSocialMediaLink());
-		
-		
+
+		if (!optionalAlumni.isEmpty()) {
+			AlumniModel alumni = optionalAlumni.get();
+			response.put("alumClass", alumni.getAlumClass());
+			response.put("graduationYear", alumni.getGraduationYear());
+		} else {
+			response.put("alumClass", null);
+			response.put("graduationYear", null);
+		}
+
 		response.put("email", user.getEmail());
 		response.put("phone", user.getPhone());
 		response.put("aboutMe", user.getAboutMe());
-		response.put("createAt", user.getCreateAt());
-		
+
+		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
+				.findByUserIdAndIsDeleteEquals(id, false);
+
+		if (!alumniVerificationOptional.isEmpty()) {
+			VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
+
+			response.put("verifyAlumniStatus", alumniVerification.getStatus());
+			response.put("studentId", alumniVerification.getStudentId());
+			response.put("beginningYear", alumniVerification.getBeginningYear());
+		} else {
+			response.put("verifyAlumniStatus", null);
+			response.put("studentId", null);
+			response.put("beginningYear", null);
+		}
+
 		return ResponseEntity.ok(response);
+	}
+
+	@PutMapping("/profile/{id}")
+	public ResponseEntity<String> updateProfileInfo(@PathVariable String id, 
+			@RequestParam(value = "fullName", required = false) String fullName,
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
+			@RequestParam(value = "sexId", required = false) Integer sexId,
+			@RequestParam(value = "dob", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd")  Date dob,
+			@RequestParam(value = "socialMediaLink", required = false) String socialMediaLink,
+			@RequestParam(value = "alumClass", required = false) String alumClass,
+			@RequestParam(value = "graduationYear", required = false) Integer graduationYear,
+			@RequestParam(value = "phone", required = false) String phone,
+			@RequestParam(value = "aboutMe", required = false) String aboutMe,
+			@RequestParam(value = "studentId", required = false) String studentId,
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+	    Optional<UserModel> optionalUser = userRepository.findById(id);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21201, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		UserModel user = optionalUser.get();
+		Optional<AlumniModel> optionalAlumni = alumniRepository.findByUserId(id);
+		boolean isPut = false;
+
+		if (StringUtils.isNotEmpty(fullName)) {
+            user.setFullName(fullName);
+            isPut = true;
+        }
+        if (facultyId != null) {
+            user.setFaculty(new FacultyModel(facultyId));
+            isPut = true;
+        }
+        if (sexId != null) {
+            user.setSex(new SexModel(sexId));
+            isPut = true;
+        }
+        if (dob != null) {
+            user.setDob(dob);
+            isPut = true;
+        }
+        if (StringUtils.isNotEmpty(socialMediaLink)) {
+            user.setSocialMediaLink(socialMediaLink);
+            isPut = true;
+        }
+        
+        if (!optionalAlumni.isEmpty()) {
+            AlumniModel alumni = optionalAlumni.get();
+            if (StringUtils.isNotEmpty(alumClass)) {
+                alumni.setAlumClass(alumClass);
+                isPut = true;
+            }
+            if (graduationYear != null) {
+                alumni.setGraduationYear(graduationYear);
+                isPut = true;
+            }
+        } 
+        
+        if (StringUtils.isNotEmpty(phone)) {
+            user.setPhone(phone);
+            isPut = true;
+        }
+        if (StringUtils.isNotEmpty(aboutMe)) {
+            user.setAboutMe(aboutMe);
+            isPut = true;
+        }
+        
+        Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
+				.findByUserIdAndIsDeleteEquals(id, false);
+        if (!alumniVerificationOptional.isEmpty()) {
+        	VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
+            if (StringUtils.isNotEmpty(studentId)) {
+            	alumniVerification.setStudentId(studentId);
+                isPut = true;
+            }
+            if (beginningYear != null) {
+            	alumniVerification.setBeginningYear(beginningYear);
+                isPut = true;
+            }
+        } 
+
+		if (isPut) {
+            userRepository.save(user);
+        }
+	    return ResponseEntity.ok("Profile updated successfully");
 	}
 }
