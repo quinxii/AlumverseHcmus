@@ -464,12 +464,12 @@ public class UserServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize);
-			Page<UserSearchDto> searchResult = null;
+			Page<UserSearchDto> users = null;
 
-            searchResult = userRepository.searchUsers(fullName, email, roleIds, pageable);
+			users = userRepository.searchUsers(fullName, email, roleIds, pageable);
 
-			result.put("totalPages", searchResult.getTotalPages());
-			result.put("users", searchResult.getContent());
+			result.put("totalPages", users.getTotalPages());
+			result.put("users", users.getContent());
 		} catch (IllegalArgumentException e) {
 			throw new AppException(21001, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
