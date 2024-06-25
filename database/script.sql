@@ -851,7 +851,7 @@ CREATE TABLE
     user_subscription_token (
         id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
-        token VARCHAR(150) NOT NULL,
+        token TEXT NOT NULL,
         is_delete TINYINT (1) DEFAULT (0),
         PRIMARY KEY (id),
         FOREIGN KEY (user_id) REFERENCES user (id)
@@ -882,15 +882,15 @@ CREATE TABLE
 -- Notification object
 DROP TABLE IF EXISTS notification_object;
 
-CREATE TABLE
+CREATE TABLE 
     notification_object (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
         entity_type INT UNSIGNED NOT NULL,
-        entity_id INT UNSIGNED NOT NULL,
-        created_on DATETIME NOT NULL,
+        entity_id VARCHAR(36) NOT NULL,
+        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
         PRIMARY KEY (id),
-        FOREIGN KEY (entity_type) REFERENCES entity_type (id)
+        FOREIGN KEY (entity_type) REFERENCES entity_type(id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Notification

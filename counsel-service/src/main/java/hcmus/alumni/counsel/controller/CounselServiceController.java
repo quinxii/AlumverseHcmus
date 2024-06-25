@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -59,13 +60,24 @@ import hcmus.alumni.counsel.model.UserModel;
 import hcmus.alumni.counsel.model.UserVotePostAdviseId;
 import hcmus.alumni.counsel.model.UserVotePostAdviseModel;
 import hcmus.alumni.counsel.model.VoteOptionPostAdviseModel;
+import hcmus.alumni.counsel.model.notification.EntityTypeModel;
+import hcmus.alumni.counsel.model.notification.NotificationChangeModel;
+import hcmus.alumni.counsel.model.notification.NotificationModel;
+import hcmus.alumni.counsel.model.notification.NotificationObjectModel;
+import hcmus.alumni.counsel.model.notification.StatusNotificationModel;
 import hcmus.alumni.counsel.repository.CommentPostAdviseRepository;
 import hcmus.alumni.counsel.repository.InteractPostAdviseRepository;
 import hcmus.alumni.counsel.repository.PostAdviseRepository;
 import hcmus.alumni.counsel.repository.TagRepository;
 import hcmus.alumni.counsel.repository.UserVotePostAdviseRepository;
 import hcmus.alumni.counsel.repository.VoteOptionPostAdviseRepository;
+import hcmus.alumni.counsel.repository.notification.EntityTypeRepository;
+import hcmus.alumni.counsel.repository.notification.NotificationChangeRepository;
+import hcmus.alumni.counsel.repository.notification.NotificationObjectRepository;
+import hcmus.alumni.counsel.repository.notification.NotificationRepository;
 import hcmus.alumni.counsel.utils.ImageUtils;
+import hcmus.alumni.counsel.utils.FirebaseService;
+import hcmus.alumni.counsel.common.NotificationType;
 
 @RestController
 @RequestMapping("/counsel")
@@ -85,9 +97,19 @@ public class CounselServiceController {
 	private UserVotePostAdviseRepository userVotePostAdviseRepository;
 	@Autowired
 	private TagRepository tagRepository;
+	@Autowired
+	private EntityTypeRepository entityTypeRepository;  
+	@Autowired
+	private NotificationObjectRepository notificationObjectRepository; 
+	@Autowired
+	private NotificationChangeRepository notificationChangeRepository;
+	@Autowired
+	private NotificationRepository notificationRepository;
 
 	@Autowired
 	private ImageUtils imageUtils;
+	@Autowired
+	private FirebaseService firebaseService;
 
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -487,8 +509,58 @@ public class CounselServiceController {
 
 		if (comment.getParentId() != null) {
 			commentPostAdviseRepository.commentCountIncrement(comment.getParentId(), 1);
+			
+			// Fetch the parent comment
+			CommentPostAdviseModel parentComment = commentPostAdviseRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(40902, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
+			
+			if (!parentComment.getCreator().getId().equals(creator)) {
+				// Create NotificationObject
+				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_post_advise", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_post_advise", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+				
+				// Create NotificationChange
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				notificationChangeRepository.save(notificationChange);
+				
+				// Create Notification
+				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				notificationRepository.save(notification);
+				
+				firebaseService.sendCommentNotification(
+						notification, notificationChange, notificationObject, 
+						notificationChange.getActor().getAvatarUrl(), 
+						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						comment.getPostAdvise().getId());
+			}
 		} else {
 			postAdviseRepository.commentCountIncrement(id, 1);
+			
+			// Fetch the parent post
+			PostAdviseModel parentPost = postAdviseRepository.findById(comment.getPostAdvise().getId()).get();
+			
+			if (!parentPost.getCreator().getId().equals(creator)) {
+				// Create NotificationObject
+				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_post_advise", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_post_advise", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+				
+				// Create NotificationChange
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				notificationChangeRepository.save(notificationChange);
+				
+				// Create Notification
+				NotificationModel notification = new NotificationModel(null, notificationObject, parentPost.getCreator(), new StatusNotificationModel(1));
+				notificationRepository.save(notification);
+				
+				firebaseService.sendCommentNotification(
+						notification, notificationChange, notificationObject, 
+						notificationChange.getActor().getAvatarUrl(), 
+						notificationChange.getActor().getFullName() + " đã bình luận về bài viết của bạn",
+						comment.getPostAdvise().getId());
+			}
 		}
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
@@ -598,6 +670,38 @@ public class CounselServiceController {
 			throw new AppException(61301, "postId hoặc reactId không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		postAdviseRepository.reactionCountIncrement(id, 1);
+		
+		// Notification creation logic
+	    PostAdviseModel postAdvise = postAdviseRepository.findById(id).get();
+	    
+	    if (!creatorId.equals(postAdvise.getCreator().getId())) {
+	        EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("interact_post_advise", NotificationType.CREATE)
+	                .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "interact_post_advise", NotificationType.CREATE, null)));
+	        
+	        Optional<NotificationObjectModel> optionalNotificationObject = notificationObjectRepository
+	                .findByEntityTypeAndEntityId(entityType, postAdvise.getId());
+	        
+	        if (optionalNotificationObject.isPresent()) {
+	            NotificationObjectModel notificationObject = optionalNotificationObject.get();
+	            notificationChangeRepository.updateActorIdByNotificationObject(notificationObject.getId(), creatorId);
+	            notificationRepository.updateStatusByNotificationObject(notificationObject.getId(), 1);
+	        } else {
+	            NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, postAdvise.getId(), new Date(), false);
+	            notificationObject = notificationObjectRepository.save(notificationObject);
+
+	            NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creatorId), false);
+	            notificationChangeRepository.save(notificationChange);
+
+	            NotificationModel notification = new NotificationModel(null, notificationObject, postAdvise.getCreator(), new StatusNotificationModel((byte) 1));
+	            notificationRepository.save(notification);
+
+	            firebaseService.sendCommentNotification(
+	                    notification, notificationChange, notificationObject,
+	                    notificationChange.getActor().getAvatarUrl(),
+	                    notificationChange.getActor().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
+	                    null);
+	        }
+	    }
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
