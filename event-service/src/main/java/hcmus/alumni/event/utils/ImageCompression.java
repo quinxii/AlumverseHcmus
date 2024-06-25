@@ -81,6 +81,8 @@ public class ImageCompression {
                 height = maxHeight;
                 width = (int) (height * aspectRatio);
             }
+        } else {
+            return originalImage;
         }
 
         // Create a new resized image

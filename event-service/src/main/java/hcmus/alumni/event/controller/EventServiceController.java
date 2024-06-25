@@ -60,7 +60,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/events")
 public class EventServiceController {
 	@PersistenceContext

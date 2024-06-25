@@ -62,7 +62,6 @@ import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000") // Allow requests from Web
 @RequestMapping("/user")
 public class UserServiceController {
 	@PersistenceContext
