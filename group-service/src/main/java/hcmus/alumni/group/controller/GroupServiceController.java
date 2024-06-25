@@ -282,7 +282,7 @@ public class GroupServiceController {
             @RequestParam(value = "tagNames", required = false) List<String> tagNames,
             @RequestParam(value = "statusId", required = false) Integer statusId
 	) {
-		if (tagNames.size() > MAXIMUM_TAGS) {
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(70502, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
         try {

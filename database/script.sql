@@ -25,7 +25,7 @@ CREATE TABLE
     permission (
         id TINYINT NOT NULL AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL UNIQUE,
-        description VARCHAR(100),
+        description VARCHAR(255),
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
@@ -95,7 +95,7 @@ CREATE TABLE `email_reset_code` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`email`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS faculty;
 

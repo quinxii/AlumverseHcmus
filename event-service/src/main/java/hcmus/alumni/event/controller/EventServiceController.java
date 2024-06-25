@@ -214,7 +214,7 @@ public class EventServiceController {
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 	    boolean isPut = false;
-	    if (tagNames.size() > MAXIMUM_TAGS) {
+	    if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(50401, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
 	    
