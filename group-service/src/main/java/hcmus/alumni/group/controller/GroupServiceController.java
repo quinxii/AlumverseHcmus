@@ -400,13 +400,10 @@ public class GroupServiceController {
 				            return entityTypeRepository.save(newEntityType);
 				        });
 				
-				NotificationObjectModel notificationObject = notificationObjectRepository.findByEntityTypeAndEntityId(entityType, id)
-				        .orElseGet(() -> {
-				            NotificationObjectModel newNotificationObject = new NotificationObjectModel();
-				            newNotificationObject.setEntityType(entityType);
-				            newNotificationObject.setEntityId(id);
-				            return notificationObjectRepository.save(newNotificationObject);
-				        });
+				NotificationObjectModel notificationObject = new NotificationObjectModel();
+				notificationObject.setEntityType(entityType);
+				notificationObject.setEntityId(id);
+				notificationObjectRepository.save(notificationObject);
 				
 				// Create Notification Change
 				NotificationChangeModel notificationChange = new NotificationChangeModel();
