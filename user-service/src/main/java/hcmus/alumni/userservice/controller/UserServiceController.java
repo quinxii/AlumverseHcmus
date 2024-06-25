@@ -31,8 +31,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,7 +43,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.userservice.config.UserConfig;
-import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.AlumniModel;
@@ -531,23 +528,26 @@ public class UserServiceController {
             isPut = true;
         }
         
-        Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-				.findByUserIdAndIsDeleteEquals(id, false);
-        if (!alumniVerificationOptional.isEmpty()) {
-        	VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
-            if (StringUtils.isNotEmpty(studentId)) {
-            	alumniVerification.setStudentId(studentId);
-                isPut = true;
-            }
-            if (beginningYear != null) {
-            	alumniVerification.setBeginningYear(beginningYear);
-                isPut = true;
-            }
-        } 
+//        Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
+//				.findByUserIdAndIsDeleteEquals(id, false);
+//        if (!alumniVerificationOptional.isEmpty()) {
+//        	VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
+//            if (StringUtils.isNotEmpty(studentId)) {
+//            	alumniVerification.setStudentId(studentId);
+//                isPut = true;
+//            }
+//            if (beginningYear != null) {
+//            	alumniVerification.setBeginningYear(beginningYear);
+//                isPut = true;
+//            }
+//        } 
 
-		if (isPut) {
+        if (isPut) {
             userRepository.save(user);
+            if (!optionalAlumni.isEmpty()) {
+                alumniRepository.save(optionalAlumni.get());
+            }
         }
-	    return ResponseEntity.ok("Profile updated successfully");
+        return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 }
