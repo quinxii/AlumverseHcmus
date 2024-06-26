@@ -1,6 +1,7 @@
 package hcmus.alumni.news.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,10 @@ import hcmus.alumni.news.model.CommentNewsModel;
 public interface CommentNewsRepository extends JpaRepository<CommentNewsModel, String> {
     @Query(value = "select count(*) > 0 from comment_news where id = :commentId and creator = :userId and is_delete = false", nativeQuery = true)
     Long isCommentOwner(String commentId, String userId);
+
+    @Query("SELECT new CommentNewsModel(c, :userId, :canDelete) FROM CommentNewsModel c " +
+            "WHERE c.news.id = :newsId AND c.id = :commentId AND c.isDelete = false")
+    Optional<ICommentNewsDto> getComment(String newsId, String commentId, String userId, boolean canDelete);
 
     @Query("SELECT new CommentNewsModel(c, :userId, :canDelete) FROM CommentNewsModel c " +
             "WHERE c.news.id = :newsId AND c.isDelete = false AND c.parentId IS NULL")
