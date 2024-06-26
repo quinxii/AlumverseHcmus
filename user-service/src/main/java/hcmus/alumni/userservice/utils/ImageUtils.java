@@ -29,6 +29,7 @@ public class ImageUtils {
 	private final int resizeMaxWidth = 2000;
 	private final int resizeMaxHeight = 2000;
 	private final String avatarPath = "images/users/avatar/";
+	private final String coverPath = "images/users/cover/";
 	private final String noneAvatar = "none";
 	public static int saltLength = 16;
 
@@ -135,6 +136,14 @@ public class ImageUtils {
 
 	public String getAvatarPath() {
 		return avatarPath;
+	}
+	
+	public String getAvatarPath(String id) {
+		return this.avatarPath + id + "/";
+	}
+	
+	public String getCoverPath(String id) {
+		return this.coverPath + id + "/";
 	}
 
 }

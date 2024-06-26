@@ -43,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.userservice.config.UserConfig;
+import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.AlumniModel;
@@ -409,6 +410,19 @@ public class UserServiceController {
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
+	
+	@GetMapping("/{id}")
+	public ResponseEntity<HashMap<String, Object>> getUser(@PathVariable String id) {
+		Optional<UserSearchDto> user = userRepository.findByIdCustom(id);
+		if (user.isEmpty()) {
+			throw new AppException(21100, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		result.put("user", user.get());
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 
 	@GetMapping("/profile/{id}")
 	public ResponseEntity<Map<String, Object>> getProfileInfo(@PathVariable String id) {
@@ -464,7 +478,7 @@ public class UserServiceController {
 	}
 
 	@PutMapping("/profile/{id}")
-	public ResponseEntity<String> updateProfileInfo(@PathVariable String id, 
+	public ResponseEntity<String> updateBasicProfileInfo(@PathVariable String id, 
 			@RequestParam(value = "fullName", required = false) String fullName,
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "sexId", required = false) Integer sexId,
@@ -473,9 +487,7 @@ public class UserServiceController {
 			@RequestParam(value = "alumClass", required = false) String alumClass,
 			@RequestParam(value = "graduationYear", required = false) Integer graduationYear,
 			@RequestParam(value = "phone", required = false) String phone,
-			@RequestParam(value = "aboutMe", required = false) String aboutMe,
-			@RequestParam(value = "studentId", required = false) String studentId,
-			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+			@RequestParam(value = "aboutMe", required = false) String aboutMe) {
 	    Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
@@ -506,9 +518,9 @@ public class UserServiceController {
             user.setSocialMediaLink(socialMediaLink);
             isPut = true;
         }
-        
+        AlumniModel alumni = null;
         if (!optionalAlumni.isEmpty()) {
-            AlumniModel alumni = optionalAlumni.get();
+            alumni = optionalAlumni.get();
             if (StringUtils.isNotEmpty(alumClass)) {
                 alumni.setAlumClass(alumClass);
                 isPut = true;
@@ -527,27 +539,88 @@ public class UserServiceController {
             user.setAboutMe(aboutMe);
             isPut = true;
         }
-        
-//        Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-//				.findByUserIdAndIsDeleteEquals(id, false);
-//        if (!alumniVerificationOptional.isEmpty()) {
-//        	VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
-//            if (StringUtils.isNotEmpty(studentId)) {
-//            	alumniVerification.setStudentId(studentId);
-//                isPut = true;
-//            }
-//            if (beginningYear != null) {
-//            	alumniVerification.setBeginningYear(beginningYear);
-//                isPut = true;
-//            }
-//        } 
 
         if (isPut) {
             userRepository.save(user);
             if (!optionalAlumni.isEmpty()) {
-                alumniRepository.save(optionalAlumni.get());
+                alumniRepository.save(alumni);
             }
         }
         return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@PutMapping("/profile/{id}/pending-info")
+	public ResponseEntity<String> updateUserPendingInfo(@PathVariable String id, 
+			@RequestParam(value = "studentId", required = false) String studentId,
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+	    Optional<UserModel> optionalUser = userRepository.findById(id);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21301, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		boolean isPut = false;
+        
+        Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
+				.findByUserIdAndIsDeleteEquals(id, false);
+        VerifyAlumniModel alumniVerification = null;
+        if (!alumniVerificationOptional.isEmpty()) {
+        	alumniVerification = alumniVerificationOptional.get();
+            if (StringUtils.isNotEmpty(studentId)) {
+            	alumniVerification.setStudentId(studentId);
+                isPut = true;
+            }
+            if (beginningYear != null) {
+            	alumniVerification.setBeginningYear(beginningYear);
+                isPut = true;
+            }
+        } 
+
+        if (isPut) {
+        	verifyAlumniRepository.save(alumniVerification);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@PutMapping("/profile/avatar")
+	public ResponseEntity<String> updateProfileAvatar(@PathVariable String id, 
+			@RequestParam(value = "avatarUrl", required = false) MultipartFile avatarUrl) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21401, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+		UserModel user = optionalUser.get();
+		if (avatarUrl != null && !avatarUrl.isEmpty()) {
+			try {
+				imageUtils.saveImageToStorage(imageUtils.getAvatarPath(id), avatarUrl, "avatarUrl");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	    userRepository.save(user);
+	    return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+	
+	@PutMapping("/profile/cover")
+	public ResponseEntity<String> updateProfileCover(@PathVariable String id, 
+			@RequestParam(value = "coverUrl", required = false) MultipartFile coverUrl) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21401, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+		UserModel user = optionalUser.get();
+		if (coverUrl != null && !coverUrl.isEmpty()) {
+			try {
+				imageUtils.saveImageToStorage(imageUtils.getAvatarPath(id), coverUrl, "coverUrl");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	    userRepository.save(user);
+	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 }
