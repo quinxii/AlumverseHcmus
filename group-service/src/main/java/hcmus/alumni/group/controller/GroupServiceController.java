@@ -1445,4 +1445,29 @@ public class GroupServiceController {
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(Collections.singletonMap("vote", mapper.map(returnedVoteOption, PostGroupDto.Votes.class)));
 	}
+	
+	// Get a specific comment of a post
+	@GetMapping("/{postId}/comments/{commentId}")
+	public ResponseEntity<Map<String, Object>> getSingleCommentOfAPost(
+			@RequestHeader("userId") String userId,
+			@PathVariable String postId,
+			@PathVariable String commentId) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+	
+		boolean canDelete = false;
+		if (1 == commentPostGroupRepository.hasGroupMemberRoleByCommentId(commentId, userId, "CREATOR") || 
+				1 == commentPostGroupRepository.hasGroupMemberRoleByCommentId(commentId, userId, "ADMIN")) {
+			canDelete = true;
+		}
+	
+		ICommentPostGroupDto comment = commentPostGroupRepository.getComment(postId, commentId, userId, canDelete)
+				.orElse(null);
+		if (comment == null) {
+			throw new AppException(73300, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+		}
+	
+		result.put("comment", comment);
+	
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 }
