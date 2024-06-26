@@ -16,6 +16,9 @@ import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 
 public interface UserRepository extends JpaRepository<UserModel, String> {
+	@Query("SELECT u FROM UserModel u WHERE u.id = :id")
+	Optional<UserSearchDto> findByIdCustom(String id);
+
 	Optional<UserModel> findById(String id);
 
 	UserModel findByEmailAndPass(String email, String pass);
@@ -51,7 +54,7 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	String findAvatarUrlByUserId(@Param("userId") String userId);
 
 	@Query("SELECT DISTINCT u " + "FROM UserModel u " + "LEFT JOIN u.roles r "
-			+ "WHERE (:fullName IS NULL OR u.fullName LIKE :fullName%) "
+			+ "WHERE (:fullName IS NULL OR u.fullName LIKE %:fullName%) "
 			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleIds IS NULL OR r.id in :roleIds)")
 	Page<UserSearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
 			@Param("roleIds") List<Integer> roleIds, Pageable pageable);

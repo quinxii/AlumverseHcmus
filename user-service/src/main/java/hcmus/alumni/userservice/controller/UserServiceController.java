@@ -28,6 +28,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -412,7 +413,7 @@ public class UserServiceController {
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
 	@PutMapping("/{id}/role")
 	public ResponseEntity<String> adminUpdateUserRole(@PathVariable String id,
-			@RequestParam(value = "roleId", required = false) List<Integer> roleIds) {
+			@RequestParam(value = "roleIds", required = false) List<Integer> roleIds) {
 
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (!optionalUser.isPresent()) {
@@ -454,7 +455,7 @@ public class UserServiceController {
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "orderBy", required = false, defaultValue = "fullName") String orderBy,
-			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "order", required = false, defaultValue = "asc") String order,
 			@RequestParam(value = "fullName", required = false) String fullName,
 			@RequestParam(value = "email", required = false) String email,
 			@RequestParam(value = "roleIds", required = false) List<Integer> roleIds) {
@@ -464,7 +465,7 @@ public class UserServiceController {
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		try {
-			Pageable pageable = PageRequest.of(page, pageSize);
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 			Page<UserSearchDto> users = null;
 
 			users = userRepository.searchUsers(fullName, email, roleIds, pageable);
@@ -476,6 +477,19 @@ public class UserServiceController {
 		} catch (Exception e) {
 			throw new AppException(21002, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<HashMap<String, Object>> getUser(@PathVariable String id) {
+		Optional<UserSearchDto> user = userRepository.findByIdCustom(id);
+		if (user.isEmpty()) {
+			throw new AppException(21100, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		result.put("user", user.get());
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }
