@@ -26,7 +26,9 @@ import javax.persistence.criteria.Selection;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -410,8 +412,11 @@ public class UserServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@GetMapping("/profile/{id}")
-	public ResponseEntity<Map<String, Object>> getProfileInfo(@PathVariable String id) {
+	@PreAuthorize("hasAnyAuthority('User.Edit')")
+	@PutMapping("/{id}/role")
+	public ResponseEntity<String> adminUpdateUserRole(@PathVariable String id,
+			@RequestParam(value = "roleId", required = false) List<Integer> roleIds) {
+
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
@@ -419,135 +424,75 @@ public class UserServiceController {
 		}
 
 		UserModel user = optionalUser.get();
-		Optional<AlumniModel> optionalAlumni = alumniRepository.findByUserId(id);
+		if (roleIds == null || roleIds.isEmpty()) {
+	        throw new AppException(20801, "Vai trò không được để trống", HttpStatus.BAD_REQUEST);
+	    }
 
-		Map<String, Object> response = new HashMap<>();
-		response.put("userId", user.getId());
-		response.put("avatarUrl", user.getAvatarUrl());
-		response.put("coverUrl", user.getCoverUrl());
+		Set<RoleModel> roles = new HashSet<>();
+	    for (Integer roleId : roleIds) {
+	        RoleModel role = roleRepository.findById(roleId)
+	                .orElseThrow(() -> new AppException(20802, "Vai trò không tồn tại", HttpStatus.BAD_REQUEST));
+	        roles.add(role);
+	    }
+	    
+		user.setRoles(roles);
+		userRepository.save(user);
 
-		response.put("fullName", user.getFullName());
-		response.put("faculty", user.getFaculty());
-		response.put("sex", user.getSex());
-		response.put("dob", user.getDob());
-		response.put("socialMediaLink", user.getSocialMediaLink());
-
-		if (!optionalAlumni.isEmpty()) {
-			AlumniModel alumni = optionalAlumni.get();
-			response.put("alumClass", alumni.getAlumClass());
-			response.put("graduationYear", alumni.getGraduationYear());
-		} else {
-			response.put("alumClass", null);
-			response.put("graduationYear", null);
-		}
-
-		response.put("email", user.getEmail());
-		response.put("phone", user.getPhone());
-		response.put("aboutMe", user.getAboutMe());
-
-		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-				.findByUserIdAndIsDeleteEquals(id, false);
-
-		if (!alumniVerificationOptional.isEmpty()) {
-			VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
-
-			response.put("verifyAlumniStatus", alumniVerification.getStatus());
-			response.put("studentId", alumniVerification.getStudentId());
-			response.put("beginningYear", alumniVerification.getBeginningYear());
-		} else {
-			response.put("verifyAlumniStatus", null);
-			response.put("studentId", null);
-			response.put("beginningYear", null);
-		}
-
-		return ResponseEntity.ok(response);
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+	
+	@GetMapping("/count/role")
+	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "roleId") List<Integer> roleIds) {
+		try {
+			if (roleIds == null || roleIds.isEmpty()) {
+				return ResponseEntity.status(HttpStatus.OK).body(userRepository.countAllUsers());
+			}
+            return ResponseEntity.status(HttpStatus.OK).body(userRepository.countUsersByRoleId(roleIds));
+        } catch (Exception e) {
+        	throw new AppException(20903, "Lỗi khi lấy số lượng người dùng. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
+        }
 	}
 
-	@PutMapping("/profile/{id}")
-	public ResponseEntity<String> updateProfileInfo(@PathVariable String id, 
+	@GetMapping("")
+	public ResponseEntity<HashMap<String, Object>> getSearchResult(
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "fullName") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "fullName", required = false) String fullName,
-			@RequestParam(value = "facultyId", required = false) Integer facultyId,
-			@RequestParam(value = "sexId", required = false) Integer sexId,
-			@RequestParam(value = "dob", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd")  Date dob,
-			@RequestParam(value = "socialMediaLink", required = false) String socialMediaLink,
-			@RequestParam(value = "alumClass", required = false) String alumClass,
-			@RequestParam(value = "graduationYear", required = false) Integer graduationYear,
-			@RequestParam(value = "phone", required = false) String phone,
-			@RequestParam(value = "aboutMe", required = false) String aboutMe,
-			@RequestParam(value = "studentId", required = false) String studentId,
-			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
-	    Optional<UserModel> optionalUser = userRepository.findById(id);
+			@RequestParam(value = "email", required = false) String email,
+			@RequestParam(value = "roleIds", required = false) List<Integer> roleIds) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
 
-		if (optionalUser.isEmpty()) {
-			throw new AppException(21201, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize);
+			Page<UserSearchDto> users = null;
+
+			users = userRepository.searchUsers(fullName, email, roleIds, pageable);
+
+			result.put("totalPages", users.getTotalPages());
+			result.put("users", users.getContent());
+		} catch (IllegalArgumentException e) {
+			throw new AppException(21001, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			throw new AppException(21002, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<HashMap<String, Object>> getUser(@PathVariable String id) {
+		Optional<UserSearchDto> user = userRepository.findByIdCustom(id);
+		if (user.isEmpty()) {
+			throw new AppException(21100, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
 		}
 
-		UserModel user = optionalUser.get();
-		Optional<AlumniModel> optionalAlumni = alumniRepository.findByUserId(id);
-		boolean isPut = false;
+		HashMap<String, Object> result = new HashMap<String, Object>();
 
-		if (StringUtils.isNotEmpty(fullName)) {
-            user.setFullName(fullName);
-            isPut = true;
-        }
-        if (facultyId != null) {
-            user.setFaculty(new FacultyModel(facultyId));
-            isPut = true;
-        }
-        if (sexId != null) {
-            user.setSex(new SexModel(sexId));
-            isPut = true;
-        }
-        if (dob != null) {
-            user.setDob(dob);
-            isPut = true;
-        }
-        if (StringUtils.isNotEmpty(socialMediaLink)) {
-            user.setSocialMediaLink(socialMediaLink);
-            isPut = true;
-        }
-        
-        if (!optionalAlumni.isEmpty()) {
-            AlumniModel alumni = optionalAlumni.get();
-            if (StringUtils.isNotEmpty(alumClass)) {
-                alumni.setAlumClass(alumClass);
-                isPut = true;
-            }
-            if (graduationYear != null) {
-                alumni.setGraduationYear(graduationYear);
-                isPut = true;
-            }
-        } 
-        
-        if (StringUtils.isNotEmpty(phone)) {
-            user.setPhone(phone);
-            isPut = true;
-        }
-        if (StringUtils.isNotEmpty(aboutMe)) {
-            user.setAboutMe(aboutMe);
-            isPut = true;
-        }
-        
-//        Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-//				.findByUserIdAndIsDeleteEquals(id, false);
-//        if (!alumniVerificationOptional.isEmpty()) {
-//        	VerifyAlumniModel alumniVerification = alumniVerificationOptional.get();
-//            if (StringUtils.isNotEmpty(studentId)) {
-//            	alumniVerification.setStudentId(studentId);
-//                isPut = true;
-//            }
-//            if (beginningYear != null) {
-//            	alumniVerification.setBeginningYear(beginningYear);
-//                isPut = true;
-//            }
-//        } 
-
-        if (isPut) {
-            userRepository.save(user);
-            if (!optionalAlumni.isEmpty()) {
-                alumniRepository.save(optionalAlumni.get());
-            }
-        }
-        return ResponseEntity.status(HttpStatus.OK).body("");
+		result.put("user", user.get());
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }

@@ -1,8 +1,12 @@
-package hcmus.alumni.news.dto;
+package hcmus.alumni.counsel.dto.response;
 
 import java.util.Date;
 
-public interface ICommentNewsDto {
+public interface ICommentWithPostDto {
+    interface PostAdvise {
+        String getId();
+        String getTitle();
+    }
     interface User {
         String getId();
         String getFullName();
@@ -15,6 +19,7 @@ public interface ICommentNewsDto {
 
     String getId();
     User getCreator();
+    PostAdvise getPostAdvise();
     String getParentId();
     String getContent();
     Integer getChildrenCommentNumber();

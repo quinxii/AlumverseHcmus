@@ -1,6 +1,7 @@
 package hcmus.alumni.event.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,10 @@ import hcmus.alumni.event.model.CommentEventModel;
 public interface CommentEventRepository extends JpaRepository<CommentEventModel, String> {
 	@Query(value = "select count(*) > 0 from comment_event where id = :commentId and creator = :userId and is_delete = false", nativeQuery = true)
 	Long isCommentOwner(String commentId, String userId);
+	
+	@Query("SELECT new CommentEventModel(c, :userId, :canDelete) FROM CommentEventModel c " +
+	        "WHERE c.event.id = :eventId AND c.id = :commentId AND c.isDelete = false")
+	Optional<ICommentEventDto> getComment(String eventId, String commentId, String userId, boolean canDelete);
 	
 	@Query("SELECT new CommentEventModel(c, :userId, :canDelete) FROM CommentEventModel c " +
 	        "WHERE c.event.id = :eventId AND c.isDelete = false AND c.parentId IS NULL")

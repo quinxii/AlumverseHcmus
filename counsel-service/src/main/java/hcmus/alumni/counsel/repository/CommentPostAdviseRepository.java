@@ -1,6 +1,7 @@
 package hcmus.alumni.counsel.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.counsel.dto.response.ICommentPostAdviseDto;
+import hcmus.alumni.counsel.dto.response.ICommentWithPostDto;
 import hcmus.alumni.counsel.model.CommentPostAdviseModel;
 
 public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAdviseModel, String> {
@@ -18,8 +20,16 @@ public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAd
     Long isCommentOwner(String commentId, String userId);
 
     @Query("SELECT new CommentPostAdviseModel(c, :userId, :canDelete) FROM CommentPostAdviseModel c " +
+            "WHERE c.postAdvise.id = :postId AND c.id = :commentId AND c.isDelete = false")
+    Optional<ICommentPostAdviseDto> getComment(String postId, String commentId, String userId, boolean canDelete);
+
+    @Query("SELECT new CommentPostAdviseModel(c, :userId, :canDelete) FROM CommentPostAdviseModel c " +
             "WHERE c.postAdvise.id = :postAdviseId AND c.isDelete = false AND c.parentId IS NULL")
     Page<ICommentPostAdviseDto> getComments(String postAdviseId, String userId, boolean canDelete, Pageable pageable);
+
+    @Query("SELECT new CommentPostAdviseModel(c, :userId, :canDelete) FROM CommentPostAdviseModel c " +
+            "WHERE c.creator.id = :userId AND c.isDelete = false")
+    Page<ICommentWithPostDto> getCommentsByUserId(String userId, boolean canDelete, Pageable pageable);
 
     @Query("SELECT new CommentPostAdviseModel(c, :userId, :canDelete) FROM CommentPostAdviseModel c " +
             "WHERE c.isDelete = false AND c.parentId = :commentId")

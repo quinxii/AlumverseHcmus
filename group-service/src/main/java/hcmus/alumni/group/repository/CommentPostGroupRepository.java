@@ -1,6 +1,7 @@
 package hcmus.alumni.group.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,10 @@ public interface CommentPostGroupRepository extends JpaRepository<CommentPostGro
 			+ "join post_group pg on pg.id = cpg.post_group_id "
 			+ "where pg.group_id = gm.group_id and gm.user_id = :userId and gm.role = :role and gm.is_delete = 0", nativeQuery = true)
 	Long hasGroupMemberRoleByCommentId(String commentId, String userId, String role);
+	
+	@Query("SELECT new CommentPostGroupModel(c, :userId, :canDelete) FROM CommentPostGroupModel c " +
+	        "WHERE c.postGroup.id = :postId AND c.id = :commentId AND c.isDelete = false")
+	Optional<ICommentPostGroupDto> getComment(String postId, String commentId, String userId, boolean canDelete);
 	
 	@Query("SELECT new CommentPostGroupModel(c, :userId, :canDelete) FROM CommentPostGroupModel c " +
             "WHERE c.postGroup.id = :postGroupId AND c.isDelete = false AND c.parentId IS NULL")

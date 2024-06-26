@@ -15,6 +15,7 @@ public interface ICommentEventDto {
 
     String getId();
     User getCreator();
+    String getParentId();
     String getContent();
     Integer getChildrenCommentNumber();
     Date getCreateAt();

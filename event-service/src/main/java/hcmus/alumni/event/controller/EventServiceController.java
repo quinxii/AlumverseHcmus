@@ -236,7 +236,7 @@ public class EventServiceController {
 	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
 	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
 	    boolean isPut = false;
-	    if (tagNames.size() > MAXIMUM_TAGS) {
+	    if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(50401, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
 	    
@@ -631,5 +631,31 @@ public class EventServiceController {
 		}
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
+	
+	// Get a specific comment of a post
+	@GetMapping("/{eventId}/comments/{commentId}")
+	public ResponseEntity<Map<String, Object>> getSingleCommentOfAPost(
+			Authentication authentication,
+			@RequestHeader("userId") String userId,
+			@PathVariable String eventId,
+			@PathVariable String commentId) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+	
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+			canDelete = true;
+		}
+	
+		ICommentEventDto comment = commentEventRepository.getComment(eventId, commentId, userId, canDelete)
+				.orElse(null);
+		if (comment == null) {
+			throw new AppException(51700, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+		}
+	
+		result.put("comment", comment);
+	
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }

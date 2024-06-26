@@ -44,6 +44,7 @@ import hcmus.alumni.counsel.dto.request.ReactRequestDto;
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.TagRequestDto;
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.VoteRequestDto;
 import hcmus.alumni.counsel.dto.response.ICommentPostAdviseDto;
+import hcmus.alumni.counsel.dto.response.ICommentWithPostDto;
 import hcmus.alumni.counsel.dto.response.IInteractPostAdviseDto;
 import hcmus.alumni.counsel.dto.response.IUserVotePostAdviseDto;
 import hcmus.alumni.counsel.dto.response.PostAdviseDto;
@@ -856,6 +857,7 @@ public class CounselServiceController {
 				.body(Collections.singletonMap("vote", mapper.map(returnedVoteOption, PostAdviseDto.Votes.class)));
 	}
 
+	@PreAuthorize("#reqUserId.equals(#userId)")
 	@GetMapping("/users/{userId}")
 	public ResponseEntity<HashMap<String, Object>> getPostsOfUser(
 			Authentication authentication,
@@ -867,9 +869,6 @@ public class CounselServiceController {
 			@RequestParam(value = "orderBy", required = false, defaultValue = "publishedAt") String orderBy,
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "tagNames", required = false) List<String> tagNames) {
-		if (!userId.equals(reqUserId)) {
-			throw new AppException(62102, "Không thể xem bài viết của người khác", HttpStatus.FORBIDDEN);
-		}
 		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
@@ -927,6 +926,54 @@ public class CounselServiceController {
 		} catch (InvalidDataAccessApiUsageException e) {
 			throw new AppException(62101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@PreAuthorize("#reqUserId.equals(#userId)")
+	@GetMapping("/users/{userId}/comments")
+	public ResponseEntity<HashMap<String, Object>> getCommentsOfUser(
+			@RequestHeader("userId") String reqUserId,
+			@PathVariable String userId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
+		Page<ICommentWithPostDto> comments = commentPostAdviseRepository.getCommentsByUserId(userId, true, pageable);
+
+		result.put("totalPages", comments.getTotalPages());
+		result.put("comments", comments.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	// Get a specific comment of a post
+	@GetMapping("/{postId}/comments/{commentId}")
+	public ResponseEntity<Map<String, Object>> getSingleCommentOfAPost(
+			Authentication authentication,
+			@RequestHeader("userId") String userId,
+			@PathVariable String postId,
+			@PathVariable String commentId) {
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
+		// Delete all post permissions regardless of being creator or not
+		boolean canDelete = false;
+		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Counsel.Comment.Delete"))) {
+			canDelete = true;
+		}
+
+		ICommentPostAdviseDto comment = commentPostAdviseRepository.getComment(postId, commentId, userId, canDelete)
+				.orElse(null);
+		if (comment == null) {
+			throw new AppException(62300, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
+		}
+
+		result.put("comment", comment);
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}

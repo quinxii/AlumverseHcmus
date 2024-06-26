@@ -16,6 +16,7 @@ public interface ICommentPostGroupDto {
 
     String getId();
     User getCreator();
+    String getParentId();
     String getContent();
     Integer getChildrenCommentNumber();
     Date getCreateAt();
