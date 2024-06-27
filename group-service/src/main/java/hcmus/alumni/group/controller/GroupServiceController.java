@@ -1293,7 +1293,7 @@ public class GroupServiceController {
 	                    notification, notificationChange, notificationObject,
 	                    optionalUser.get().getAvatarUrl(), 
 						optionalUser.get().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
-						id);
+						null);
 	        }
 	    }
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
