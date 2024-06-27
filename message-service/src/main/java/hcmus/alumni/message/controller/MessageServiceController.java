@@ -65,6 +65,7 @@ public class MessageServiceController {
     @GetMapping("/inbox")
     public ResponseEntity<Map<String, Object>> getInboxes(
             @RequestHeader("userId") String userId,
+            @RequestParam(required = false) String query,
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
         if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
@@ -74,7 +75,7 @@ public class MessageServiceController {
         HashMap<String, Object> response = new HashMap<>();
 
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<InboxModel> inboxPage = inboxService.getLastestInboxes(userId, pageable);
+        Page<InboxModel> inboxPage = inboxService.getLastestInboxes(userId, query, pageable);
         List<InboxModel> inboxes = inboxPage.getContent();
         messageService.processLatestInboxes(inboxes);
 
