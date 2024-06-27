@@ -21,7 +21,7 @@ public class FirebaseService {
 	@Autowired
     private UserSubscriptionTokenRepository userSubscriptionTokenRepository;
 	
-	public void sendCommentNotification(
+	public void sendNotification(
 			NotificationModel notification, 
 			NotificationChangeModel notificationChange, 
 			NotificationObjectModel notificationObject, 
@@ -29,33 +29,33 @@ public class FirebaseService {
 			String notificationMessage, 
 			String parentId) {
 
-        NotificationPayload payload = new NotificationPayload(
-                notification.getId().toString(),
-                notification.getNotifier().getId(),
-                notificationChange.getActor().getId(),
-                notificationObject.getEntityId(),
-                notificationObject.getEntityType().getEntityTable(),
-                notificationObject.getEntityType().getNotificationType().toString(),
-                notificationImageUrl,
-                notificationMessage,
-                parentId
-        );
-        
-        List<String> tokens = userSubscriptionTokenRepository.findAllTokensByUserId(notification.getNotifier().getId());
-
-        if (!tokens.isEmpty()) {
-            MulticastMessage message = MulticastMessage.builder()
-                    .putData("title", "Alumverse")
-                    .putData("body", payload.toString())
-                    .addAllTokens(tokens)
-                    .build();
-
-            try {
-                BatchResponse response = FirebaseMessaging.getInstance().sendMulticast(message);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+		NotificationPayload payload = new NotificationPayload(
+		        notification.getId().toString(),
+		        notification.getNotifier().getId(),
+		        notificationChange.getActor().getId(),
+		        notificationObject.getEntityId(),
+		        notificationObject.getEntityType().getEntityTable(),
+		        notificationObject.getEntityType().getNotificationType().toString(),
+		        notificationImageUrl,
+		        notificationMessage,
+		        parentId
+		);
+		
+		List<String> tokens = userSubscriptionTokenRepository.findAllTokensByUserId(notification.getNotifier().getId());
+		if (!tokens.isEmpty()) {
+			for (String token : tokens) {
+				Message message = Message.builder()
+					.putData("title", "Alumverse")
+					.putData("body", payload.toString())
+					.setToken(token)
+					.build();
+				try {
+					String response = FirebaseMessaging.getInstance().send(message);
+				} catch (Exception e) {
+				    e.printStackTrace();
+				}
+			}
+		}
     }
 
 	@AllArgsConstructor
