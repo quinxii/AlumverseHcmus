@@ -77,6 +77,7 @@ import hcmus.alumni.counsel.repository.notification.NotificationChangeRepository
 import hcmus.alumni.counsel.repository.notification.NotificationObjectRepository;
 import hcmus.alumni.counsel.repository.notification.NotificationRepository;
 import hcmus.alumni.counsel.utils.ImageUtils;
+import hcmus.alumni.counsel.repository.UserRepository;
 import hcmus.alumni.counsel.utils.FirebaseService;
 import hcmus.alumni.counsel.common.NotificationType;
 
@@ -86,6 +87,8 @@ public class CounselServiceController {
 	@Autowired
 	private final ModelMapper mapper = new ModelMapper();
 
+	@Autowired
+	private UserRepository userRepository;
 	@Autowired
 	private PostAdviseRepository postAdviseRepository;
 	@Autowired
@@ -529,10 +532,11 @@ public class CounselServiceController {
 				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
 				
-				firebaseService.sendCommentNotification(
+				Optional<UserModel> optionalUser = userRepository.findById(creator);
+				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject, 
-						notificationChange.getActor().getAvatarUrl(), 
-						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getPostAdvise().getId());
 			}
 		} else {
@@ -556,10 +560,11 @@ public class CounselServiceController {
 				NotificationModel notification = new NotificationModel(null, notificationObject, parentPost.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
 				
-				firebaseService.sendCommentNotification(
+				Optional<UserModel> optionalUser = userRepository.findById(creator);
+				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject, 
-						notificationChange.getActor().getAvatarUrl(), 
-						notificationChange.getActor().getFullName() + " đã bình luận về bài viết của bạn",
+						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bình luận về bài viết của bạn",
 						comment.getPostAdvise().getId());
 			}
 		}
@@ -695,12 +700,13 @@ public class CounselServiceController {
 
 	            NotificationModel notification = new NotificationModel(null, notificationObject, postAdvise.getCreator(), new StatusNotificationModel((byte) 1));
 	            notificationRepository.save(notification);
-
-	            firebaseService.sendCommentNotification(
-	                    notification, notificationChange, notificationObject,
-	                    notificationChange.getActor().getAvatarUrl(),
-	                    notificationChange.getActor().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
-	                    null);
+	            
+	            Optional<UserModel> optionalUser = userRepository.findById(creatorId);
+	            firebaseService.sendNotification(
+						notification, notificationChange, notificationObject,
+						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
+						null);
 	        }
 	    }
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);

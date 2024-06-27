@@ -43,6 +43,7 @@ import hcmus.alumni.news.repository.notification.EntityTypeRepository;
 import hcmus.alumni.news.repository.notification.NotificationChangeRepository;
 import hcmus.alumni.news.repository.notification.NotificationObjectRepository;
 import hcmus.alumni.news.repository.notification.NotificationRepository;
+import hcmus.alumni.news.repository.UserRepository;
 import hcmus.alumni.news.common.NotificationType;
 import hcmus.alumni.news.model.notification.EntityTypeModel;
 import hcmus.alumni.news.model.notification.NotificationChangeModel;
@@ -66,6 +67,8 @@ import hcmus.alumni.news.utils.ImageUtils;
 @RestController
 @RequestMapping("/news")
 public class NewsServiceController {
+	@Autowired
+	private UserRepository userRepository;
 	@Autowired
 	private NewsRepository newsRepository;
 	@Autowired
@@ -478,10 +481,11 @@ public class NewsServiceController {
 				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
 				
-				firebaseService.sendCommentNotification(
+				Optional<UserModel> optionalUser = userRepository.findById(creator);
+				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject, 
-						notificationChange.getActor().getAvatarUrl(), 
-						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getNews().getId());
 			}
 		} else {
