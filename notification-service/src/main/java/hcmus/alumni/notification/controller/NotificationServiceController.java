@@ -85,16 +85,17 @@ public class NotificationServiceController {
 	@PostMapping("/subscription")
     public ResponseEntity<String> addUserSubscriptionToken(
     		@RequestHeader("userId") String userId, 
-    		@RequestBody UserSubscriptionTokenModel userSubscriptionToken) {
-        UserSubscriptionTokenModel createdToken = new UserSubscriptionTokenModel(userSubscriptionToken, userId);
+    		@RequestBody Map<String, Object> userSubscriptionToken) {
+        UserSubscriptionTokenModel createdToken = new UserSubscriptionTokenModel(userId, (String) userSubscriptionToken.get("token"));
         userSubscriptionTokenRepository.save(createdToken);
-        return new ResponseEntity<>(createdToken.getId(), HttpStatus.CREATED);
+        return new ResponseEntity<>(null, HttpStatus.CREATED);
     }
 
-	@DeleteMapping("/subscription/{userSubscriptionTokenId}")
+	@DeleteMapping("/subscription")
     public ResponseEntity<Void> deleteUserSubscriptionToken(
-    		@PathVariable("userSubscriptionTokenId") String id) {
-    	userSubscriptionTokenRepository.deleteUserSubscriptionTokenById(id);
+    		@RequestHeader("userId") String userId, 
+    		@RequestBody Map<String, Object> userSubscriptionToken) {
+    	userSubscriptionTokenRepository.deleteUserSubscriptionToken(userId, (String) userSubscriptionToken.get("token"));
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

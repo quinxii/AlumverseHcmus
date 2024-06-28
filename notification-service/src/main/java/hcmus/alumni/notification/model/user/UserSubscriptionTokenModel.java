@@ -7,6 +7,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.EmbeddedId;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,23 +19,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class UserSubscriptionTokenModel implements Serializable {
-	private static final long serialVersionUID = 1L;
-	
-	@Id
-	@Column(name = "id", length = 36, nullable = false)
-	private String id = UUID.randomUUID().toString();
-	
-	@Column(name = "user_id", length = 36)
-	private String userId;
-	
-	@Column(name = "token", columnDefinition = "TEXT")
-	private String token;
+	@EmbeddedId
+	private UserSubscriptionTokenId id;
 	
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
 	
-	public UserSubscriptionTokenModel(UserSubscriptionTokenModel copy, String userId) {
-		this.userId = userId;
-		this.token = copy.token;
+	public UserSubscriptionTokenModel(String userId, String token) {
+		this.id = new UserSubscriptionTokenId(userId, token);
+	}
+	
+	public String getUserId() {
+		return this.id.getUserId();
+	}
+	public String getToken() {
+		return this.id.getToken();
 	}
 }
