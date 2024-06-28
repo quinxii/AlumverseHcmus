@@ -2,8 +2,7 @@ package hcmus.alumni.news.utils;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
-import com.google.firebase.messaging.MulticastMessage;
-import com.google.firebase.messaging.BatchResponse;
+import com.google.firebase.messaging.Notification;
 
 import hcmus.alumni.news.model.notification.NotificationChangeModel;
 import hcmus.alumni.news.model.notification.NotificationModel;
@@ -45,8 +44,10 @@ public class FirebaseService {
 		if (!tokens.isEmpty()) {
 			for (String token : tokens) {
 				Message message = Message.builder()
-					.putData("title", "Alumverse")
-					.putData("body", payload.toString())
+					.setNotification(Notification.builder()
+				            .setTitle("Alumverse")
+				            .setBody(payload.toString())
+				            .build())
 					.setToken(token)
 					.build();
 				try {
