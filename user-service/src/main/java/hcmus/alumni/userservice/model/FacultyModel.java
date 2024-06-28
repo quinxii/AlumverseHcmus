@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,6 +37,7 @@ public class FacultyModel {
 	@Column(name = "create_at")
 	private Date createAt;
 
+	@UpdateTimestamp
 	@Column(name = "update_at")
 	private Date updateAt;
 

@@ -42,18 +42,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.userservice.common.Privacy;
 import hcmus.alumni.userservice.config.UserConfig;
+import hcmus.alumni.userservice.dto.JobDto;
 import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.AlumniModel;
 import hcmus.alumni.userservice.model.FacultyModel;
+import hcmus.alumni.userservice.model.JobModel;
 import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
 import hcmus.alumni.userservice.model.SexModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.AlumniRepository;
+import hcmus.alumni.userservice.repository.JobRepository;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
 import hcmus.alumni.userservice.repository.StatusUserGroupRepository;
@@ -90,6 +94,9 @@ public class UserServiceController {
 
 	@Autowired
 	private AlumniRepository alumniRepository;
+
+	@Autowired
+	private JobRepository jobRepository;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 	
@@ -474,7 +481,7 @@ public class UserServiceController {
 			response.put("beginningYear", null);
 		}
 
-		return ResponseEntity.ok(response);
+		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 
 	@PutMapping("/profile/{id}")
@@ -582,7 +589,7 @@ public class UserServiceController {
         return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PutMapping("/profile/avatar")
+	@PutMapping("/profile/{id}/avatar")
 	public ResponseEntity<String> updateProfileAvatar(@PathVariable String id, 
 			@RequestParam(value = "avatarUrl", required = false) MultipartFile avatarUrl) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
@@ -604,7 +611,7 @@ public class UserServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 	
-	@PutMapping("/profile/cover")
+	@PutMapping("/profile/{id}/cover")
 	public ResponseEntity<String> updateProfileCover(@PathVariable String id, 
 			@RequestParam(value = "coverUrl", required = false) MultipartFile coverUrl) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
@@ -625,4 +632,98 @@ public class UserServiceController {
 	    userRepository.save(user);
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
+
+	@GetMapping("profile/{id}/job")
+    public ResponseEntity<Map<String, Object>> getAllWorks(@PathVariable String id) {
+        Optional<JobModel> optionalJob = jobRepository.findByUserId(id);
+
+        if (optionalJob.isEmpty()) {
+            throw new AppException(21601, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+        }
+
+        HashMap<String, Object> result = new HashMap<String, Object>();
+
+		result.put("job", optionalJob.get());
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+	@GetMapping("profile/{id}/{companyName}")
+    public ResponseEntity<Map<String, Object>> getJobByCompanyName(@PathVariable String id, @PathVariable String companyName) {
+		Optional<JobModel> optionalJob = jobRepository.findByUserIdAndCompanyName(id, companyName);
+
+        if (optionalJob.isEmpty()) {
+			throw new AppException(21701, "Không tìm thấy công việc", HttpStatus.NOT_FOUND);
+		}
+
+		JobModel job = optionalJob.get();
+
+       	Map<String, Object> result = new HashMap<>();
+		result.put("userId", id);
+		result.put("companyName", companyName);
+		result.put("position", job.getPosition());
+		result.put("startTime", job.getStartTime());
+		result.put("endTime", job.getEndTime());
+		result.put("privacy", job.getPrivacy().name()); 
+		result.put("isWorking", job.getIsWorking());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+	@PostMapping("profile/{id}/create-job")
+    public ResponseEntity<String> createJob(@RequestParam String id, @RequestBody JobDto newJobDto) {
+		Optional<JobModel> optionalJob = jobRepository.findByUserId(id);
+		if (optionalJob.isEmpty()) {
+			throw new AppException(21801, "Không tìm thấy công việc", HttpStatus.NOT_FOUND);
+		}
+		JobModel newJob = new JobModel();
+		newJob.setUserId(id);
+		newJob.setCompanyName(newJobDto.getCompanyName());
+		newJob.setPosition(newJobDto.getPosition());
+		newJob.setStartTime(newJobDto.getStartTime());
+		newJob.setEndTime(newJobDto.getEndTime());
+		newJob.setPrivacy(Privacy.valueOf(newJobDto.getPrivacy().toUpperCase())); 
+		newJob.setIsWorking(newJobDto.getIsDelete());
+		newJob.setIsWorking(newJobDto.getIsWorking());
+
+		jobRepository.save(newJob);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body("");
+    }
+
+	@PutMapping("profile/{id}/update-job/{companyName}")
+	public ResponseEntity<String> updateJob(
+			@PathVariable String id,
+			@PathVariable String companyName,
+			@RequestBody JobDto updatedJobDto) {
+
+		Optional<JobModel> optionalJob = jobRepository.findByUserIdAndCompanyName(id,companyName);
+		if (optionalJob.isEmpty()) {
+			throw new AppException(21802, "Không tìm thấy công việc", HttpStatus.NOT_FOUND);
+		}
+
+		JobModel jobToUpdate = optionalJob.get();
+		if (updatedJobDto.getCompanyName() != null) {
+			jobToUpdate.setCompanyName(updatedJobDto.getCompanyName());
+		}
+		if (updatedJobDto.getPosition() != null) {
+			jobToUpdate.setPosition(updatedJobDto.getPosition());
+		}
+		if (updatedJobDto.getStartTime() != null) {
+			jobToUpdate.setStartTime(updatedJobDto.getStartTime());
+		}
+		if (updatedJobDto.getEndTime() != null) {
+			jobToUpdate.setEndTime(updatedJobDto.getEndTime());
+		}
+		if (updatedJobDto.getPrivacy() != null) {
+			jobToUpdate.setPrivacy(Privacy.valueOf(updatedJobDto.getPrivacy().toUpperCase()));
+		}
+		if (updatedJobDto.getIsWorking() != null) {
+			jobToUpdate.setIsWorking(updatedJobDto.getIsWorking());
+		}
+
+		jobRepository.save(jobToUpdate);
+
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
 }

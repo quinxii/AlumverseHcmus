@@ -210,6 +210,7 @@ CREATE TABLE
         privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
+        is_working TINYINT (1) DEFAULT (0),
         FOREIGN KEY (user_id) REFERENCES user (id),
         PRIMARY KEY (user_id, company_name, position)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
