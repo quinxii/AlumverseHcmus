@@ -46,8 +46,9 @@ public class FirebaseService {
 				Message message = Message.builder()
 					.setNotification(Notification.builder()
 				            .setTitle("Alumverse")
-				            .setBody(payload.toString())
+				            .setBody(notificationMessage)
 				            .build())
+					.putData("body", payload.toString())
 					.setToken(token)
 					.build();
 				try {
