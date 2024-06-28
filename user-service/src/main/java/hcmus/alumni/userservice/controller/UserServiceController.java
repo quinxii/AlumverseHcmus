@@ -593,10 +593,11 @@ public class UserServiceController {
 		UserModel user = optionalUser.get();
 		if (avatarUrl != null && !avatarUrl.isEmpty()) {
 			try {
-				imageUtils.saveImageToStorage(imageUtils.getAvatarPath(id), avatarUrl, "avatarUrl");
+				String avatarPath = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(id), avatarUrl, "avatarUrl");
+            	user.setAvatarUrl(avatarPath); 
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+				throw new AppException(21402, "Lỗi khi tải ảnh", HttpStatus.BAD_REQUEST);
 			}
 		}
 	    userRepository.save(user);
@@ -609,15 +610,16 @@ public class UserServiceController {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21401, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21501, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 		UserModel user = optionalUser.get();
 		if (coverUrl != null && !coverUrl.isEmpty()) {
 			try {
-				imageUtils.saveImageToStorage(imageUtils.getAvatarPath(id), coverUrl, "coverUrl");
+				String coverPath = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(id), coverUrl, "coverUrl");
+				user.setAvatarUrl(coverPath); 
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+				throw new AppException(21502, "Lỗi khi tải ảnh", HttpStatus.BAD_REQUEST);
 			}
 		}
 	    userRepository.save(user);
