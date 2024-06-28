@@ -1118,10 +1118,11 @@ public class GroupServiceController {
 				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
 				
+				Optional<UserModel> optionalUser = userRepository.findById(creator);
 				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject, 
-						notificationChange.getActor().getAvatarUrl(), 
-						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getPostGroup().getId());
 			}
 		} else {
@@ -1145,10 +1146,11 @@ public class GroupServiceController {
 				NotificationModel notification = new NotificationModel(null, notificationObject, parentPost.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
 				
+				Optional<UserModel> optionalUser = userRepository.findById(creator);
 				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject, 
-						notificationChange.getActor().getAvatarUrl(), 
-						notificationChange.getActor().getFullName() + " đã bình luận về bài viết của bạn",
+						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bình luận về bài viết của bạn",
 						comment.getPostGroup().getId());
 			}
 		}
@@ -1285,12 +1287,13 @@ public class GroupServiceController {
 
 	            NotificationModel notification = new NotificationModel(null, notificationObject, postGroup.getCreator(), new StatusNotificationModel((byte) 1));
 	            notificationRepository.save(notification);
-
+	            
+	            Optional<UserModel> optionalUser = userRepository.findById(creatorId);
 	            firebaseService.sendNotification(
 	                    notification, notificationChange, notificationObject,
-	                    notificationChange.getActor().getAvatarUrl(),
-	                    notificationChange.getActor().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
-	                    null);
+	                    optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
+						null);
 	        }
 	    }
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);

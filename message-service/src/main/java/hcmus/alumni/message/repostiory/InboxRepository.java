@@ -37,7 +37,26 @@ public interface InboxRepository extends JpaRepository<InboxModel, Long> {
     @Query("SELECT i FROM InboxModel i " +
             "JOIN (SELECT m.inbox.id as inboxId, MAX(m.createAt) as latestMessageTime " +
             "FROM MessageModel m WHERE m.isDelete = false GROUP BY m.inbox.id) lm ON i.id = lm.inboxId " +
-            "JOIN InboxMemberModel im on im.id.inboxId = i.id AND im.id.userId = :userId " +
+                "JOIN InboxMemberModel im on im.id.inboxId = i.id AND im.id.userId = :userId " +
             "ORDER BY lm.latestMessageTime DESC")
     Page<InboxModel> getLatestInboxes(String userId, Pageable pageable);
+
+    /**
+     * Retrieves the latest inboxes with search based on the provided user ID and query.
+     * The search is performed based on the full name of the user who is in inbox of the provided user ID.
+     *
+     * @param userId  the ID of the user
+     * @param query   the search query
+     * @param pageable  the pagination information
+     * @return a Page of InboxModel objects representing the latest inboxes that match the search criteria
+     */
+    @Query("SELECT i FROM InboxModel i " +
+            "JOIN (SELECT m.inbox.id as inboxId, MAX(m.createAt) as latestMessageTime " +
+            "FROM MessageModel m WHERE m.isDelete = false GROUP BY m.inbox.id) lm ON i.id = lm.inboxId " +
+            "JOIN InboxMemberModel im1 on im1.id.inboxId = i.id AND im1.id.userId = :userId " +
+            "JOIN (SELECT im2.id.inboxId as queryInboxId from InboxMemberModel im2 " +
+                "WHERE im2.user.fullName like %:query% AND im2.id.userId != :userId) queryTable "+
+                "ON queryTable.queryInboxId = im1.id.inboxId " +
+            "ORDER BY lm.latestMessageTime DESC")
+    Page<InboxModel> getLatestInboxesWithSearch(String userId, String query, Pageable pageable);
 }

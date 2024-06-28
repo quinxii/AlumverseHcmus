@@ -54,6 +54,7 @@ import hcmus.alumni.event.repository.CommentEventRepository;
 import hcmus.alumni.event.repository.EventRepository;
 import hcmus.alumni.event.repository.ParticipantEventRepository;
 import hcmus.alumni.event.repository.TagRepository;
+import hcmus.alumni.event.repository.UserRepository;
 import hcmus.alumni.event.utils.ImageUtils;
 import hcmus.alumni.event.utils.FirebaseService;
 import hcmus.alumni.event.exception.AppException;
@@ -76,6 +77,8 @@ import hcmus.alumni.event.repository.notification.NotificationRepository;
 public class EventServiceController {
 	@PersistenceContext
 	private EntityManager em;
+	@Autowired
+	private UserRepository userRepository;
 	@Autowired
 	private EventRepository eventRepository;
 	@Autowired
@@ -558,10 +561,11 @@ public class EventServiceController {
 				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
 				
-				firebaseService.sendCommentNotification(
+				Optional<UserModel> optionalUser = userRepository.findById(creator);
+				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject, 
-						notificationChange.getActor().getAvatarUrl(), 
-						notificationChange.getActor().getFullName() + " đã bình luận về bình luận của bạn",
+						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getEvent().getId());
 			}
 	    } else {

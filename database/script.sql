@@ -849,11 +849,10 @@ DROP TABLE IF EXISTS user_subscription_token;
 
 CREATE TABLE
     user_subscription_token (
-        id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
-        token TEXT NOT NULL,
+        token VARCHAR(200) NOT NULL,
         is_delete TINYINT (1) DEFAULT (0),
-        PRIMARY KEY (id),
+        PRIMARY KEY (user_id, token),
         FOREIGN KEY (user_id) REFERENCES user (id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 

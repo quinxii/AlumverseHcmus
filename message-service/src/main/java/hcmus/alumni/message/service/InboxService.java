@@ -28,14 +28,20 @@ public class InboxService {
     private InboxMemberService inboxMemberService;
 
     /**
-     * Retrieves the latest inboxes for a given user.
+     * Retrieves the latest inboxes for a given user with optional search query.
+     * The search is performed based on the full name of the user who is in inbox of the provided user ID.
      *
      * @param userId   the ID of the user
+     * @param query    the search query (can be null or empty)
      * @param pageable the pagination information
      * @return a Page object containing the latest inboxes
      */
-    public Page<InboxModel> getLastestInboxes(String userId, Pageable pageable) {
-        return inboxRepository.getLatestInboxes(userId, pageable);
+    public Page<InboxModel> getLastestInboxes(String userId, String query, Pageable pageable) {
+        if (query == null || query.isBlank()) {
+            return inboxRepository.getLatestInboxes(userId, pageable);
+        } else {
+            return inboxRepository.getLatestInboxesWithSearch(userId, query, pageable);
+        }
     }
 
     /**
