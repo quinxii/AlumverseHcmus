@@ -202,6 +202,7 @@ DROP TABLE IF EXISTS job;
 
 CREATE TABLE
     job (
+    	job_id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         company_name VARCHAR(255) NOT NULL,
         position VARCHAR(100) NOT NULL,
@@ -212,13 +213,14 @@ CREATE TABLE
         is_delete TINYINT (1) DEFAULT (0),
         is_working TINYINT (1) DEFAULT (0),
         FOREIGN KEY (user_id) REFERENCES user (id),
-        PRIMARY KEY (user_id, company_name, position)
+        PRIMARY KEY (job_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
+    
 DROP TABLE IF EXISTS education;
 
 CREATE TABLE
     education (
+        education_id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         school_name VARCHAR(255) NOT NULL,
         degree VARCHAR(50) NOT NULL,
@@ -227,14 +229,16 @@ CREATE TABLE
         privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
+        is_learnig TINYINT (1) DEFAULT (0),
         FOREIGN KEY (user_id) REFERENCES user (id),
-        PRIMARY KEY (user_id, school_name, degree)
+        PRIMARY KEY (education_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS achievement;
 
 CREATE TABLE
     achievement (
+        achievement_id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         name VARCHAR(255) NOT NULL,
         type VARCHAR(50) NOT NULL,
@@ -243,7 +247,7 @@ CREATE TABLE
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
         FOREIGN KEY (user_id) REFERENCES user (id),
-        PRIMARY KEY (user_id, name)
+        PRIMARY KEY (achievement_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS verify_alumni;

@@ -18,24 +18,24 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "[job]")
+@Table(name = "[education]")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class JobModel implements Serializable {
+public class EducationModel implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id
-    @Column(name = "job_id", length = 36, nullable = false)
-    private String jobId; 
+    @Column(name = "education_id", length = 36, nullable = false)
+    private String educationId; 
 
     @Column(name = "user_id", length = 36, nullable = false)
     private String userId;
 
-	@Column(name = "company_name", length = 255, nullable = false)
-	private String companyName;
+	@Column(name = "school_name", length = 255, nullable = false)
+	private String schoolName;
 
-    @Column(name = "position", length = 100, nullable = false)
-	private String position;
+    @Column(name = "degree", length = 100, nullable = false)
+	private String degree;
 
 	@Column(name = "start_time")
 	private Date startTime;
@@ -54,6 +54,6 @@ public class JobModel implements Serializable {
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
 
-    @Column(name = "is_working", columnDefinition = "TINYINT(1) DEFAULT(0)")
-	private Boolean isWorking;
+    @Column(name = "is_learning", columnDefinition = "TINYINT(1) DEFAULT(0)")
+	private Boolean isLearning;
 }

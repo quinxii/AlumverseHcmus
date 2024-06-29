@@ -8,12 +8,12 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class JobDto {
-    private String companyName;
-    private String position;
+public class EducationDto {
+    private String schoolName;
+    private String degree;
     private Date startTime;
     private Date endTime;
     private String privacy;
     private Boolean isDelete;
-    private Boolean isWorking;
+    private Boolean isLearning;
 }

@@ -8,12 +8,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class JobDto {
-    private String companyName;
-    private String position;
-    private Date startTime;
-    private Date endTime;
+public class AchievementDto {
+    private String name;
+    private String type;
+    private Date time;
     private String privacy;
     private Boolean isDelete;
-    private Boolean isWorking;
 }
