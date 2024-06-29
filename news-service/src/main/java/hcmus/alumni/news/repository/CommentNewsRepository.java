@@ -53,4 +53,10 @@ public interface CommentNewsRepository extends JpaRepository<CommentNewsModel, S
     @Modifying
     @Query("UPDATE CommentNewsModel c SET c.childrenCommentNumber = c.childrenCommentNumber + :count WHERE c.id = :id")
     int commentCountIncrement(String id, @Param("count") Integer count);
+    
+    @Query("SELECT c.id FROM CommentNewsModel c WHERE c.news.id = :newsId")
+    List<String> findByNewsId(@Param("newsId") String newsId);
+    
+    @Query("SELECT c.id FROM CommentNewsModel c WHERE c.parentId IN :parentIds")
+    List<String> findByParentIds(List<String> parentIds);
 }
