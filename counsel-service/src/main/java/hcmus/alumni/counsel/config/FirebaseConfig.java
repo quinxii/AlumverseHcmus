@@ -18,13 +18,17 @@ public class FirebaseConfig {
 
     @Bean
     public FirebaseApp initializeFirebase() throws IOException {
-        FileInputStream serviceAccount = new FileInputStream(serviceAccountPath);
-
-        FirebaseOptions options = new FirebaseOptions.Builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                .build();
-
-        return FirebaseApp.initializeApp(options);
+    	if (FirebaseApp.getApps().isEmpty()) {
+            // Initialize Firebase only if there are no existing apps
+            FileInputStream serviceAccount = new FileInputStream(serviceAccountPath);
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .build();
+            return FirebaseApp.initializeApp(options);
+        } else {
+            // Firebase already initialized, return existing instance
+            return FirebaseApp.getInstance();
+        }
     }
 }
 

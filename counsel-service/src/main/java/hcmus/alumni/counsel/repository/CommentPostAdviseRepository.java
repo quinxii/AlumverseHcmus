@@ -59,4 +59,10 @@ public interface CommentPostAdviseRepository extends JpaRepository<CommentPostAd
     @Modifying
     @Query("UPDATE CommentPostAdviseModel c SET c.childrenCommentNumber = c.childrenCommentNumber + :count WHERE c.id = :id")
     int commentCountIncrement(String id, @Param("count") Integer count);
+    
+	@Query("SELECT c.id FROM CommentPostAdviseModel c WHERE c.postAdvise.id = :postAdviseId")
+	List<String> findByPostAdviseId(@Param("postAdviseId") String postAdviseId);
+	
+	@Query("SELECT c.id FROM CommentPostAdviseModel c WHERE c.parentId IN :parentIds")
+	List<String> findByParentIds(List<String> parentIds);
 }
