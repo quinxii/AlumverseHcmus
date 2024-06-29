@@ -52,4 +52,10 @@ public interface CommentEventRepository extends JpaRepository<CommentEventModel,
 	@Modifying
 	@Query("UPDATE CommentEventModel c SET c.childrenCommentNumber = c.childrenCommentNumber + :count WHERE c.id = :id")
 	int commentCountIncrement(String id,@Param("count") Integer count);
+	
+	@Query("SELECT c.id FROM CommentEventModel c WHERE c.event.id = :eventId")
+	List<String> findByEventId(@Param("eventId") String eventId);
+	
+	@Query("SELECT c.id FROM CommentEventModel c WHERE c.parentId IN :parentIds")
+	List<String> findByParentIds(List<String> parentIds);
 }
