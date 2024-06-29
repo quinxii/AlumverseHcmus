@@ -74,4 +74,7 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 
 	@Query(value = "select allow_add_options from post_group where id = :postId", nativeQuery = true)
 	boolean isAllowAddOptions(String postId);
+	
+	@Query("SELECT p.id FROM PostGroupModel p WHERE p.groupId = :groupId")
+	List<String> findByGroupId(@Param("groupId") String groupId);
 }

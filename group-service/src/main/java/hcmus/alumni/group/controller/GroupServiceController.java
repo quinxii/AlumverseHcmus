@@ -46,6 +46,7 @@ import hcmus.alumni.group.repository.notification.NotificationChangeRepository;
 import hcmus.alumni.group.repository.notification.NotificationObjectRepository;
 import hcmus.alumni.group.repository.notification.NotificationRepository;
 import hcmus.alumni.group.utils.FirebaseService;
+import hcmus.alumni.group.utils.NotificationService;
 import hcmus.alumni.group.common.GroupMemberRole;
 import hcmus.alumni.group.exception.AppException;
 import hcmus.alumni.group.model.GroupModel;
@@ -137,6 +138,8 @@ public class GroupServiceController {
 	private ImageUtils imageUtils;
 	@Autowired
 	private FirebaseService firebaseService;
+	@Autowired
+	private NotificationService notificationService;
 	
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -451,6 +454,12 @@ public class GroupServiceController {
 	    
 	    groupMemberRepository.deleteAllGroupMember(id);
 	    
+		List<String> entityIds = commentPostGroupRepository.findByGroupId(id);
+		entityIds.addAll(postGroupRepository.findByGroupId(id));
+		entityIds.add(id);
+		System.out.println(entityIds);
+		notificationService.deleteNotificationsByEntityIds(entityIds);
+
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 	
@@ -663,6 +672,8 @@ public class GroupServiceController {
 		}
 		
 		requestJoinGroupRepository.deleteRequestJoin(id, userId);
+		
+		notificationService.deleteRequestJoinNotifications(id, userId);
 		
 		// Ensure Notification Object for join request exists
 		EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("request_join_group", NotificationType.UPDATE)
@@ -1017,6 +1028,11 @@ public class GroupServiceController {
 
 		postGroup.setStatus(new StatusPostModel(4));
 		postGroupRepository.save(postGroup);
+		
+		List<String> entityIds = commentPostGroupRepository.findByPostGroupId(id);
+		entityIds.add(id);
+		notificationService.deleteNotificationsByEntityIds(entityIds);
+		
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
     
@@ -1219,6 +1235,10 @@ public class GroupServiceController {
 			}
 		}
 		
+		// Delete notifications for the comment and its children
+		List<String> allCommentIds = commentPostGroupRepository.findByParentIds(allParentId);
+		allCommentIds.add(commentId);
+		notificationService.deleteNotificationsByEntityIds(allCommentIds);
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
@@ -1341,6 +1361,11 @@ public class GroupServiceController {
 		InteractPostGroupModel interactPostGroup = optionalInteractPostGroup.get();
 		interactPostGroup.setIsDelete(true);
 		postGroupRepository.reactionCountIncrement(id, -1);
+		
+		List<String> entityIds = new ArrayList<String>();
+		entityIds.add(id);
+		notificationService.deleteNotificationsByEntityIds(entityIds);
+		
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 	
