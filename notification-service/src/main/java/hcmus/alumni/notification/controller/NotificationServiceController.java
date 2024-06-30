@@ -205,7 +205,8 @@ public class NotificationServiceController {
 				}
 			}
 	    }
-
+		
+		result.put("totalPages", notificationsPages.getTotalPages());
 		result.put("totalUnreadNotification", totalUnreadNotification);
 		result.put("notifications", notifications.stream().map(n -> mapper.map(n, NotificationDto.class)).toList());
 		

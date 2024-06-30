@@ -59,4 +59,13 @@ public interface CommentPostGroupRepository extends JpaRepository<CommentPostGro
     @Modifying
     @Query("UPDATE CommentPostGroupModel c SET c.childrenCommentNumber = c.childrenCommentNumber + :count WHERE c.id = :id")
     int commentCountIncrement(String id, @Param("count") Integer count);
+    
+	@Query("SELECT c.id FROM CommentPostGroupModel c JOIN c.postGroup p WHERE p.groupId = :groupId")
+	List<String> findByGroupId(@Param("groupId") String groupId);
+	
+	@Query("SELECT c.id FROM CommentPostGroupModel c WHERE c.postGroup.id = :postGroupId")
+	List<String> findByPostGroupId(@Param("postGroupId") String postGroupId);
+	
+	@Query("SELECT c.id FROM CommentPostGroupModel c WHERE c.parentId IN :parentIds")
+	List<String> findByParentIds(List<String> parentIds);
 }
