@@ -457,7 +457,6 @@ public class GroupServiceController {
 		List<String> entityIds = commentPostGroupRepository.findByGroupId(id);
 		entityIds.addAll(postGroupRepository.findByGroupId(id));
 		entityIds.add(id);
-		System.out.println(entityIds);
 		notificationService.deleteNotificationsByEntityIds(entityIds);
 
 	    return ResponseEntity.status(HttpStatus.OK).body("");
