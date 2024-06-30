@@ -682,7 +682,7 @@ public class UserServiceController {
 
 	@PutMapping("/profile/{id}/avatar")
 	public ResponseEntity<String> updateProfileAvatar(@PathVariable String id,
-			@RequestParam(value = "avatarUrl", required = false) MultipartFile avatarUrl) {
+			@RequestParam(value = "avatarUrl", required = true) MultipartFile avatarUrl) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
@@ -704,7 +704,7 @@ public class UserServiceController {
 
 	@PutMapping("/profile/{id}/cover")
 	public ResponseEntity<String> updateProfileCover(@PathVariable String id,
-			@RequestParam(value = "coverUrl", required = false) MultipartFile coverUrl) {
+			@RequestParam(value = "coverUrl", required = true) MultipartFile coverUrl) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
