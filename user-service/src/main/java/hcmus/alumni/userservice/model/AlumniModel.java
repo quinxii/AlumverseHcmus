@@ -64,7 +64,4 @@ public class AlumniModel implements Serializable {
     	classPrivacy = Privacy.PUBLIC;
 	}
     
-	public AlumniModel(String alumClass) {
-		// TODO Auto-generated constructor stub
-	}
 }
