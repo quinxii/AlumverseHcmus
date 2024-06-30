@@ -135,7 +135,11 @@ public class ImageUtils {
 	}
 
 	public String getAvatarPath() {
-		return avatarPath;
+		return this.avatarPath;
+	}
+	
+	public String getCoverPath() {
+		return this.coverPath;
 	}
 	
 	public String getAvatarPath(String id) {

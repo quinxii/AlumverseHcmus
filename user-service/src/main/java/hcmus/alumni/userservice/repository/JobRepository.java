@@ -10,8 +10,8 @@ import hcmus.alumni.userservice.dto.IJobDto;
 import hcmus.alumni.userservice.model.JobModel;
 
 public interface JobRepository extends JpaRepository<JobModel, String> {
-	@Query("SELECT j FROM JobModel j WHERE j.isDelete = false")
-	List<JobModel> findByUserId(String id);
+	@Query("SELECT j FROM JobModel j WHERE j.userId = :userId AND j.isDelete = false")
+	List<JobModel> findByUserId(String userId);
 
 	Optional<JobModel> findByUserIdAndCompanyName(String userId, String companyName);
 

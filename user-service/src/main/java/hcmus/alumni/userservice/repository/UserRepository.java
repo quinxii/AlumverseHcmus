@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import hcmus.alumni.userservice.dto.IUserProfileDto;
 import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
@@ -54,7 +55,7 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	String findAvatarUrlByUserId(@Param("userId") String userId);
 
 	@Query("SELECT DISTINCT u " + "FROM UserModel u " + "LEFT JOIN u.roles r "
-			+ "WHERE (:fullName IS NULL OR u.fullName LIKE :fullName%) "
+			+ "WHERE (:fullName IS NULL OR u.fullName LIKE %:fullName%) "
 			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleIds IS NULL OR r.id in :roleIds)")
 	Page<UserSearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
 			@Param("roleIds") List<Integer> roleIds, Pageable pageable);
@@ -67,4 +68,10 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	
 	@Query("SELECT u FROM UserModel u")
 	Page<UserSearchDto> findAllUsers(Pageable pageable);
+
+	@Query("SELECT u.id AS id, u.avatarUrl AS avatarUrl, u.coverUrl AS coverUrl, u.fullName AS fullName, " +
+	           "u.faculty AS faculty, u.sex AS sex, u.dob AS dob, u.socialMediaLink AS socialMediaLink, " +
+	           "u.email AS email, u.phone AS phone, u.aboutMe AS aboutMe " +
+	           "FROM UserModel u WHERE u.id = :id")
+    Optional<IUserProfileDto> findUserProfileById(@Param("id") String id);
 }
