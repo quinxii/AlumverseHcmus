@@ -475,7 +475,7 @@ public class UserServiceController {
 			}
 			return ResponseEntity.status(HttpStatus.OK).body(userRepository.countUsersByRoleId(roleIds));
 		} catch (Exception e) {
-			throw new AppException(20903, "Lỗi khi lấy số lượng người dùng. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
+			throw new AppException(20900, "Lỗi khi lấy số lượng người dùng. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -502,9 +502,9 @@ public class UserServiceController {
 			result.put("totalPages", users.getTotalPages());
 			result.put("users", users.getContent());
 		} catch (IllegalArgumentException e) {
-			throw new AppException(21001, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+			throw new AppException(21000, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
-			throw new AppException(21002, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(21001, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -513,7 +513,7 @@ public class UserServiceController {
 	public ResponseEntity<HashMap<String, Object>> getUser(@PathVariable String id) {
 		Optional<UserSearchDto> user = userRepository.findByIdCustom(id);
 		if (user.isEmpty()) {
-			throw new AppException(21101, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21100, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
@@ -527,7 +527,7 @@ public class UserServiceController {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21201, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21200, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		UserModel user = optionalUser.get();
@@ -589,7 +589,7 @@ public class UserServiceController {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21301, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21300, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		UserModel user = optionalUser.get();
@@ -654,7 +654,7 @@ public class UserServiceController {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21401, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21400, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		boolean isPut = false;
@@ -686,7 +686,7 @@ public class UserServiceController {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21501, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21500, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 		UserModel user = optionalUser.get();
 		if (avatarUrl != null && !avatarUrl.isEmpty()) {
@@ -695,7 +695,7 @@ public class UserServiceController {
 				user.setAvatarUrl(avatarPath);
 			} catch (IOException e) {
 				e.printStackTrace();
-				throw new AppException(21502, "Lỗi khi tải ảnh lên", HttpStatus.BAD_REQUEST);
+				throw new AppException(21501, "Lỗi khi tải ảnh lên", HttpStatus.BAD_REQUEST);
 			}
 		}
 		userRepository.save(user);
@@ -708,7 +708,7 @@ public class UserServiceController {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21601, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21600, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 		UserModel user = optionalUser.get();
 		if (coverUrl != null && !coverUrl.isEmpty()) {
@@ -717,7 +717,7 @@ public class UserServiceController {
 				user.setAvatarUrl(coverPath);
 			} catch (IOException e) {
 				e.printStackTrace();
-				throw new AppException(21602, "Lỗi khi tải ảnh lên", HttpStatus.BAD_REQUEST);
+				throw new AppException(21601, "Lỗi khi tải ảnh lên", HttpStatus.BAD_REQUEST);
 			}
 		}
 		userRepository.save(user);
@@ -728,12 +728,12 @@ public class UserServiceController {
 	public ResponseEntity<Map<String, Object>> getAllJobs(@PathVariable String id) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21701, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21700, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		List<JobModel> jobs = jobRepository.findByUserId(id);
 		if (jobs.isEmpty()) {
-			throw new AppException(21702, "Không có công việc nào được tìm thấy cho người dùng này",
+			throw new AppException(21701, "Không có công việc nào được tìm thấy cho người dùng này",
 					HttpStatus.NOT_FOUND);
 		}
 
@@ -746,12 +746,12 @@ public class UserServiceController {
 	public ResponseEntity<IJobDto> getJobById(@PathVariable String id, @PathVariable String jobId) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21801, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21800, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		Optional<IJobDto> optionalJob = jobRepository.findByJobId(jobId);
 		if (optionalJob.isEmpty()) {
-			throw new AppException(21802, "Không có công việc nào được tìm thấy cho người dùng này",
+			throw new AppException(21801, "Không có công việc nào được tìm thấy cho người dùng này",
 					HttpStatus.NOT_FOUND);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(optionalJob.get());
@@ -761,14 +761,14 @@ public class UserServiceController {
 	public ResponseEntity<String> createJob(@PathVariable String id, @RequestBody JobDto newJobDto) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(21901, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(21900, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		if (newJobDto.getCompanyName() == null || newJobDto.getCompanyName().isBlank()) {
-			throw new AppException(21902, "Tên công ty không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(21901, "Tên công ty không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		if (newJobDto.getPosition() == null || newJobDto.getPosition().isBlank()) {
-			throw new AppException(21903, "Chức vụ không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(21902, "Chức vụ không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		Optional<JobModel> optionalJob = jobRepository.findByUserIdAndCompanyNameAndPosition(id,
@@ -776,7 +776,7 @@ public class UserServiceController {
 		JobModel newJob;
 		if (optionalJob.isPresent()) {
 			if (!optionalJob.get().getIsDelete()) {
-				throw new AppException(21904, "Công việc đã tồn tại", HttpStatus.BAD_REQUEST);
+				throw new AppException(21903, "Công việc đã tồn tại", HttpStatus.BAD_REQUEST);
 			} else {
 				newJob = optionalJob.get();
 				if (newJobDto.getStartTime() == null) {
@@ -816,7 +816,7 @@ public class UserServiceController {
 
 		Optional<JobModel> optionalJob = jobRepository.findByUserIdAndJobId(id, jobId);
 		if (optionalJob.isEmpty()) {
-			throw new AppException(22001, "Không tìm thấy công việc", HttpStatus.NOT_FOUND);
+			throw new AppException(22000, "Không tìm thấy công việc", HttpStatus.NOT_FOUND);
 		}
 
 		JobModel jobToUpdate = optionalJob.get();
@@ -824,7 +824,7 @@ public class UserServiceController {
 		Optional<JobModel> existingJob = jobRepository.findByUserIdAndCompanyNameAndPosition(id,
 				updatedJobDto.getCompanyName(), updatedJobDto.getPosition());
 		if (existingJob.isPresent() && !existingJob.get().getJobId().equals(jobId)) {
-			throw new AppException(22002, "Không thể cập nhật vì đã tồn tại công việc với cùng công ty và chức vụ",
+			throw new AppException(22001, "Không thể cập nhật vì đã tồn tại công việc với cùng công ty và chức vụ",
 					HttpStatus.BAD_REQUEST);
 		}
 
@@ -859,12 +859,12 @@ public class UserServiceController {
 	public ResponseEntity<Map<String, Object>> getAllEducations(@PathVariable String id) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(22101, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(22100, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		List<EducationModel> edus = educationRepository.findByUserId(id);
 		if (edus.isEmpty()) {
-			throw new AppException(22102, "Không có bằng cấp nào được tìm thấy cho người dùng này",
+			throw new AppException(22101, "Không có bằng cấp nào được tìm thấy cho người dùng này",
 					HttpStatus.NOT_FOUND);
 		}
 
@@ -877,12 +877,12 @@ public class UserServiceController {
 	public ResponseEntity<IEducationDto> getEducationById(@PathVariable String id, @PathVariable String educationId) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(22201, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(22200, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		Optional<IEducationDto> optionalEdu = educationRepository.findByEducationId(educationId);
 		if (optionalEdu.isEmpty()) {
-			throw new AppException(22202, "Không có bằng cấp nào được tìm thấy cho người dùng này",
+			throw new AppException(22201, "Không có bằng cấp nào được tìm thấy cho người dùng này",
 					HttpStatus.NOT_FOUND);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(optionalEdu.get());
@@ -892,14 +892,14 @@ public class UserServiceController {
 	public ResponseEntity<String> createEducation(@PathVariable String id, @RequestBody EducationDto newEducationDto) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(22301, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(22300, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		if (newEducationDto.getSchoolName() == null || newEducationDto.getSchoolName().isBlank()) {
-			throw new AppException(22302, "Tên trường học không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(22301, "Tên trường học không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		if (newEducationDto.getDegree() == null || newEducationDto.getDegree().isBlank()) {
-			throw new AppException(22303, "Tên bằng cấp không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(22302, "Tên bằng cấp không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		Optional<EducationModel> optionalEdu = educationRepository.findByUserIdAndSchoolNameAndDegree(id,
@@ -907,7 +907,7 @@ public class UserServiceController {
 		EducationModel newEdu;
 		if (optionalEdu.isPresent()) {
 			if (!optionalEdu.get().getIsDelete()) {
-				throw new AppException(22304, "Học vấn đã tồn tại", HttpStatus.BAD_REQUEST);
+				throw new AppException(22303, "Học vấn đã tồn tại", HttpStatus.BAD_REQUEST);
 			} else {
 				newEdu = optionalEdu.get();
 				if (newEducationDto.getStartTime() == null) {
@@ -947,7 +947,7 @@ public class UserServiceController {
 
 		Optional<EducationModel> optionalEdu = educationRepository.findByUserIdAndEducationId(id, educationId);
 		if (optionalEdu.isEmpty()) {
-			throw new AppException(22401, "Không tìm thấy học vấn", HttpStatus.NOT_FOUND);
+			throw new AppException(22400, "Không tìm thấy học vấn", HttpStatus.NOT_FOUND);
 		}
 
 		EducationModel eduToUpdate = optionalEdu.get();
@@ -955,7 +955,7 @@ public class UserServiceController {
 		Optional<EducationModel> existingEdu = educationRepository.findByUserIdAndSchoolNameAndDegree(id,
 				updatedEducationDto.getSchoolName(), updatedEducationDto.getDegree());
 		if (existingEdu.isPresent() && !existingEdu.get().getEducationId().equals(educationId)) {
-			throw new AppException(22402, "Không thể cập nhật vì đã tồn tại học vấn với cùng trường học và bằng cấp",
+			throw new AppException(22401, "Không thể cập nhật vì đã tồn tại học vấn với cùng trường học và bằng cấp",
 					HttpStatus.BAD_REQUEST);
 		}
 
@@ -990,12 +990,12 @@ public class UserServiceController {
 	public ResponseEntity<Map<String, Object>> getAllAchievements(@PathVariable String id) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(22501, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(22500, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		List<AchievementModel> achievements = achievementRepository.findByUserId(id);
 		if (achievements.isEmpty()) {
-			throw new AppException(22502, "Không có thành tựu nào được tìm thấy cho người dùng này",
+			throw new AppException(22501, "Không có thành tựu nào được tìm thấy cho người dùng này",
 					HttpStatus.NOT_FOUND);
 		}
 
@@ -1009,12 +1009,12 @@ public class UserServiceController {
 			@PathVariable String achievementId) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(22601, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(22600, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		Optional<IAchievementDto> optionalAchievement = achievementRepository.findByAchievementId(achievementId);
 		if (optionalAchievement.isEmpty()) {
-			throw new AppException(22602, "Không có thành tựu nào được tìm thấy cho người dùng này",
+			throw new AppException(22601, "Không có thành tựu nào được tìm thấy cho người dùng này",
 					HttpStatus.NOT_FOUND);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(optionalAchievement.get());
@@ -1025,14 +1025,14 @@ public class UserServiceController {
 			@RequestBody AchievementDto newAchievementDto) {
 		Optional<UserModel> optionalUser = userRepository.findById(id);
 		if (optionalUser.isEmpty()) {
-			throw new AppException(22701, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+			throw new AppException(22700, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
 		if (newAchievementDto.getAchievementName() == null || newAchievementDto.getAchievementName().isBlank()) {
-			throw new AppException(22702, "Tên thành tựu không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(22701, "Tên thành tựu không được để trống", HttpStatus.BAD_REQUEST);
 		}
 		if (newAchievementDto.getAchievementType() == null || newAchievementDto.getAchievementType().isBlank()) {
-			throw new AppException(22703, "Loại bằng cấp không được để trống", HttpStatus.BAD_REQUEST);
+			throw new AppException(22702, "Loại thành tựu không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
 		Optional<AchievementModel> optionalAchievement = achievementRepository.findByUserIdAndAchievementNameAndAchievementType(id,
@@ -1040,7 +1040,7 @@ public class UserServiceController {
 		AchievementModel newAchievement;
 		if (optionalAchievement.isPresent()) {
 			if (!optionalAchievement.get().getIsDelete()) {
-				throw new AppException(22704, "Thành tựu đã tồn tại", HttpStatus.BAD_REQUEST);
+				throw new AppException(22703, "Thành tựu đã tồn tại", HttpStatus.BAD_REQUEST);
 			} else {
 				newAchievement = optionalAchievement.get();
 				if (newAchievementDto.getAchievementTime() == null) {
@@ -1071,13 +1071,13 @@ public class UserServiceController {
 	}
 
 	@PutMapping("profile/{id}/update-achievement/{achievementId}")
-	public ResponseEntity<String> updateEducation(@PathVariable String id, @PathVariable String achievementId,
+	public ResponseEntity<String> updateAchievement(@PathVariable String id, @PathVariable String achievementId,
 			@RequestBody AchievementDto updatedAchievementDto) {
 
 		Optional<AchievementModel> optionalAchievement = achievementRepository.findByUserIdAndAchievementId(id,
 				achievementId);
 		if (optionalAchievement.isEmpty()) {
-			throw new AppException(22801, "Không tìm thấy thành tựu", HttpStatus.NOT_FOUND);
+			throw new AppException(22800, "Không tìm thấy thành tựu", HttpStatus.NOT_FOUND);
 		}
 
 		AchievementModel achievementToUpdate = optionalAchievement.get();
@@ -1085,7 +1085,7 @@ public class UserServiceController {
 		Optional<AchievementModel> existingAchievement = achievementRepository.findByUserIdAndAchievementNameAndAchievementType(id,
 				updatedAchievementDto.getAchievementName(), updatedAchievementDto.getAchievementType());
 		if (existingAchievement.isPresent() && !existingAchievement.get().getAchievementId().equals(achievementId)) {
-			throw new AppException(22802,
+			throw new AppException(22801,
 					"Không thể cập nhật vì đã tồn tại thành tựu với cùng tên thành tựu và loại thành tựu",
 					HttpStatus.BAD_REQUEST);
 		}
