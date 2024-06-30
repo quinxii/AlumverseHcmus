@@ -240,9 +240,9 @@ CREATE TABLE
     achievement (
         achievement_id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        type VARCHAR(50) NOT NULL,
-        time DATE,
+        achievement_name VARCHAR(255) NOT NULL,
+        achievement_type VARCHAR(50) NOT NULL,
+        achievement_time DATE,
         privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),

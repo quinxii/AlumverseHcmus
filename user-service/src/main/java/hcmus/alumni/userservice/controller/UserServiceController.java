@@ -1028,25 +1028,25 @@ public class UserServiceController {
 			throw new AppException(22701, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
 		}
 
-		if (newAchievementDto.getName() == null || newAchievementDto.getName().isBlank()) {
+		if (newAchievementDto.getAchievementName() == null || newAchievementDto.getAchievementName().isBlank()) {
 			throw new AppException(22702, "Tên thành tựu không được để trống", HttpStatus.BAD_REQUEST);
 		}
-		if (newAchievementDto.getType() == null || newAchievementDto.getType().isBlank()) {
+		if (newAchievementDto.getAchievementType() == null || newAchievementDto.getAchievementType().isBlank()) {
 			throw new AppException(22703, "Loại bằng cấp không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
-		Optional<AchievementModel> optionalAchievement = achievementRepository.findByUserIdAndNameAndType(id,
-				newAchievementDto.getName(), newAchievementDto.getType());
+		Optional<AchievementModel> optionalAchievement = achievementRepository.findByUserIdAndAchievementNameAndAchievementType(id,
+				newAchievementDto.getAchievementName(), newAchievementDto.getAchievementType());
 		AchievementModel newAchievement;
 		if (optionalAchievement.isPresent()) {
 			if (!optionalAchievement.get().getIsDelete()) {
 				throw new AppException(22704, "Thành tựu đã tồn tại", HttpStatus.BAD_REQUEST);
 			} else {
 				newAchievement = optionalAchievement.get();
-				if (newAchievementDto.getTime() == null) {
-					newAchievement.setTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+				if (newAchievementDto.getAchievementTime() == null) {
+					newAchievement.setAchievementTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
 				} else {
-					newAchievement.setTime(newAchievementDto.getTime());
+					newAchievement.setAchievementTime(newAchievementDto.getAchievementTime());
 				}
 				newAchievement.setPrivacy(Privacy.valueOf(newAchievementDto.getPrivacy().toUpperCase()));
 				newAchievement.setIsDelete(false);
@@ -1055,12 +1055,12 @@ public class UserServiceController {
 			newAchievement = new AchievementModel();
 			newAchievement.setAchievementId(UUID.randomUUID().toString());
 			newAchievement.setUserId(id);
-			newAchievement.setName(newAchievementDto.getName());
-			newAchievement.setType(newAchievementDto.getType());
-			if (newAchievementDto.getTime() == null) {
-				newAchievement.setTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+			newAchievement.setAchievementName(newAchievementDto.getAchievementName());
+			newAchievement.setAchievementType(newAchievementDto.getAchievementType());
+			if (newAchievementDto.getAchievementTime() == null) {
+				newAchievement.setAchievementTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
 			} else {
-				newAchievement.setTime(newAchievementDto.getTime());
+				newAchievement.setAchievementTime(newAchievementDto.getAchievementTime());
 			}
 			newAchievement.setPrivacy(Privacy.valueOf(newAchievementDto.getPrivacy().toUpperCase()));
 		}
@@ -1082,22 +1082,22 @@ public class UserServiceController {
 
 		AchievementModel achievementToUpdate = optionalAchievement.get();
 
-		Optional<AchievementModel> existingAchievement = achievementRepository.findByUserIdAndNameAndType(id,
-				updatedAchievementDto.getName(), updatedAchievementDto.getType());
+		Optional<AchievementModel> existingAchievement = achievementRepository.findByUserIdAndAchievementNameAndAchievementType(id,
+				updatedAchievementDto.getAchievementName(), updatedAchievementDto.getAchievementType());
 		if (existingAchievement.isPresent() && !existingAchievement.get().getAchievementId().equals(achievementId)) {
 			throw new AppException(22802,
 					"Không thể cập nhật vì đã tồn tại thành tựu với cùng tên thành tựu và loại thành tựu",
 					HttpStatus.BAD_REQUEST);
 		}
 
-		if (updatedAchievementDto.getName() != null || !updatedAchievementDto.getName().isEmpty()) {
-			achievementToUpdate.setName(updatedAchievementDto.getName());
+		if (updatedAchievementDto.getAchievementName() != null || !updatedAchievementDto.getAchievementName().isEmpty()) {
+			achievementToUpdate.setAchievementName(updatedAchievementDto.getAchievementName());
 		}
-		if (updatedAchievementDto.getType() != null && !updatedAchievementDto.getType().isEmpty()) {
-			achievementToUpdate.setType(updatedAchievementDto.getType());
+		if (updatedAchievementDto.getAchievementType() != null && !updatedAchievementDto.getAchievementType().isEmpty()) {
+			achievementToUpdate.setAchievementType(updatedAchievementDto.getAchievementType());
 		}
-		if (updatedAchievementDto.getTime() != null) {
-			achievementToUpdate.setTime(updatedAchievementDto.getTime());
+		if (updatedAchievementDto.getAchievementTime() != null) {
+			achievementToUpdate.setAchievementTime(updatedAchievementDto.getAchievementTime());
 		}
 		if (updatedAchievementDto.getPrivacy() != null) {
 			achievementToUpdate.setPrivacy(Privacy.valueOf(updatedAchievementDto.getPrivacy().toUpperCase()));

@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AchievementDto {
-    private String name;
-    private String type;
-    private Date time;
+    private String achievementName;
+    private String achievementType;
+    private Date achievementTime;
     private String privacy;
     private Boolean isDelete;
 }

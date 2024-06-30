@@ -31,14 +31,14 @@ public class AchievementModel implements Serializable {
     @Column(name = "user_id", length = 36, nullable = false)
     private String userId;
 
-	@Column(name = "name", length = 255, nullable = false)
-	private String name;
+	@Column(name = "achievement_name", length = 255, nullable = false)
+	private String achievementName;
 
-    @Column(name = "type", length = 50, nullable = false)
-	private String type;
+    @Column(name = "achievement_type", length = 50, nullable = false)
+	private String achievementType;
 
-	@Column(name = "time")
-	private Date time;
+	@Column(name = "achievement_time")
+	private Date achievementTime;
 
     @Column(name = "privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)

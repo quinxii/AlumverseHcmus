@@ -15,8 +15,8 @@ public interface AchievementRepository extends JpaRepository<AchievementModel, S
 
 	Optional<IAchievementDto> findByAchievementId(String achievementId);
 
-	@Query("SELECT a FROM AchievementModel a WHERE a.userId = :userId AND a.name = :name AND a.type = :type")
-	Optional<AchievementModel> findByUserIdAndNameAndType(String id, String name, String type);
+	@Query("SELECT a FROM AchievementModel a WHERE a.userId = :userId AND a.achievementName = :achievementName AND a.achievementType = :achievementType")
+	Optional<AchievementModel> findByUserIdAndAchievementNameAndAchievementType(String userId, String achievementName, String achievementType);
 
 	Optional<AchievementModel> findByUserIdAndAchievementId(String id, String achievementId);
 
