@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +55,7 @@ import hcmus.alumni.userservice.dto.EducationDto;
 import hcmus.alumni.userservice.dto.IAchievementDto;
 import hcmus.alumni.userservice.dto.IAlumniProfileDto;
 import hcmus.alumni.userservice.dto.IEducationDto;
+import hcmus.alumni.userservice.dto.IFriendDto;
 import hcmus.alumni.userservice.dto.IJobDto;
 import hcmus.alumni.userservice.dto.IUserProfileDto;
 import hcmus.alumni.userservice.dto.IVerifyAlumniProfileDto;
@@ -79,6 +79,9 @@ import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.AchievementRepository;
 import hcmus.alumni.userservice.repository.AlumniRepository;
 import hcmus.alumni.userservice.repository.EducationRepository;
+import hcmus.alumni.userservice.repository.FollowUserRepository;
+import hcmus.alumni.userservice.repository.FriendRepository;
+import hcmus.alumni.userservice.repository.FriendRequestRepository;
 import hcmus.alumni.userservice.repository.JobRepository;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
@@ -111,6 +114,7 @@ public class UserServiceController {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
 	@Autowired
 	private PasswordHistoryRepository passwordHistoryRepository;
 
@@ -125,6 +129,15 @@ public class UserServiceController {
 
 	@Autowired
 	private AchievementRepository achievementRepository;
+
+	@Autowired
+	private FriendRepository friendRepository;
+
+	@Autowired
+	private FriendRequestRepository friendRequestRepository;
+
+	@Autowired
+	private FollowUserRepository followUserRepository;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
@@ -608,32 +621,31 @@ public class UserServiceController {
 
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
 	@PutMapping("/alumni-verification")
-	public ResponseEntity<String> updateUserPendingInfo(@RequestHeader("userId")String userId,
-	        @RequestBody VerifyAlumniRequestDto requestDto) {
-	    Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-	            .findByUserIdAndStatusAndIsDeleteEquals(userId, VerifyAlumniModel.Status.PENDING, false);
+	public ResponseEntity<String> updateUserPendingInfo(@RequestHeader("userId") String userId,
+			@RequestBody VerifyAlumniRequestDto requestDto) {
+		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
+				.findByUserIdAndStatusAndIsDeleteEquals(userId, VerifyAlumniModel.Status.PENDING, false);
 
-	    VerifyAlumniModel alumniVerification = alumniVerificationOptional.orElseThrow(() ->
-	            new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên", HttpStatus.NOT_FOUND));
+		VerifyAlumniModel alumniVerification = alumniVerificationOptional.orElseThrow(
+				() -> new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên", HttpStatus.NOT_FOUND));
 
-	    boolean isPut = false;
+		boolean isPut = false;
 
-	    if (StringUtils.isNotEmpty(requestDto.getStudentId())) {
-	        alumniVerification.setStudentId(requestDto.getStudentId());
-	        isPut = true;
-	    }
-	    if (requestDto.getBeginningYear() != null) {
-	        alumniVerification.setBeginningYear(requestDto.getBeginningYear());
-	        isPut = true;
-	    }
-	    alumniVerification.setCreateAt(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+		if (StringUtils.isNotEmpty(requestDto.getStudentId())) {
+			alumniVerification.setStudentId(requestDto.getStudentId());
+			isPut = true;
+		}
+		if (requestDto.getBeginningYear() != null) {
+			alumniVerification.setBeginningYear(requestDto.getBeginningYear());
+			isPut = true;
+		}
+		alumniVerification.setCreateAt(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
 
-	    if (isPut) {
-	        verifyAlumniRepository.save(alumniVerification);
-	    }
-	    return ResponseEntity.status(HttpStatus.OK).body("");
+		if (isPut) {
+			verifyAlumniRepository.save(alumniVerification);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-
 
 	@PutMapping("/profile/avatar")
 	public ResponseEntity<String> updateProfileAvatar(@RequestHeader("userId") String userId,
@@ -836,7 +848,8 @@ public class UserServiceController {
 	}
 
 	@PostMapping("/profile/education")
-	public ResponseEntity<String> createEducation(@RequestHeader String userId, @RequestBody EducationDto newEducationDto) {
+	public ResponseEntity<String> createEducation(@RequestHeader String userId,
+			@RequestBody EducationDto newEducationDto) {
 		Optional<UserModel> optionalUser = userRepository.findById(userId);
 		if (optionalUser.isEmpty()) {
 			throw new AppException(22300, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
@@ -1058,6 +1071,76 @@ public class UserServiceController {
 		achievementRepository.save(achievementToUpdate);
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@GetMapping("/friends")
+    public ResponseEntity<Map<String, Object>> getAllFriends(
+            @RequestHeader("userId") String userId,
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+            @RequestParam(value = "orderBy", required = false, defaultValue = "createAt") String orderBy,
+            @RequestParam(value = "order", required = false, defaultValue = "asc") String order) {
+
+        if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+            pageSize = MAXIMUM_PAGES;
+        }
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+            Page<IFriendDto> friendsPage = friendRepository.findByUserIdAndIsDelete(userId, pageable);
+
+            result.put("totalPages", friendsPage.getTotalPages());
+            result.put("friends", friendsPage.getContent());
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        } catch (IllegalArgumentException e) {
+            throw new AppException(22900, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            throw new AppException(22901, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+	@GetMapping("/friends/count")
+	public ResponseEntity<Long> getSearchFriendResultCount(@RequestHeader("userId") String userId) {
+		try {
+			Long count = friendRepository.countByUserId(userId);
+			return ResponseEntity.status(HttpStatus.OK).body(count);
+		} catch (Exception e) {
+			throw new AppException(23000, "Lỗi khi lấy số lượng bạn bè. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	@GetMapping("/friends/search")
+	public ResponseEntity<HashMap<String, Object>> getSearchFriendsResult(@RequestHeader("userId") String userId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "createAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "asc") String order,
+			@RequestParam(value = "fullName", required = false) String fullName) {
+
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+
+		HashMap<String, Object> result = new HashMap<>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IFriendDto> friendsPage = friendRepository.findByUserId(userId, fullName, pageable);
+
+			result.put("totalPages", friendsPage.getTotalPages());
+			result.put("friends", friendsPage.getContent());
+
+			return ResponseEntity.status(HttpStatus.OK).body(result);
+
+		} catch (IllegalArgumentException e) {
+			throw new AppException(23100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			throw new AppException(23101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
 	}
 
 }

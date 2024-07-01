@@ -20,7 +20,7 @@ spring:
             - Path=/user/**,/roles/**
           filters:
             - name: Authentication
-
+            
         ## event service
         - id: event
           uri: lb://event-service
