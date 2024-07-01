@@ -1129,7 +1129,7 @@ public class UserServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IFriendDto> friendsPage = friendRepository.findByUserId(userId, fullName, pageable);
+			Page<IFriendDto> friendsPage = friendRepository.findByUserIdAndFullName(userId, fullName, pageable);
 
 			result.put("totalPages", friendsPage.getTotalPages());
 			result.put("friends", friendsPage.getContent());
