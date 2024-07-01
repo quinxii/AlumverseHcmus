@@ -151,8 +151,8 @@ public class NotificationServiceController {
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						Optional<PostGroupModel> optionalPostGroup = notificationRepository.findPostGroupById(notification.getEntityId());
 						if (optionalPostGroup.isPresent()) {
-							notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
-									(optionalPostGroup.get().getReactionCount() - 1 == 0 ? "" : (" và " + (optionalPostGroup.get().getReactionCount() - 1) + " người khác")) + 
+							notification.setNotificationMessage(notification.getActor().getFullName() + 
+									(optionalPostGroup.get().getReactionCount() <= 1 ? "" : (" và " + (optionalPostGroup.get().getReactionCount() - 1) + " người khác")) + 
 									" đã bày tỏ cảm xúc về bài viết của bạn");
 							notification.setParentId(optionalPostGroup.get().getGroupId());
 						}
@@ -173,8 +173,8 @@ public class NotificationServiceController {
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						Optional<PostAdviseModel> optionalPostAdvise = notificationRepository.findPostAdviseById(notification.getEntityId());
 						if (optionalPostAdvise.isPresent()) {
-							notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
-									(optionalPostAdvise.get().getReactionCount() - 1 == 0 ? "" : (" và " + (optionalPostAdvise.get().getReactionCount() - 1) + " người khác")) + 
+							notification.setNotificationMessage(notification.getActor().getFullName() + 
+									(optionalPostAdvise.get().getReactionCount() <= 1 ? "" : (" và " + (optionalPostAdvise.get().getReactionCount() - 1) + " người khác")) + 
 									" đã bày tỏ cảm xúc về bài viết của bạn");
 						}
 						break;
