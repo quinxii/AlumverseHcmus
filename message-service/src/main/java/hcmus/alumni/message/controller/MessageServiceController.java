@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,9 +98,15 @@ public class MessageServiceController {
 
         HashMap<String, Object> response = new HashMap<>();
 
+        Optional<InboxModel> inbox = inboxService.findById(inboxId);
+        if (inbox.isEmpty()) {
+            throw new AppException(90200, "Không tìm thấy cuộc trò chuyện", HttpStatus.NOT_FOUND);
+        }
+
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
         Page<MessageModel> messages = messageService.getMessagesByInboxId(inboxId, pageable);
 
+        response.put("inbox", mapper.map(inbox.get(), InboxDto.class));
         response.put("totalPages", messages.getTotalPages());
         response.put("messages", messages.getContent().stream().map(m -> mapper.map(m, MessageDto.class)).toList());
         return ResponseEntity.ok(response);
