@@ -1,6 +1,7 @@
 package hcmus.alumni.message.service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,8 +29,19 @@ public class InboxService {
     private InboxMemberService inboxMemberService;
 
     /**
+     * Retrieves an inbox model by its ID.
+     *
+     * @param id the ID of the inbox model to retrieve
+     * @return an Optional containing the inbox model if found, otherwise an empty Optional
+     */
+    public Optional<InboxModel> findById(Long id) {
+        return inboxRepository.findById(id);
+    }
+
+    /**
      * Retrieves the latest inboxes for a given user with optional search query.
-     * The search is performed based on the full name of the user who is in inbox of the provided user ID.
+     * The search is performed based on the full name of the user who is in inbox of
+     * the provided user ID.
      *
      * @param userId   the ID of the user
      * @param query    the search query (can be null or empty)
