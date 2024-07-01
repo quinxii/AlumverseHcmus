@@ -3,6 +3,8 @@ package hcmus.alumni.group.model;
 import java.io.Serializable;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -28,6 +30,7 @@ public class PicturePostGroupModel implements Serializable {
     @Id
     @ManyToOne
     @JoinColumn(name = "post_group_id", nullable = false)
+    @JsonBackReference
     private PostGroupModel postGroup;
 
     @Column(name = "picture_url", nullable = false, length = 255)
