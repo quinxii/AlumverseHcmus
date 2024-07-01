@@ -154,15 +154,19 @@ public class NotificationServiceController {
 							notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
 									(optionalPostGroup.get().getReactionCount() - 1 == 0 ? "" : (" và " + (optionalPostGroup.get().getReactionCount() - 1) + " người khác")) + 
 									" đã bày tỏ cảm xúc về bài viết của bạn");
+							notification.setParentId(optionalPostGroup.get().getGroupId());
 						}
 						break;
 					case "comment_post_group":
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						Optional<CommentPostGroupModel> optionalCommentPostGroup = notificationRepository.findCommentPostGroupById(notification.getEntityId());
 						if (optionalCommentPostGroup.isPresent()) {
-							notification.setParentId(optionalCommentPostGroup.get().getPostGroupId());
 							notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
 									((optionalCommentPostGroup.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
+							Optional<PostGroupModel> postGroup = notificationRepository.findPostGroupById(optionalCommentPostGroup.get().getPostGroupId());
+							if (postGroup.isPresent())
+								notification.setParentId(optionalCommentPostGroup.get().getPostGroupId() + "," +
+										postGroup.get().getGroupId());
 						}
 						break;
 					case "interact_post_advise":
