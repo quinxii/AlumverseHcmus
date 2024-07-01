@@ -151,26 +151,30 @@ public class NotificationServiceController {
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						Optional<PostGroupModel> optionalPostGroup = notificationRepository.findPostGroupById(notification.getEntityId());
 						if (optionalPostGroup.isPresent()) {
-							notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
-									(optionalPostGroup.get().getReactionCount() - 1 == 0 ? "" : (" và " + (optionalPostGroup.get().getReactionCount() - 1) + " người khác")) + 
+							notification.setNotificationMessage(notification.getActor().getFullName() + 
+									(optionalPostGroup.get().getReactionCount() <= 1 ? "" : (" và " + (optionalPostGroup.get().getReactionCount() - 1) + " người khác")) + 
 									" đã bày tỏ cảm xúc về bài viết của bạn");
+							notification.setParentId(optionalPostGroup.get().getGroupId());
 						}
 						break;
 					case "comment_post_group":
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						Optional<CommentPostGroupModel> optionalCommentPostGroup = notificationRepository.findCommentPostGroupById(notification.getEntityId());
 						if (optionalCommentPostGroup.isPresent()) {
-							notification.setParentId(optionalCommentPostGroup.get().getPostGroupId());
 							notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về " + 
 									((optionalCommentPostGroup.get().getParentId() == null) ? "bài viết" : "bình luận") + " của bạn");
+							Optional<PostGroupModel> postGroup = notificationRepository.findPostGroupById(optionalCommentPostGroup.get().getPostGroupId());
+							if (postGroup.isPresent())
+								notification.setParentId(optionalCommentPostGroup.get().getPostGroupId() + "," +
+										postGroup.get().getGroupId());
 						}
 						break;
 					case "interact_post_advise":
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						Optional<PostAdviseModel> optionalPostAdvise = notificationRepository.findPostAdviseById(notification.getEntityId());
 						if (optionalPostAdvise.isPresent()) {
-							notification.setNotificationMessage(notification.getActor().getFullName() + " và " + 
-									(optionalPostAdvise.get().getReactionCount() - 1 == 0 ? "" : (" và " + (optionalPostAdvise.get().getReactionCount() - 1) + " người khác")) + 
+							notification.setNotificationMessage(notification.getActor().getFullName() + 
+									(optionalPostAdvise.get().getReactionCount() <= 1 ? "" : (" và " + (optionalPostAdvise.get().getReactionCount() - 1) + " người khác")) + 
 									" đã bày tỏ cảm xúc về bài viết của bạn");
 						}
 						break;
