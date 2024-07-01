@@ -79,6 +79,7 @@ import hcmus.alumni.counsel.repository.notification.NotificationRepository;
 import hcmus.alumni.counsel.utils.ImageUtils;
 import hcmus.alumni.counsel.repository.UserRepository;
 import hcmus.alumni.counsel.utils.FirebaseService;
+import hcmus.alumni.counsel.utils.NotificationService;
 import hcmus.alumni.counsel.common.NotificationType;
 
 @RestController
@@ -114,6 +115,8 @@ public class CounselServiceController {
 	private ImageUtils imageUtils;
 	@Autowired
 	private FirebaseService firebaseService;
+	@Autowired
+	private NotificationService notificationService;
 
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -423,6 +426,11 @@ public class CounselServiceController {
 
 		postAdvise.setStatus(new StatusPostModel(4));
 		postAdviseRepository.save(postAdvise);
+		
+		List<String> entityIds = commentPostAdviseRepository.findByPostAdviseId(id);
+		entityIds.add(id);
+		notificationService.deleteNotificationsByEntityIds(entityIds);
+		
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
@@ -631,6 +639,11 @@ public class CounselServiceController {
 				postAdviseRepository.commentCountIncrement(originalComment.getPostAdvise().getId(), -1);
 			}
 		}
+		
+		// Delete notifications for the comment and its children
+		List<String> allCommentIds = commentPostAdviseRepository.findByParentIds(allParentId);
+		allCommentIds.add(commentId);
+		notificationService.deleteNotificationsByEntityIds(allCommentIds);
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
@@ -754,6 +767,11 @@ public class CounselServiceController {
 		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();
 		interactPostAdvise.setIsDelete(true);
 		postAdviseRepository.reactionCountIncrement(id, -1);
+		
+		List<String> entityIds = new ArrayList<String>();
+		entityIds.add(id);
+		notificationService.deleteNotificationsByEntityIds(entityIds);
+		
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 

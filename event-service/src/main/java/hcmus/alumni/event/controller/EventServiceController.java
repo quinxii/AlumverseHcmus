@@ -56,6 +56,7 @@ import hcmus.alumni.event.repository.ParticipantEventRepository;
 import hcmus.alumni.event.repository.TagRepository;
 import hcmus.alumni.event.repository.UserRepository;
 import hcmus.alumni.event.utils.ImageUtils;
+import hcmus.alumni.event.utils.NotificationService;
 import hcmus.alumni.event.utils.FirebaseService;
 import hcmus.alumni.event.exception.AppException;
 import jakarta.persistence.EntityManager;
@@ -99,6 +100,8 @@ public class EventServiceController {
 	private ImageUtils imageUtils;
 	@Autowired
 	private FirebaseService firebaseService;
+	@Autowired
+	private NotificationService notificationService;
 	
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -339,6 +342,10 @@ public class EventServiceController {
 	    EventModel event = optionalEvent.get();
 	    event.setStatus(new StatusPostModel(4));
 	    eventRepository.save(event);
+
+		List<String> commentIds = commentEventRepository.findByEventId(id);
+		notificationService.deleteNotificationsByEntityIds(commentIds);
+	    
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
@@ -633,6 +640,11 @@ public class EventServiceController {
 				eventRepository.commentCountIncrement(originalComment.getEvent().getId(), -1);
 			}
 		}
+		
+		// Delete notifications for the comment and its children
+		List<String> allCommentIds = commentEventRepository.findByParentIds(allParentId);
+		allCommentIds.add(commentId);
+		notificationService.deleteNotificationsByEntityIds(allCommentIds);
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}

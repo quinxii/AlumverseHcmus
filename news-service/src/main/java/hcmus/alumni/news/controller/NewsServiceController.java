@@ -63,6 +63,7 @@ import hcmus.alumni.news.repository.CommentNewsRepository;
 import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.repository.TagRepository;
 import hcmus.alumni.news.utils.ImageUtils;
+import hcmus.alumni.news.utils.NotificationService;
 
 @RestController
 @RequestMapping("/news")
@@ -87,6 +88,8 @@ public class NewsServiceController {
 	private ImageUtils imageUtils;
 	@Autowired
 	private FirebaseService firebaseService;
+	@Autowired
+	private NotificationService notificationService;
 
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
@@ -298,6 +301,10 @@ public class NewsServiceController {
 		NewsModel news = optionalNews.get();
 		news.setStatus(new StatusPostModel(4));
 		newsRepository.save(news);
+		
+		List<String> commentIds = commentNewsRepository.findByNewsId(id);
+		notificationService.deleteNotificationsByEntityIds(commentIds);
+		
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
@@ -554,6 +561,11 @@ public class NewsServiceController {
 				newsRepository.commentCountIncrement(originalComment.getNews().getId(), -1);
 			}
 		}
+
+		// Delete notifications for the comment and its children
+		List<String> allCommentIds = commentNewsRepository.findByParentIds(allParentId);
+		allCommentIds.add(commentId);
+		notificationService.deleteNotificationsByEntityIds(allCommentIds);
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}

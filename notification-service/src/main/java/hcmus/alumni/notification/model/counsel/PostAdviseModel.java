@@ -27,11 +27,13 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Data;
 
 @Entity
 @Table(name = "[post_advise]")
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class PostAdviseModel implements Serializable {
 	private static final long serialVersionUID = 1L;
