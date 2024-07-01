@@ -61,17 +61,14 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 			@Param("roleIds") List<Integer> roleIds, Pageable pageable);
 
 	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.roles r WHERE r.id in :roleIds")
-    Long countUsersByRoleId(@Param("roleIds") List<Integer> roleIds);
-	
+	Long countUsersByRoleId(@Param("roleIds") List<Integer> roleIds);
+
 	@Query("SELECT COUNT(u) FROM UserModel u")
-    Long countAllUsers();
-	
+	Long countAllUsers();
+
 	@Query("SELECT u FROM UserModel u")
 	Page<UserSearchDto> findAllUsers(Pageable pageable);
 
-	@Query("SELECT u.id AS id, u.avatarUrl AS avatarUrl, u.coverUrl AS coverUrl, u.fullName AS fullName, " +
-	           "u.faculty AS faculty, u.sex AS sex, u.dob AS dob, u.socialMediaLink AS socialMediaLink, " +
-	           "u.email AS email, u.phone AS phone, u.aboutMe AS aboutMe " +
-	           "FROM UserModel u WHERE u.id = :id")
-    Optional<IUserProfileDto> findUserProfileById(@Param("id") String id);
+	@Query("SELECT u FROM UserModel u WHERE u.id = :id")
+	Optional<IUserProfileDto> findUserProfileById(@Param("id") String id);
 }

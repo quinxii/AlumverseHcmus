@@ -1,6 +1,8 @@
 package hcmus.alumni.userservice.dto;
 
 public interface IAlumniProfileDto {
-    String getAlumClass();
+	String getStudentId();
+	Integer getBeginningYear();
     Integer getGraduationYear();
+    String getAlumClass();
 }

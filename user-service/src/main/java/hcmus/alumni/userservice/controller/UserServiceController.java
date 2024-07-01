@@ -607,11 +607,11 @@ public class UserServiceController {
 	}
 
 	@PreAuthorize("hasAnyAuthority('User.Edit')")
-	@PutMapping("/alumni-verification/{id}")
-	public ResponseEntity<String> updateUserPendingInfo(@PathVariable String id,
+	@PutMapping("/alumni-verification")
+	public ResponseEntity<String> updateUserPendingInfo(@RequestHeader("userId")String userId,
 	        @RequestBody VerifyAlumniRequestDto requestDto) {
 	    Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-	            .findByUserIdAndStatusAndIsDeleteEquals(id, VerifyAlumniModel.Status.PENDING, false);
+	            .findByUserIdAndStatusAndIsDeleteEquals(userId, VerifyAlumniModel.Status.PENDING, false);
 
 	    VerifyAlumniModel alumniVerification = alumniVerificationOptional.orElseThrow(() ->
 	            new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên", HttpStatus.NOT_FOUND));
