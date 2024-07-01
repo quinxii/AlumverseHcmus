@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import hcmus.alumni.userservice.dto.IUserProfileDto;
 import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
@@ -60,11 +61,14 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 			@Param("roleIds") List<Integer> roleIds, Pageable pageable);
 
 	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.roles r WHERE r.id in :roleIds")
-    Long countUsersByRoleId(@Param("roleIds") List<Integer> roleIds);
-	
+	Long countUsersByRoleId(@Param("roleIds") List<Integer> roleIds);
+
 	@Query("SELECT COUNT(u) FROM UserModel u")
-    Long countAllUsers();
-	
+	Long countAllUsers();
+
 	@Query("SELECT u FROM UserModel u")
 	Page<UserSearchDto> findAllUsers(Pageable pageable);
+
+	@Query("SELECT u FROM UserModel u WHERE u.id = :id")
+	Optional<IUserProfileDto> findUserProfileById(@Param("id") String id);
 }

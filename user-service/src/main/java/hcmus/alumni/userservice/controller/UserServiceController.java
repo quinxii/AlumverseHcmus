@@ -1,7 +1,10 @@
 package hcmus.alumni.userservice.controller;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +26,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -33,8 +37,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,15 +48,38 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.userservice.common.Privacy;
 import hcmus.alumni.userservice.config.UserConfig;
+import hcmus.alumni.userservice.dto.AchievementDto;
+import hcmus.alumni.userservice.dto.AlumniDto;
+import hcmus.alumni.userservice.dto.EducationDto;
+import hcmus.alumni.userservice.dto.IAchievementDto;
+import hcmus.alumni.userservice.dto.IAlumniProfileDto;
+import hcmus.alumni.userservice.dto.IEducationDto;
+import hcmus.alumni.userservice.dto.IJobDto;
+import hcmus.alumni.userservice.dto.IUserProfileDto;
+import hcmus.alumni.userservice.dto.IVerifyAlumniProfileDto;
+import hcmus.alumni.userservice.dto.JobDto;
+import hcmus.alumni.userservice.dto.ProfileRequestDto;
+import hcmus.alumni.userservice.dto.UserDto;
 import hcmus.alumni.userservice.dto.UserSearchDto;
 import hcmus.alumni.userservice.dto.VerifyAlumniDto;
+import hcmus.alumni.userservice.dto.VerifyAlumniRequestDto;
 import hcmus.alumni.userservice.exception.AppException;
+import hcmus.alumni.userservice.model.AchievementModel;
+import hcmus.alumni.userservice.model.AlumniModel;
+import hcmus.alumni.userservice.model.EducationModel;
 import hcmus.alumni.userservice.model.FacultyModel;
+import hcmus.alumni.userservice.model.JobModel;
 import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
+import hcmus.alumni.userservice.model.SexModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
+import hcmus.alumni.userservice.repository.AchievementRepository;
+import hcmus.alumni.userservice.repository.AlumniRepository;
+import hcmus.alumni.userservice.repository.EducationRepository;
+import hcmus.alumni.userservice.repository.JobRepository;
 import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
 import hcmus.alumni.userservice.repository.StatusUserGroupRepository;
@@ -86,12 +111,23 @@ public class UserServiceController {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
 	@Autowired
 	private PasswordHistoryRepository passwordHistoryRepository;
 
+	@Autowired
+	private AlumniRepository alumniRepository;
+
+	@Autowired
+	private JobRepository jobRepository;
+
+	@Autowired
+	private EducationRepository educationRepository;
+
+	@Autowired
+	private AchievementRepository achievementRepository;
+
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
-	
+
 	private final static int MAXIMUM_PAGES = 50;
 
 	@PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
@@ -327,6 +363,12 @@ public class UserServiceController {
 			if (status.equals(VerifyAlumniModel.Status.APPROVED)) {
 				// Change role
 				userRepository.updateRoleFromGuestToAlumni(va.getUser().getId());
+
+				AlumniModel alumni = new AlumniModel();
+				alumni.setUserId(va.getUser().getId());
+				alumni.setStudentId(va.getStudentId());
+				alumni.setBeginningYear(va.getBeginningYear());
+				alumniRepository.save(alumni);
 			}
 		} catch (IllegalArgumentException e) {
 			throw new AppException(20501, "Trạng thái không hợp lệ", HttpStatus.BAD_REQUEST);
@@ -422,32 +464,32 @@ public class UserServiceController {
 
 		UserModel user = optionalUser.get();
 		if (roleIds == null || roleIds.isEmpty()) {
-	        throw new AppException(20801, "Vai trò không được để trống", HttpStatus.BAD_REQUEST);
-	    }
+			throw new AppException(20801, "Vai trò không được để trống", HttpStatus.BAD_REQUEST);
+		}
 
 		Set<RoleModel> roles = new HashSet<>();
-	    for (Integer roleId : roleIds) {
-	        RoleModel role = roleRepository.findById(roleId)
-	                .orElseThrow(() -> new AppException(20802, "Vai trò không tồn tại", HttpStatus.BAD_REQUEST));
-	        roles.add(role);
-	    }
-	    
+		for (Integer roleId : roleIds) {
+			RoleModel role = roleRepository.findById(roleId)
+					.orElseThrow(() -> new AppException(20802, "Vai trò không tồn tại", HttpStatus.BAD_REQUEST));
+			roles.add(role);
+		}
+
 		user.setRoles(roles);
 		userRepository.save(user);
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	
+
 	@GetMapping("/count/role")
 	public ResponseEntity<Long> getSearchResultCount(@RequestParam(value = "roleId") List<Integer> roleIds) {
 		try {
 			if (roleIds == null || roleIds.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.OK).body(userRepository.countAllUsers());
 			}
-            return ResponseEntity.status(HttpStatus.OK).body(userRepository.countUsersByRoleId(roleIds));
-        } catch (Exception e) {
-        	throw new AppException(20903, "Lỗi khi lấy số lượng người dùng. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
-        }
+			return ResponseEntity.status(HttpStatus.OK).body(userRepository.countUsersByRoleId(roleIds));
+		} catch (Exception e) {
+			throw new AppException(20900, "Lỗi khi lấy số lượng người dùng. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
+		}
 	}
 
 	@GetMapping("")
@@ -473,9 +515,9 @@ public class UserServiceController {
 			result.put("totalPages", users.getTotalPages());
 			result.put("users", users.getContent());
 		} catch (IllegalArgumentException e) {
-			throw new AppException(21001, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+			throw new AppException(21000, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
-			throw new AppException(21002, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(21001, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
@@ -492,4 +534,530 @@ public class UserServiceController {
 		result.put("user", user.get());
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
+
+	@GetMapping("/{id}/profile")
+	public ResponseEntity<Map<String, Object>> getProfileInfo(@PathVariable String id) {
+		Optional<IUserProfileDto> optionalUser = userRepository.findUserProfileById(id);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21200, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		IUserProfileDto user = optionalUser.get();
+		Optional<IAlumniProfileDto> optionalAlumni = alumniRepository.findAlumniProfileById(id);
+
+		Map<String, Object> response = new HashMap<>();
+
+		Optional<IVerifyAlumniProfileDto> alumniVerificationOptional = verifyAlumniRepository
+				.findByUserIdAndIsDelete(id, false);
+
+		response.put("user", user);
+		response.put("alumni", optionalAlumni.orElse(null));
+		response.put("alumniVerification", alumniVerificationOptional.orElse(null));
+
+		return ResponseEntity.status(HttpStatus.OK).body(response);
+	}
+
+	@PutMapping("/profile")
+	public ResponseEntity<String> updateBasicProfileInfo(@RequestHeader("userId") String userId,
+			@RequestBody ProfileRequestDto profileRequestDto) {
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21300, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		UserModel user = optionalUser.get();
+		UserDto userDto = profileRequestDto.getUser();
+		AlumniDto alumniDto = profileRequestDto.getAlumni();
+		if (userDto != null) {
+			if (userDto.getFullName() != null) {
+				user.setFullName(userDto.getFullName());
+			}
+			if (userDto.getFacultyId() != null) {
+				user.setFaculty(new FacultyModel(userDto.getFacultyId()));
+			}
+			if (userDto.getSexId() != null) {
+				user.setSex(new SexModel(userDto.getSexId()));
+			}
+			if (userDto.getSocialMediaLink() != null) {
+				user.setSocialMediaLink(userDto.getSocialMediaLink());
+			}
+			if (userDto.getPhone() != null) {
+				user.setPhone(userDto.getPhone());
+			}
+			if (userDto.getAboutMe() != null) {
+				user.setAboutMe(userDto.getAboutMe());
+			}
+		}
+
+		Optional<AlumniModel> optionalAlumni = alumniRepository.findByUserId(userId);
+		if (optionalAlumni.isPresent() && alumniDto != null) {
+			AlumniModel alumni = optionalAlumni.get();
+			if (alumniDto.getAlumClass() != null) {
+				alumni.setAlumClass(alumniDto.getAlumClass());
+			}
+			if (alumniDto.getGraduationYear() != null) {
+				alumni.setGraduationYear(alumniDto.getGraduationYear());
+			}
+			alumniRepository.save(alumni);
+		}
+		userRepository.save(user);
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@PreAuthorize("hasAnyAuthority('User.Edit')")
+	@PutMapping("/alumni-verification")
+	public ResponseEntity<String> updateUserPendingInfo(@RequestHeader("userId")String userId,
+	        @RequestBody VerifyAlumniRequestDto requestDto) {
+	    Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
+	            .findByUserIdAndStatusAndIsDeleteEquals(userId, VerifyAlumniModel.Status.PENDING, false);
+
+	    VerifyAlumniModel alumniVerification = alumniVerificationOptional.orElseThrow(() ->
+	            new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên", HttpStatus.NOT_FOUND));
+
+	    boolean isPut = false;
+
+	    if (StringUtils.isNotEmpty(requestDto.getStudentId())) {
+	        alumniVerification.setStudentId(requestDto.getStudentId());
+	        isPut = true;
+	    }
+	    if (requestDto.getBeginningYear() != null) {
+	        alumniVerification.setBeginningYear(requestDto.getBeginningYear());
+	        isPut = true;
+	    }
+	    alumniVerification.setCreateAt(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+
+	    if (isPut) {
+	        verifyAlumniRepository.save(alumniVerification);
+	    }
+	    return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+
+	@PutMapping("/profile/avatar")
+	public ResponseEntity<String> updateProfileAvatar(@RequestHeader("userId") String userId,
+			@RequestParam(value = "avatar", required = true) MultipartFile avatar) {
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21500, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+		UserModel user = optionalUser.get();
+		if (avatar != null && !avatar.isEmpty()) {
+			try {
+				String avatarPath = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, userId);
+				user.setAvatarUrl(avatarPath);
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new AppException(21501, "Lỗi khi tải ảnh lên", HttpStatus.BAD_REQUEST);
+			}
+		}
+		userRepository.save(user);
+		return ResponseEntity.status(HttpStatus.OK).body(user.getAvatarUrl());
+	}
+
+	@PutMapping("/profile/cover")
+	public ResponseEntity<String> updateProfileCover(@RequestHeader("userId") String userId,
+			@RequestParam(value = "cover", required = true) MultipartFile cover) {
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21600, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+		UserModel user = optionalUser.get();
+		if (cover != null && !cover.isEmpty()) {
+			try {
+				String coverPath = imageUtils.saveImageToStorage(imageUtils.getCoverPath(), cover, userId);
+				user.setAvatarUrl(coverPath);
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new AppException(21601, "Lỗi khi tải ảnh lên", HttpStatus.BAD_REQUEST);
+			}
+		}
+		userRepository.save(user);
+		return ResponseEntity.status(HttpStatus.OK).body(user.getCoverUrl());
+	}
+
+	@GetMapping("/{id}/profile/job")
+	public ResponseEntity<Map<String, Object>> getAllJobs(@PathVariable String id) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21700, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		List<JobModel> jobs = jobRepository.findByUserId(id);
+
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("jobs", jobs);
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("{id}/profile/job/{jobId}")
+	public ResponseEntity<IJobDto> getJobById(@PathVariable String id, @PathVariable String jobId) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21800, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		Optional<IJobDto> optionalJob = jobRepository.findByJobId(jobId);
+		if (optionalJob.isEmpty()) {
+			throw new AppException(21801, "Không có công việc nào được tìm thấy cho người dùng này",
+					HttpStatus.NOT_FOUND);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(optionalJob.get());
+	}
+
+	@PostMapping("profile/job")
+	public ResponseEntity<String> createJob(@RequestHeader String userId, @RequestBody JobDto newJobDto) {
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(21900, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		if (newJobDto.getCompanyName() == null || newJobDto.getCompanyName().isBlank()) {
+			throw new AppException(21901, "Tên công ty không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		if (newJobDto.getPosition() == null || newJobDto.getPosition().isBlank()) {
+			throw new AppException(21902, "Chức vụ không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
+		Optional<JobModel> optionalJob = jobRepository.findByUserIdAndCompanyNameAndPosition(userId,
+				newJobDto.getCompanyName(), newJobDto.getPosition());
+		JobModel newJob;
+		if (optionalJob.isPresent()) {
+			if (!optionalJob.get().getIsDelete()) {
+				throw new AppException(21903, "Công việc đã tồn tại", HttpStatus.BAD_REQUEST);
+			} else {
+				newJob = optionalJob.get();
+				if (newJobDto.getStartTime() == null) {
+					newJob.setStartTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+				} else {
+					newJob.setStartTime(newJobDto.getStartTime());
+				}
+				newJob.setEndTime(newJobDto.getEndTime());
+				newJob.setPrivacy(Privacy.valueOf(newJobDto.getPrivacy().toUpperCase()));
+				newJob.setIsWorking(newJobDto.getIsWorking());
+				newJob.setIsDelete(false);
+			}
+		} else {
+			newJob = new JobModel();
+			newJob.setJobId(UUID.randomUUID().toString());
+			newJob.setUserId(userId);
+			newJob.setCompanyName(newJobDto.getCompanyName());
+			newJob.setPosition(newJobDto.getPosition());
+			if (newJobDto.getStartTime() == null) {
+				newJob.setStartTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+			} else {
+				newJob.setStartTime(newJobDto.getStartTime());
+			}
+			newJob.setEndTime(newJobDto.getEndTime());
+			newJob.setPrivacy(Privacy.valueOf(newJobDto.getPrivacy().toUpperCase()));
+			newJob.setIsWorking(newJobDto.getIsWorking());
+		}
+
+		jobRepository.save(newJob);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body("");
+	}
+
+	@PutMapping("profile/job/{jobId}")
+	public ResponseEntity<String> updateJob(@RequestHeader String userId, @PathVariable String jobId,
+			@RequestBody JobDto updatedJobDto) {
+
+		Optional<JobModel> optionalJob = jobRepository.findByUserIdAndJobId(userId, jobId);
+		if (optionalJob.isEmpty()) {
+			throw new AppException(22000, "Không tìm thấy công việc", HttpStatus.NOT_FOUND);
+		}
+
+		JobModel jobToUpdate = optionalJob.get();
+
+		Optional<JobModel> existingJob = jobRepository.findByUserIdAndCompanyNameAndPosition(userId,
+				updatedJobDto.getCompanyName(), updatedJobDto.getPosition());
+		if (existingJob.isPresent() && !existingJob.get().getJobId().equals(jobId)) {
+			throw new AppException(22001, "Không thể cập nhật vì đã tồn tại công việc với cùng công ty và chức vụ",
+					HttpStatus.BAD_REQUEST);
+		}
+
+		if (updatedJobDto.getCompanyName() != null || !updatedJobDto.getCompanyName().isEmpty()) {
+			jobToUpdate.setCompanyName(updatedJobDto.getCompanyName());
+		}
+		if (updatedJobDto.getPosition() != null && !updatedJobDto.getPosition().isEmpty()) {
+			jobToUpdate.setPosition(updatedJobDto.getPosition());
+		}
+		if (updatedJobDto.getStartTime() != null) {
+			jobToUpdate.setStartTime(updatedJobDto.getStartTime());
+		}
+		if (updatedJobDto.getEndTime() != null) {
+			jobToUpdate.setEndTime(updatedJobDto.getEndTime());
+		}
+		if (updatedJobDto.getPrivacy() != null) {
+			jobToUpdate.setPrivacy(Privacy.valueOf(updatedJobDto.getPrivacy().toUpperCase()));
+		}
+		if (updatedJobDto.getIsWorking() != null) {
+			jobToUpdate.setIsWorking(updatedJobDto.getIsWorking());
+		}
+		if (updatedJobDto.getIsDelete() != null) {
+			jobToUpdate.setIsDelete(updatedJobDto.getIsDelete());
+		}
+
+		jobRepository.save(jobToUpdate);
+
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@GetMapping("/{id}/profile/education")
+	public ResponseEntity<Map<String, Object>> getAllEducations(@PathVariable String id) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(22100, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		List<EducationModel> edus = educationRepository.findByUserId(id);
+
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("education", edus);
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/{id}/profile/education/{educationId}")
+	public ResponseEntity<IEducationDto> getEducationById(@PathVariable String id, @PathVariable String educationId) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(22200, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		Optional<IEducationDto> optionalEdu = educationRepository.findByEducationId(educationId);
+		if (optionalEdu.isEmpty()) {
+			throw new AppException(22201, "Không có bằng cấp nào được tìm thấy cho người dùng này",
+					HttpStatus.NOT_FOUND);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(optionalEdu.get());
+	}
+
+	@PostMapping("/profile/education")
+	public ResponseEntity<String> createEducation(@RequestHeader String userId, @RequestBody EducationDto newEducationDto) {
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(22300, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		if (newEducationDto.getSchoolName() == null || newEducationDto.getSchoolName().isBlank()) {
+			throw new AppException(22301, "Tên trường học không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		if (newEducationDto.getDegree() == null || newEducationDto.getDegree().isBlank()) {
+			throw new AppException(22302, "Tên bằng cấp không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
+		Optional<EducationModel> optionalEdu = educationRepository.findByUserIdAndSchoolNameAndDegree(userId,
+				newEducationDto.getSchoolName(), newEducationDto.getDegree());
+		EducationModel newEdu;
+		if (optionalEdu.isPresent()) {
+			if (!optionalEdu.get().getIsDelete()) {
+				throw new AppException(22303, "Học vấn đã tồn tại", HttpStatus.BAD_REQUEST);
+			} else {
+				newEdu = optionalEdu.get();
+				if (newEducationDto.getStartTime() == null) {
+					newEdu.setStartTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+				} else {
+					newEdu.setStartTime(newEducationDto.getStartTime());
+				}
+				newEdu.setEndTime(newEducationDto.getEndTime());
+				newEdu.setPrivacy(Privacy.valueOf(newEducationDto.getPrivacy().toUpperCase()));
+				newEdu.setIsLearning(newEducationDto.getIsLearning());
+				newEdu.setIsDelete(false);
+			}
+		} else {
+			newEdu = new EducationModel();
+			newEdu.setEducationId(UUID.randomUUID().toString());
+			newEdu.setUserId(userId);
+			newEdu.setSchoolName(newEducationDto.getSchoolName());
+			newEdu.setDegree(newEducationDto.getDegree());
+			if (newEducationDto.getStartTime() == null) {
+				newEdu.setStartTime(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+			} else {
+				newEdu.setStartTime(newEducationDto.getStartTime());
+			}
+			newEdu.setEndTime(newEducationDto.getEndTime());
+			newEdu.setPrivacy(Privacy.valueOf(newEducationDto.getPrivacy().toUpperCase()));
+			newEdu.setIsLearning(newEducationDto.getIsLearning());
+		}
+
+		educationRepository.save(newEdu);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body("");
+	}
+
+	@PutMapping("/profile/education/{educationId}")
+	public ResponseEntity<String> updateEducation(@RequestHeader String userId, @PathVariable String educationId,
+			@RequestBody EducationDto updatedEducationDto) {
+
+		Optional<EducationModel> optionalEdu = educationRepository.findByUserIdAndEducationId(userId, educationId);
+		if (optionalEdu.isEmpty()) {
+			throw new AppException(22400, "Không tìm thấy học vấn", HttpStatus.NOT_FOUND);
+		}
+
+		EducationModel eduToUpdate = optionalEdu.get();
+
+		Optional<EducationModel> existingEdu = educationRepository.findByUserIdAndSchoolNameAndDegree(userId,
+				updatedEducationDto.getSchoolName(), updatedEducationDto.getDegree());
+		if (existingEdu.isPresent() && !existingEdu.get().getEducationId().equals(educationId)) {
+			throw new AppException(22401, "Không thể cập nhật vì đã tồn tại học vấn với cùng trường học và bằng cấp",
+					HttpStatus.BAD_REQUEST);
+		}
+
+		if (updatedEducationDto.getSchoolName() != null || !updatedEducationDto.getSchoolName().isEmpty()) {
+			eduToUpdate.setSchoolName(updatedEducationDto.getSchoolName());
+		}
+		if (updatedEducationDto.getDegree() != null && !updatedEducationDto.getDegree().isEmpty()) {
+			eduToUpdate.setDegree(updatedEducationDto.getDegree());
+		}
+		if (updatedEducationDto.getStartTime() != null) {
+			eduToUpdate.setStartTime(updatedEducationDto.getStartTime());
+		}
+		if (updatedEducationDto.getEndTime() != null) {
+			eduToUpdate.setEndTime(updatedEducationDto.getEndTime());
+		}
+		if (updatedEducationDto.getPrivacy() != null) {
+			eduToUpdate.setPrivacy(Privacy.valueOf(updatedEducationDto.getPrivacy().toUpperCase()));
+		}
+		if (updatedEducationDto.getIsLearning() != null) {
+			eduToUpdate.setIsLearning(updatedEducationDto.getIsLearning());
+		}
+		if (updatedEducationDto.getIsDelete() != null) {
+			eduToUpdate.setIsDelete(updatedEducationDto.getIsDelete());
+		}
+
+		educationRepository.save(eduToUpdate);
+
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@GetMapping("/{id}/profile/achievement")
+	public ResponseEntity<Map<String, Object>> getAllAchievements(@PathVariable String id) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(22500, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		List<AchievementModel> achievements = achievementRepository.findByUserId(id);
+
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("achievements", achievements);
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
+
+	@GetMapping("/{id}/profile/achievement/{achievementId}")
+	public ResponseEntity<IAchievementDto> getAchievementById(@PathVariable String id,
+			@PathVariable String achievementId) {
+		Optional<UserModel> optionalUser = userRepository.findById(id);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(22600, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		Optional<IAchievementDto> optionalAchievement = achievementRepository.findByAchievementId(achievementId);
+		if (optionalAchievement.isEmpty()) {
+			throw new AppException(22601, "Không có thành tựu nào được tìm thấy cho người dùng này",
+					HttpStatus.NOT_FOUND);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(optionalAchievement.get());
+	}
+
+	@PostMapping("/profile/achievement")
+	public ResponseEntity<String> createAchievement(@RequestHeader String userId,
+			@RequestBody AchievementDto newAchievementDto) {
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(22700, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		if (newAchievementDto.getAchievementName() == null || newAchievementDto.getAchievementName().isBlank()) {
+			throw new AppException(22701, "Tên thành tựu không được để trống", HttpStatus.BAD_REQUEST);
+		}
+		if (newAchievementDto.getAchievementType() == null || newAchievementDto.getAchievementType().isBlank()) {
+			throw new AppException(22702, "Loại thành tựu không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
+		Optional<AchievementModel> optionalAchievement = achievementRepository
+				.findByUserIdAndAchievementNameAndAchievementType(userId, newAchievementDto.getAchievementName(),
+						newAchievementDto.getAchievementType());
+		AchievementModel newAchievement;
+		if (optionalAchievement.isPresent()) {
+			if (!optionalAchievement.get().getIsDelete()) {
+				throw new AppException(22703, "Thành tựu đã tồn tại", HttpStatus.BAD_REQUEST);
+			} else {
+				newAchievement = optionalAchievement.get();
+				if (newAchievementDto.getAchievementTime() == null) {
+					newAchievement.setAchievementTime(
+							Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+				} else {
+					newAchievement.setAchievementTime(newAchievementDto.getAchievementTime());
+				}
+				newAchievement.setPrivacy(Privacy.valueOf(newAchievementDto.getPrivacy().toUpperCase()));
+				newAchievement.setIsDelete(false);
+			}
+		} else {
+			newAchievement = new AchievementModel();
+			newAchievement.setAchievementId(UUID.randomUUID().toString());
+			newAchievement.setUserId(userId);
+			newAchievement.setAchievementName(newAchievementDto.getAchievementName());
+			newAchievement.setAchievementType(newAchievementDto.getAchievementType());
+			if (newAchievementDto.getAchievementTime() == null) {
+				newAchievement.setAchievementTime(
+						Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+			} else {
+				newAchievement.setAchievementTime(newAchievementDto.getAchievementTime());
+			}
+			newAchievement.setPrivacy(Privacy.valueOf(newAchievementDto.getPrivacy().toUpperCase()));
+		}
+
+		achievementRepository.save(newAchievement);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body("");
+	}
+
+	@PutMapping("/profile/achievement/{achievementId}")
+	public ResponseEntity<String> updateAchievement(@RequestHeader String userId, @PathVariable String achievementId,
+			@RequestBody AchievementDto updatedAchievementDto) {
+
+		Optional<AchievementModel> optionalAchievement = achievementRepository.findByUserIdAndAchievementId(userId,
+				achievementId);
+		if (optionalAchievement.isEmpty()) {
+			throw new AppException(22800, "Không tìm thấy thành tựu", HttpStatus.NOT_FOUND);
+		}
+
+		AchievementModel achievementToUpdate = optionalAchievement.get();
+
+		Optional<AchievementModel> existingAchievement = achievementRepository
+				.findByUserIdAndAchievementNameAndAchievementType(userId, updatedAchievementDto.getAchievementName(),
+						updatedAchievementDto.getAchievementType());
+		if (existingAchievement.isPresent() && !existingAchievement.get().getAchievementId().equals(achievementId)) {
+			throw new AppException(22801,
+					"Không thể cập nhật vì đã tồn tại thành tựu với cùng tên thành tựu và loại thành tựu",
+					HttpStatus.BAD_REQUEST);
+		}
+
+		if (updatedAchievementDto.getAchievementName() != null
+				|| !updatedAchievementDto.getAchievementName().isEmpty()) {
+			achievementToUpdate.setAchievementName(updatedAchievementDto.getAchievementName());
+		}
+		if (updatedAchievementDto.getAchievementType() != null
+				&& !updatedAchievementDto.getAchievementType().isEmpty()) {
+			achievementToUpdate.setAchievementType(updatedAchievementDto.getAchievementType());
+		}
+		if (updatedAchievementDto.getAchievementTime() != null) {
+			achievementToUpdate.setAchievementTime(updatedAchievementDto.getAchievementTime());
+		}
+		if (updatedAchievementDto.getPrivacy() != null) {
+			achievementToUpdate.setPrivacy(Privacy.valueOf(updatedAchievementDto.getPrivacy().toUpperCase()));
+		}
+		if (updatedAchievementDto.getIsDelete() != null) {
+			achievementToUpdate.setIsDelete(updatedAchievementDto.getIsDelete());
+		}
+
+		achievementRepository.save(achievementToUpdate);
+
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
 }
