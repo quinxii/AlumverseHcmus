@@ -1134,11 +1134,12 @@ public class GroupServiceController {
 				notificationRepository.save(notification);
 				
 				Optional<UserModel> optionalUser = userRepository.findById(creator);
+				PostGroupModel parentPost = postGroupRepository.findById(comment.getPostGroup().getId()).get();
 				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject, 
 						optionalUser.get().getAvatarUrl(), 
 						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
-						comment.getPostGroup().getId());
+						comment.getPostGroup().getId() + "," + parentPost.getGroupId());
 			}
 		} else {
 			postGroupRepository.commentCountIncrement(id, 1);
@@ -1166,7 +1167,7 @@ public class GroupServiceController {
 						notification, notificationChange, notificationObject, 
 						optionalUser.get().getAvatarUrl(), 
 						optionalUser.get().getFullName() + " đã bình luận về bài viết của bạn",
-						comment.getPostGroup().getId());
+						comment.getPostGroup().getId() + "," + parentPost.getGroupId());
 			}
 		}
 
@@ -1312,7 +1313,7 @@ public class GroupServiceController {
 	                    notification, notificationChange, notificationObject,
 	                    optionalUser.get().getAvatarUrl(), 
 						optionalUser.get().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
-						null);
+						postGroup.getGroupId());
 	        }
 	    }
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
