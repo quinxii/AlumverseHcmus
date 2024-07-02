@@ -1089,7 +1089,7 @@ public class UserServiceController {
 
         try {
             Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-            Page<IFriendDto> friendsPage = friendRepository.findByUserIdAndIsDelete(userId, pageable);
+            Page<IFriendDto> friendsPage = friendRepository.getAllUserFriends(userId, pageable);
 
             result.put("totalPages", friendsPage.getTotalPages());
             result.put("friends", friendsPage.getContent());
@@ -1106,7 +1106,7 @@ public class UserServiceController {
 	@GetMapping("/friends/count")
 	public ResponseEntity<Long> getSearchFriendResultCount(@RequestHeader("userId") String userId) {
 		try {
-			Long count = friendRepository.countByUserId(userId);
+			Long count = friendRepository.countFriendByUserId(userId);
 			return ResponseEntity.status(HttpStatus.OK).body(count);
 		} catch (Exception e) {
 			throw new AppException(23000, "Lỗi khi lấy số lượng bạn bè. Vui lòng thử lại", HttpStatus.BAD_REQUEST);
@@ -1129,7 +1129,7 @@ public class UserServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IFriendDto> friendsPage = friendRepository.findByUserIdAndFullName(userId, fullName, pageable);
+			Page<IFriendDto> friendsPage = friendRepository.getUserFriendsByFullName(userId, fullName, pageable);
 
 			result.put("totalPages", friendsPage.getTotalPages());
 			result.put("friends", friendsPage.getContent());
@@ -1142,5 +1142,27 @@ public class UserServiceController {
 			throw new AppException(23101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 	}
+	
+	@PutMapping("/friends")
+    public ResponseEntity<String> markAsUnfriend(@RequestParam String userId, @RequestParam String friendId) {
+        try {
+            Optional<IFriendDto> friendOptional = friendRepository.findByUserIdAndFriendIdAndIsDelete(userId, friendId, false);
+
+            if (!friendOptional.isPresent()) {
+                logger.warn("Friendship does not exist between {} and {}", userId, friendId);
+                return ResponseEntity.notFound().build();
+            }
+
+            Friend friend = friendOptional.get();
+            friend.setIsDelete(true);
+            friendRepository.save(friend);
+
+            logger.info("Friendship removed between {} and {}", userId, friendId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error("Error removing friendship between {} and {}", userId, friendId, e);
+            return ResponseEntity.status(500).build();
+        }
+    }
 
 }

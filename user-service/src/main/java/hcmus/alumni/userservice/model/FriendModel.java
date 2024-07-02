@@ -5,6 +5,9 @@ import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,6 +24,16 @@ import lombok.NoArgsConstructor;
 public class FriendModel {
 	@EmbeddedId
     private FriendId id;
+	
+	@MapsId("userId")
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    private UserModel user;
+	
+	@MapsId("friendId")
+    @ManyToOne
+    @JoinColumn(name = "friend_id", referencedColumnName = "id", nullable = false)
+    private UserModel friend;
     
 	@CreationTimestamp
 	@Column(name = "create_at")

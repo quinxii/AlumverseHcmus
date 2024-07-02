@@ -2,10 +2,14 @@ package hcmus.alumni.userservice.dto;
 
 import java.util.Date;
 
-
 public interface IFriendDto {
-    String getUserId();
-    String getFriendId();
+	
+	interface Friend {
+        String getId();
+        String getFullName();
+        String getAvatarUrl();
+    }
+
     Date getCreateAt();
-    Boolean getIsDelete();
+    Friend getFriend();
 }
