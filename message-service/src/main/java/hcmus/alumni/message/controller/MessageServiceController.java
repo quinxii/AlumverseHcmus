@@ -205,6 +205,8 @@ public class MessageServiceController {
                     response);
         }
 
+        firebaseService.sendChatMessageNotification(savedMsg, userIds);
+
         return ResponseEntity.ok(null);
     }
 
