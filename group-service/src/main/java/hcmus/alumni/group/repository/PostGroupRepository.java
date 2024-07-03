@@ -53,10 +53,11 @@ public interface PostGroupRepository extends JpaRepository<PostGroupModel, Strin
 
     @Query("SELECT DISTINCT new PostGroupModel(p, ip.isDelete, :userId, :canDelete) FROM PostGroupModel p " +
             "JOIN FETCH p.creator " +
-            "JOIN FETCH p.status " +
+            "JOIN FETCH p.status s " +
             "LEFT JOIN p.tags " +
             "LEFT JOIN InteractPostGroupModel ip ON p.id = ip.id.postGroupId AND ip.id.creator = :userId " +
-            "WHERE p.id = :postId")
+            "WHERE p.id = :postId " +
+            "AND s.id = 2")
     Optional<PostGroupModel> findPostGroupById(@Param("postId") String postId, @Param("userId") String userId, boolean canDelete);
     
     @Transactional
