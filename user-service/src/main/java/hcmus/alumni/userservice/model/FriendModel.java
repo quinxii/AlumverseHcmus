@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "friend")
 public class FriendModel {
+	
 	@EmbeddedId
     private FriendId id;
 	
@@ -41,5 +42,6 @@ public class FriendModel {
 
     @Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
 	private Boolean isDelete = false;
+    
 }
 

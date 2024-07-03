@@ -56,6 +56,7 @@ import hcmus.alumni.userservice.dto.IAchievementDto;
 import hcmus.alumni.userservice.dto.IAlumniProfileDto;
 import hcmus.alumni.userservice.dto.IEducationDto;
 import hcmus.alumni.userservice.dto.IFriendDto;
+import hcmus.alumni.userservice.dto.IFriendRequestDto;
 import hcmus.alumni.userservice.dto.IJobDto;
 import hcmus.alumni.userservice.dto.IUserProfileDto;
 import hcmus.alumni.userservice.dto.IVerifyAlumniProfileDto;
@@ -70,6 +71,10 @@ import hcmus.alumni.userservice.model.AchievementModel;
 import hcmus.alumni.userservice.model.AlumniModel;
 import hcmus.alumni.userservice.model.EducationModel;
 import hcmus.alumni.userservice.model.FacultyModel;
+import hcmus.alumni.userservice.model.FriendId;
+import hcmus.alumni.userservice.model.FriendModel;
+import hcmus.alumni.userservice.model.FriendRequestId;
+import hcmus.alumni.userservice.model.FriendRequestModel;
 import hcmus.alumni.userservice.model.JobModel;
 import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
@@ -79,7 +84,6 @@ import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.repository.AchievementRepository;
 import hcmus.alumni.userservice.repository.AlumniRepository;
 import hcmus.alumni.userservice.repository.EducationRepository;
-import hcmus.alumni.userservice.repository.FollowUserRepository;
 import hcmus.alumni.userservice.repository.FriendRepository;
 import hcmus.alumni.userservice.repository.FriendRequestRepository;
 import hcmus.alumni.userservice.repository.JobRepository;
@@ -135,9 +139,6 @@ public class UserServiceController {
 
 	@Autowired
 	private FriendRequestRepository friendRequestRepository;
-
-	@Autowired
-	private FollowUserRepository followUserRepository;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
@@ -602,6 +603,9 @@ public class UserServiceController {
 			if (userDto.getAboutMe() != null) {
 				user.setAboutMe(userDto.getAboutMe());
 			}
+			if (userDto.getDob() != null) {
+				user.setDob(userDto.getDob());
+			}
 		}
 
 		Optional<AlumniModel> optionalAlumni = alumniRepository.findByUserId(userId);
@@ -681,7 +685,7 @@ public class UserServiceController {
 		if (cover != null && !cover.isEmpty()) {
 			try {
 				String coverPath = imageUtils.saveImageToStorage(imageUtils.getCoverPath(), cover, userId);
-				user.setAvatarUrl(coverPath);
+				user.setCoverUrl(coverPath);
 			} catch (IOException e) {
 				e.printStackTrace();
 				throw new AppException(21601, "Lỗi khi tải ảnh lên", HttpStatus.BAD_REQUEST);
@@ -1074,34 +1078,33 @@ public class UserServiceController {
 	}
 
 	@GetMapping("/friends")
-    public ResponseEntity<Map<String, Object>> getAllFriends(
-            @RequestHeader("userId") String userId,
-            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-            @RequestParam(value = "orderBy", required = false, defaultValue = "createAt") String orderBy,
-            @RequestParam(value = "order", required = false, defaultValue = "asc") String order) {
+	public ResponseEntity<Map<String, Object>> getAllFriends(@RequestHeader("userId") String userId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "createAt") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "asc") String order) {
 
-        if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
-            pageSize = MAXIMUM_PAGES;
-        }
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
 
-        Map<String, Object> result = new HashMap<>();
+		Map<String, Object> result = new HashMap<>();
 
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-            Page<IFriendDto> friendsPage = friendRepository.getAllUserFriends(userId, pageable);
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IFriendDto> friendsPage = friendRepository.getAllUserFriends(userId, pageable);
 
-            result.put("totalPages", friendsPage.getTotalPages());
-            result.put("friends", friendsPage.getContent());
+			result.put("totalPages", friendsPage.getTotalPages());
+			result.put("friends", friendsPage.getContent());
 
-            return ResponseEntity.status(HttpStatus.OK).body(result);
+			return ResponseEntity.status(HttpStatus.OK).body(result);
 
-        } catch (IllegalArgumentException e) {
-            throw new AppException(22900, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            throw new AppException(22901, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
-        }
-    }
+		} catch (IllegalArgumentException e) {
+			throw new AppException(22900, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			throw new AppException(22901, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+	}
 
 	@GetMapping("/friends/count")
 	public ResponseEntity<Long> getSearchFriendResultCount(@RequestHeader("userId") String userId) {
@@ -1142,27 +1145,168 @@ public class UserServiceController {
 			throw new AppException(23101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 	}
-	
-	@PutMapping("/friends")
-    public ResponseEntity<String> markAsUnfriend(@RequestParam String userId, @RequestParam String friendId) {
-        try {
-            Optional<IFriendDto> friendOptional = friendRepository.findByUserIdAndFriendIdAndIsDelete(userId, friendId, false);
 
-            if (!friendOptional.isPresent()) {
-                logger.warn("Friendship does not exist between {} and {}", userId, friendId);
-                return ResponseEntity.notFound().build();
-            }
+	@PutMapping("/friends/unfriend")
+	public ResponseEntity<String> markAsUnfriend(@RequestHeader("userId") String userId,
+			@RequestParam String friendId) {
 
-            Friend friend = friendOptional.get();
-            friend.setIsDelete(true);
-            friendRepository.save(friend);
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(23200, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
 
-            logger.info("Friendship removed between {} and {}", userId, friendId);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            logger.error("Error removing friendship between {} and {}", userId, friendId, e);
-            return ResponseEntity.status(500).build();
-        }
-    }
+		Optional<FriendModel> optionalFriend = friendRepository.findByUserIdAndFriendIdAndIsDelete(userId, friendId);
+		if (optionalFriend.isEmpty()) {
+			throw new AppException(23201, "Không tìm thấy bạn bè", HttpStatus.NOT_FOUND);
+		}
+		FriendModel friend = optionalFriend.get();
+		friend.setIsDelete(true);
+		friendRepository.save(friend);
+		
+		Optional<FriendModel> optionalReverseFriend = friendRepository.findByUserIdAndFriendIdAndIsDelete(friendId, userId);
+	    if (optionalReverseFriend.isPresent()) {
+	        FriendModel reverseFriend = optionalReverseFriend.get();
+	        reverseFriend.setIsDelete(true);
+	        friendRepository.save(reverseFriend);
+	    }
 
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@PostMapping("/friends")
+	public ResponseEntity<String> sendFriendRequest(@RequestHeader("userId") String userId,
+			@RequestParam String friendId) {
+
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(23300, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+		Optional<UserModel> optionalFriend = userRepository.findById(friendId);
+		if (optionalFriend.isEmpty()) {
+			throw new AppException(23301, "Không tìm thấy thông tin bạn bè", HttpStatus.NOT_FOUND);
+		}
+		UserModel user = optionalUser.get();
+		UserModel friend = optionalFriend.get();
+		Optional<FriendModel> existingFriend = friendRepository.findByUserIdAndFriendIdAndIsDelete(userId, friendId);
+		if (existingFriend.isPresent() && existingFriend.isEmpty() && !existingFriend.get().getIsDelete()) {
+			throw new AppException(23302, "Đã là bạn bè của nhau", HttpStatus.CONFLICT);
+		}
+
+		Optional<FriendRequestModel> existingFriendRequest = friendRequestRepository.findByUserIdAndFriendId(userId,
+				friendId);
+		FriendRequestModel friendRequest = new FriendRequestModel();
+		if (existingFriendRequest.isPresent() && existingFriendRequest.isEmpty()
+				&& !existingFriendRequest.get().getIsDelete()) {
+			throw new AppException(23303, "Đã hủy lời mời", HttpStatus.CONFLICT);
+		}
+
+		FriendRequestId friendRequestId = new FriendRequestId(userId, friendId);
+		friendRequest.setId(friendRequestId);
+		friendRequest.setUser(user);
+		friendRequest.setFriend(friend);
+		friendRequest.setIsDelete(false);
+
+		friendRequestRepository.save(friendRequest);
+		return ResponseEntity.status(HttpStatus.CREATED).body("");
+	}
+
+	@PutMapping("/friends/cancel-request")
+	public ResponseEntity<String> cancelFriendRequest(@RequestHeader("userId") String userId,
+			@RequestParam String friendId) {
+
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(23400, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		Optional<UserModel> optionalFriend = userRepository.findById(friendId);
+		if (optionalFriend.isEmpty()) {
+			throw new AppException(23401, "Không tìm thấy thông tin bạn bè", HttpStatus.NOT_FOUND);
+		}
+
+		Optional<FriendRequestModel> existingFriendRequest = friendRequestRepository.findByUserIdAndFriendId(userId,
+				friendId);
+		if (existingFriendRequest.isEmpty() || existingFriendRequest.get().getIsDelete()) {
+			throw new AppException(23402, "Không tìm thấy lời mời kết bạn", HttpStatus.NOT_FOUND);
+		}
+
+		FriendRequestModel friendRequest = existingFriendRequest.get();
+		friendRequest.setIsDelete(true);
+
+		friendRequestRepository.save(friendRequest);
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
+
+	@GetMapping("/friends/requests")
+	public ResponseEntity<Map<String, Object>> getAllFriendRequests(@RequestHeader("userId") String userId,
+			@RequestParam(value = "page", defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
+			@RequestParam(value = "orderBy", defaultValue = "createAt") String orderBy,
+			@RequestParam(value = "order", defaultValue = "asc") String order) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+
+		Map<String, Object> result = new HashMap<>();
+
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IFriendRequestDto> friendRequestsPage = friendRequestRepository.findByUserIdAndIsDelete(userId,
+					pageable);
+
+			result.put("totalPages", friendRequestsPage.getTotalPages());
+			result.put("friendRequests", friendRequestsPage.getContent());
+
+			return ResponseEntity.status(HttpStatus.OK).body(result);
+
+		} catch (IllegalArgumentException e) {
+			throw new AppException(23500, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			throw new AppException(23501, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	@PutMapping("/friends/accept-request")
+	public ResponseEntity<String> acceptFriendRequest(@RequestHeader("userId") String userId,
+			@RequestParam String friendId) {
+
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(23600, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		Optional<UserModel> optionalFriend = userRepository.findById(friendId);
+		if (optionalFriend.isEmpty()) {
+			throw new AppException(23601, "Không tìm thấy thông tin bạn bè", HttpStatus.NOT_FOUND);
+		}
+		
+		UserModel user = optionalUser.get();
+		UserModel friend = optionalFriend.get();
+
+		Optional<FriendRequestModel> optionalFriendRequest = friendRequestRepository
+				.findByUserIdAndFriendIdAndIsDelete(userId, friendId);
+		if (optionalFriendRequest.isEmpty()) {
+			throw new AppException(23602, "Không tìm thấy lời mời kết bạn", HttpStatus.NOT_FOUND);
+		}
+		FriendRequestModel friendRequest = optionalFriendRequest.get();
+		friendRequestRepository.delete(friendRequest);
+
+		FriendId friendIdObj = new FriendId(userId, friendId);
+		FriendModel friendModel = new FriendModel();
+		friendModel.setId(friendIdObj);
+		friendModel.setUser(user);
+		friendModel.setFriend(friend);
+		friendModel.setIsDelete(false);
+		friendRepository.save(friendModel);
+
+		FriendId reverseFriendIdObj = new FriendId(friendId, userId);
+		FriendModel reverseFriendModel = new FriendModel();
+		reverseFriendModel.setId(reverseFriendIdObj);
+		reverseFriendModel.setUser(friend);
+		reverseFriendModel.setFriend(user);
+		reverseFriendModel.setIsDelete(false);
+		friendRepository.save(reverseFriendModel);
+
+		return ResponseEntity.status(HttpStatus.OK).body("");
+	}
 }
