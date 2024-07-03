@@ -22,7 +22,7 @@ public interface NotificationChangeRepository extends JpaRepository<Notification
 	List<NotificationChangeModel> findByNotificationObject(NotificationObjectModel notificationObject);
 	
 	@Query("SELECT nc FROM NotificationChangeModel nc JOIN nc.notificationObject no " +
-			"WHERE no.entityId = :entityId AND nc.actor.id = :actorId")
+			"WHERE no.entityId = :entityId AND nc.actor.id = :actorId AND nc.isDelete = false")
 	Optional<NotificationChangeModel> findByEntityIdAndActorId(String entityId, String actorId);
 }
 
