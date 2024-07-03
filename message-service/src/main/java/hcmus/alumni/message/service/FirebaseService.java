@@ -45,7 +45,7 @@ public class FirebaseService {
 		NotificationPayload payload = new NotificationPayload(
 				null,
 				null,
-				msg.getSender().getFullName(),
+				msg.getSender().getId(),
 				msg.getId().toString(),
 				"message",
 				"CREATE",
@@ -62,14 +62,14 @@ public class FirebaseService {
 				for (String token : tokens) {
 					Message message = Message.builder()
 						.setNotification(Notification.builder()
-					            .setTitle(msg.getSender().getId())
+					            .setTitle(msg.getSender().getFullName())
 					            .setBody(notificationMessage)
 					            .build())
 						.putData("body", payload.toString())
 						.setToken(token)
 						.build();
 					try {
-						String response = FirebaseMessaging.getInstance().send(message);
+						FirebaseMessaging.getInstance().send(message);
 					} catch (Exception e) {
 					    e.printStackTrace();
 					}
