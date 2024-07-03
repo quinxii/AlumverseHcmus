@@ -39,6 +39,7 @@ import hcmus.alumni.message.service.ImageService;
 import hcmus.alumni.message.service.InboxMemberService;
 import hcmus.alumni.message.service.InboxService;
 import hcmus.alumni.message.service.MessageService;
+import hcmus.alumni.message.service.FirebaseService;
 import jakarta.transaction.Transactional;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -60,6 +61,8 @@ public class MessageServiceController {
     private InboxMemberService inboxMemberService;
     @Autowired
     private MessageService messageService;
+    @Autowired
+    private FirebaseService firebaseService;
 
     private static final int MAXIMUM_PAGES = 50;
 
@@ -251,5 +254,7 @@ public class MessageServiceController {
                     "/queue/messages",
                     response);
         }
+        
+        firebaseService.sendChatMessageNotification(savedMsg, userIds);
     }
 }
