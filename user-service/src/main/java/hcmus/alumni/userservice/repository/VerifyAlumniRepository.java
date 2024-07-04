@@ -32,4 +32,6 @@ public interface VerifyAlumniRepository extends JpaRepository<VerifyAlumniModel,
 			VerifyAlumniModel.Status status);
 
 	Optional<VerifyAlumniModel> findByUserIdAndStatusAndIsDeleteEquals(String id, Status pending, boolean b);
+
+	Optional<VerifyAlumniModel> findTopByUserIdAndIsDeleteEqualsOrderByCreateAtDesc(String userId, boolean isDelete);
 }
