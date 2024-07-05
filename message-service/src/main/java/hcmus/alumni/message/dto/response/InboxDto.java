@@ -20,4 +20,5 @@ public class InboxDto {
     private Set<InboxMemberDto> members;
     @JsonManagedReference
     private MessageDto latestMessage;
+    private boolean hasRead;
 }

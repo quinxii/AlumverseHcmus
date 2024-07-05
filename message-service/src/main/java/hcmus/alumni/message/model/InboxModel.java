@@ -62,6 +62,9 @@ public class InboxModel implements Serializable {
     @JsonManagedReference
     private MessageModel latestMessage;
 
+    @Transient
+    private boolean hasRead;
+
     public InboxModel(Long id) {
         this.id = id;
     }
