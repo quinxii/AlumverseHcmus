@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.message.dto.request.InboxRequestDto;
 import hcmus.alumni.message.dto.request.MessageRequestDto;
+import hcmus.alumni.message.dto.request.InboxReadStatusRequestDto;
 import hcmus.alumni.message.dto.response.InboxDto;
 import hcmus.alumni.message.dto.response.MessageDto;
 import hcmus.alumni.message.exception.AppException;
@@ -37,6 +38,7 @@ import hcmus.alumni.message.model.MessageModel;
 import hcmus.alumni.message.model.MessageModel.MessageType;
 import hcmus.alumni.message.service.ImageService;
 import hcmus.alumni.message.service.InboxMemberService;
+import hcmus.alumni.message.service.InboxReadStatusService;
 import hcmus.alumni.message.service.InboxService;
 import hcmus.alumni.message.service.MessageService;
 import hcmus.alumni.message.service.FirebaseService;
@@ -62,6 +64,8 @@ public class MessageServiceController {
     @Autowired
     private MessageService messageService;
     @Autowired
+    private InboxReadStatusService inboxReadStatusService;
+    @Autowired
     private FirebaseService firebaseService;
 
     private static final int MAXIMUM_PAGES = 50;
@@ -82,6 +86,7 @@ public class MessageServiceController {
         Page<InboxModel> inboxPage = inboxService.getLastestInboxes(userId, query, pageable);
         List<InboxModel> inboxes = inboxPage.getContent();
         messageService.processLatestInboxes(inboxes);
+        inboxReadStatusService.processReadStatus(inboxes, userId);
 
         response.put("totalPages", inboxPage.getTotalPages());
         response.put("inboxes", inboxes.stream().map(i -> mapper.map(i, InboxDto.class)).toList());
@@ -243,6 +248,7 @@ public class MessageServiceController {
 
         // Handle saving the message to the database
         MessageModel savedMsg = messageService.saveFromReq(req, inboxId);
+        inboxReadStatusService.updateLastReadMessage(inboxId, req.getSenderId(), savedMsg.getId());
 
         // Get other members' userId in inbox
         List<String> userIds = inboxService.extractUserIds(savedMsg.getInbox());
@@ -256,7 +262,21 @@ public class MessageServiceController {
                     "/queue/messages",
                     response);
         }
-        
+
         firebaseService.sendChatMessageNotification(savedMsg, userIds);
+    }
+
+    @MessageMapping("/read-inbox/{inboxId}")
+    public void readInbox(
+            @DestinationVariable Long inboxId,
+            @Payload InboxReadStatusRequestDto req) {
+        if (req.getUserId() == null || req.getUserId().isBlank()) {
+            return;
+        }
+        if (req.getLastReadMessageId() == null || req.getLastReadMessageId() < 0) {
+            return;
+        }
+
+        inboxReadStatusService.updateLastReadMessage(inboxId, req.getUserId(), req.getLastReadMessageId());
     }
 }
