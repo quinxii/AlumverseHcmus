@@ -188,21 +188,6 @@ CREATE TABLE
         PRIMARY KEY (user_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-DROP TABLE IF EXISTS teacher;
-
-CREATE TABLE
-    teacher (
-        user_id VARCHAR(36) NOT NULL,
-        start_year SMALLINT,
-        end_year SMALLINT,
-        position VARCHAR(50),
-        start_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
-        end_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
-        position_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
-        FOREIGN KEY (user_id) REFERENCES user (id),
-        PRIMARY KEY (user_id)
-    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
 DROP TABLE IF EXISTS job;
 
 CREATE TABLE
@@ -272,19 +257,6 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES user (id),
         FOREIGN KEY (faculty_id) REFERENCES faculty (id),
         PRIMARY KEY (id)
-    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS follow_user;
-
-CREATE TABLE
-    follow_user (
-        user_id VARCHAR(36) NOT NULL,
-        follower_id VARCHAR(36) NOT NULL,
-        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-        is_delete TINYINT (1) DEFAULT (0),
-        FOREIGN KEY (user_id) REFERENCES user (id),
-        FOREIGN KEY (follower_id) REFERENCES user (id),
-        PRIMARY KEY (user_id, follower_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS friend;
@@ -982,7 +954,6 @@ ALTER TABLE hall_of_fame ADD INDEX idx_create_at (create_at);
 INSERT INTO
     permission (name, description)
 VALUES
-    ('User.Create', 'Tạo tài khoản'),
     (
         'User.Edit',
         'Chỉnh sửa tài khoản (gồm khoá tài khoản)'
@@ -1070,7 +1041,7 @@ VALUES
     (1, 4, 0),
     (1, 5, 0),
     (1, 6, 0),
-    (1, 7, 0),
+    (1, 8, 0),
     (1, 9, 0),
     (1, 10, 0),
     (1, 11, 0),
@@ -1094,8 +1065,7 @@ VALUES
     (1, 29, 0),
     (1, 30, 0),
     (1, 31, 0),
-    (1, 32, 0),
-    (1, 33, 0);
+    (1, 32, 0);
 
 INSERT into
     sex (name)
