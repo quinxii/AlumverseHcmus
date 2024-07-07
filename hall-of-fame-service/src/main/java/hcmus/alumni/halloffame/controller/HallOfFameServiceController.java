@@ -224,7 +224,7 @@ public class HallOfFameServiceController {
 		if (updatedHallOfFame.getContent() == null) {
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		}
-		
+
 		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findById(id);
 		if (optionalHallOfFame.isEmpty()) {
 			throw new AppException(30600, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
@@ -254,5 +254,18 @@ public class HallOfFameServiceController {
 		halloffameRepository.save(hof);
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
+	// Add getRandomHof
+	@GetMapping("")
+	public ResponseEntity<HashMap<String, Object>> getRandomHof(
+			@RequestParam(value = "number", defaultValue = "") String number) {
+		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
+		if (optionalHallOfFame.isEmpty()) {
+			throw new AppException(30700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+		}
+		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		result.put("hof", optionalHallOfFame.get());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
+	}
 }
