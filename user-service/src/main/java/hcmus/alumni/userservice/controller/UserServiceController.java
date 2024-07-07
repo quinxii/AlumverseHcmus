@@ -648,7 +648,7 @@ public class UserServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PreAuthorize("hasAnyAuthority('User.Edit')")
+	@PreAuthorize("hasAnyAuthority('AlumniVerify.Create')")
 	@PutMapping("/alumni-verification")
 	public ResponseEntity<String> updateUserPendingInfo(@RequestHeader("userId") String userId,
 			@RequestBody VerifyAlumniRequestDto requestDto) {
@@ -1111,7 +1111,7 @@ public class UserServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@GetMapping("/friends/{id}")
+	@GetMapping("/{id}/friends")
 	public ResponseEntity<Map<String, Object>> getFriends(@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
@@ -1147,7 +1147,7 @@ public class UserServiceController {
 		}
 	}
 
-	@GetMapping("/friends/count/{id}")
+	@GetMapping("/{id}/friends/count")
 	public ResponseEntity<Long> getSearchFriendResultCount(@PathVariable String id) {
 		try {
 			Long count = friendRepository.countFriendByUserId(id);
@@ -1255,14 +1255,6 @@ public class UserServiceController {
 			friendModel.setFriend(friend);
 			friendModel.setIsDelete(false);
 			friendRepository.save(friendModel);
-
-			FriendId reverseFriendIdObj = new FriendId(friendId, userId);
-			FriendModel reverseFriendModel = new FriendModel();
-			reverseFriendModel.setId(reverseFriendIdObj);
-			reverseFriendModel.setUser(friend);
-			reverseFriendModel.setFriend(user);
-			reverseFriendModel.setIsDelete(false);
-			friendRepository.save(reverseFriendModel);
 
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		} else if (action == FriendRequestAction.DENY) {

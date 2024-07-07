@@ -259,11 +259,8 @@ public class HallOfFameServiceController {
 	public ResponseEntity<HashMap<String, Object>> getRandomHof(
 			@RequestParam(value = "number", defaultValue = "8") Integer number) {
 		List<HallOfFameModel> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
-		if (optionalHallOfFame.isEmpty()) {
-			throw new AppException(30800, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
-		}
-		HashMap<String, Object> result = new HashMap<String, Object>();
 
+		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("hof", optionalHallOfFame);
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
