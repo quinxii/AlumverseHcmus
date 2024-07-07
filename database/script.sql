@@ -650,36 +650,6 @@ CREATE TABLE
         PRIMARY KEY (post_group_id, creator)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-DROP TABLE IF EXISTS interact_news;
-
-CREATE TABLE
-    interact_news (
-        react_id TINYINT NOT NULL,
-        news_id VARCHAR(36) NOT NULL,
-        creator VARCHAR(36) NOT NULL,
-        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-        is_delete TINYINT (1) DEFAULT (0),
-        FOREIGN KEY (react_id) REFERENCES react (id),
-        FOREIGN KEY (creator) REFERENCES user (id),
-        FOREIGN KEY (news_id) REFERENCES news (id),
-        PRIMARY KEY (news_id, creator)
-    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS interact_event;
-
-CREATE TABLE
-    interact_event (
-        react_id TINYINT NOT NULL,
-        event_id VARCHAR(36) NOT NULL,
-        creator VARCHAR(36) NOT NULL,
-        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-        is_delete TINYINT (1) DEFAULT (0),
-        FOREIGN KEY (react_id) REFERENCES react (id),
-        FOREIGN KEY (creator) REFERENCES user (id),
-        FOREIGN KEY (event_id) REFERENCES event (id),
-        PRIMARY KEY (event_id, creator)
-    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
 DROP TABLE IF EXISTS participant_event;
 
 CREATE TABLE
