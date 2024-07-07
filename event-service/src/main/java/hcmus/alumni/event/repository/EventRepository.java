@@ -23,7 +23,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 		"where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
 	List<String> getPermissions(List<String> role, String domain);
 	
-	@Query("SELECT e " +
+	@Query("SELECT DISTINCT e " +
         "FROM EventModel e " +
         "LEFT JOIN e.status s " +
         "LEFT JOIN e.faculty f " +
@@ -36,6 +36,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
         "       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
         "       ELSE true " +
         "   END) " +
+		"AND s.id != 4 " +
         "AND (:tagNames IS NULL OR t.name IN :tagNames)")
 	Page<IEventDto> searchEvents(
 			@Param("title") String title,

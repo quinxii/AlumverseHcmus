@@ -89,13 +89,18 @@ CREATE TABLE
 
 DROP TABLE IF EXISTS email_reset_code;
 
-CREATE TABLE `email_reset_code` (
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `reset_code` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`email`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+    `email_reset_code` (
+        `email` varchar(255) CHARACTER
+        SET
+            utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            `reset_code` varchar(8) CHARACTER
+        SET
+            utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`email`),
+            UNIQUE KEY `email` (`email`)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS faculty;
 
@@ -183,26 +188,11 @@ CREATE TABLE
         PRIMARY KEY (user_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-DROP TABLE IF EXISTS teacher;
-
-CREATE TABLE
-    teacher (
-        user_id VARCHAR(36) NOT NULL,
-        start_year SMALLINT,
-        end_year SMALLINT,
-        position VARCHAR(50),
-        start_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
-        end_year_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
-        position_privacy ENUM ('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT ('PUBLIC'),
-        FOREIGN KEY (user_id) REFERENCES user (id),
-        PRIMARY KEY (user_id)
-    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
 DROP TABLE IF EXISTS job;
 
 CREATE TABLE
     job (
-    	job_id VARCHAR(36) NOT NULL,
+        job_id VARCHAR(36) NOT NULL,
         user_id VARCHAR(36) NOT NULL,
         company_name VARCHAR(255) NOT NULL,
         position VARCHAR(100) NOT NULL,
@@ -215,7 +205,7 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES user (id),
         PRIMARY KEY (job_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-    
+
 DROP TABLE IF EXISTS education;
 
 CREATE TABLE
@@ -267,19 +257,6 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES user (id),
         FOREIGN KEY (faculty_id) REFERENCES faculty (id),
         PRIMARY KEY (id)
-    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS follow_user;
-
-CREATE TABLE
-    follow_user (
-        user_id VARCHAR(36) NOT NULL,
-        follower_id VARCHAR(36) NOT NULL,
-        create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
-        is_delete TINYINT (1) DEFAULT (0),
-        FOREIGN KEY (user_id) REFERENCES user (id),
-        FOREIGN KEY (follower_id) REFERENCES user (id),
-        PRIMARY KEY (user_id, follower_id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS friend;
@@ -829,6 +806,20 @@ CREATE TABLE
 
 BEGIN;
 
+DROP TABLE IF EXISTS inbox_read_status;
+
+CREATE TABLE
+    inbox_read_status (
+        inbox_id BIGINT NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        last_read_message_id BIGINT,
+        update_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+        FOREIGN KEY (user_id, inbox_id) REFERENCES inbox_member (user_id, inbox_id),
+        PRIMARY KEY (user_id, inbox_id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+BEGIN;
+
 DROP TABLE IF EXISTS password_history;
 
 CREATE TABLE
@@ -886,7 +877,7 @@ CREATE TABLE
 -- Notification object
 DROP TABLE IF EXISTS notification_object;
 
-CREATE TABLE 
+CREATE TABLE
     notification_object (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
         entity_type INT UNSIGNED NOT NULL,
@@ -894,7 +885,7 @@ CREATE TABLE
         create_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
         is_delete TINYINT (1) DEFAULT (0),
         PRIMARY KEY (id),
-        FOREIGN KEY (entity_type) REFERENCES entity_type(id)
+        FOREIGN KEY (entity_type) REFERENCES entity_type (id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Notification
@@ -963,7 +954,6 @@ ALTER TABLE hall_of_fame ADD INDEX idx_create_at (create_at);
 INSERT INTO
     permission (name, description)
 VALUES
-    ('User.Create', 'Tạo tài khoản'),
     (
         'User.Edit',
         'Chỉnh sửa tài khoản (gồm khoá tài khoản)'
@@ -1051,7 +1041,7 @@ VALUES
     (1, 4, 0),
     (1, 5, 0),
     (1, 6, 0),
-    (1, 7, 0),
+    (1, 8, 0),
     (1, 9, 0),
     (1, 10, 0),
     (1, 11, 0),
@@ -1075,8 +1065,7 @@ VALUES
     (1, 29, 0),
     (1, 30, 0),
     (1, 31, 0),
-    (1, 32, 0),
-    (1, 33, 0);
+    (1, 32, 0);
 
 INSERT into
     sex (name)
