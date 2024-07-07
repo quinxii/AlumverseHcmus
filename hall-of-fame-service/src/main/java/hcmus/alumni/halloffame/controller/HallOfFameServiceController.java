@@ -2,6 +2,7 @@ package hcmus.alumni.halloffame.controller;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -254,17 +254,17 @@ public class HallOfFameServiceController {
 		halloffameRepository.save(hof);
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
-	// Add getRandomHof
-	@GetMapping("")
+
+	@GetMapping("/rand")
 	public ResponseEntity<HashMap<String, Object>> getRandomHof(
-			@RequestParam(value = "number", defaultValue = "") String number) {
-		Optional<HallOfFameModel> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
+			@RequestParam(value = "number", defaultValue = "8") Integer number) {
+		List<HallOfFameModel> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
 		if (optionalHallOfFame.isEmpty()) {
-			throw new AppException(30700, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
+			throw new AppException(30800, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
-		result.put("hof", optionalHallOfFame.get());
+		result.put("hof", optionalHallOfFame);
 
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
