@@ -134,15 +134,6 @@ INSERT INTO `faculty` VALUES (1,'Công nghệ thông tin',NULL,'2024-07-07 20:04
 UNLOCK TABLES;
 
 --
--- Dumping data for table `follow_user`
---
-
-LOCK TABLES `follow_user` WRITE;
-/*!40000 ALTER TABLE `follow_user` DISABLE KEYS */;
-/*!40000 ALTER TABLE `follow_user` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping data for table `friend`
 --
 
@@ -210,24 +201,6 @@ LOCK TABLES `inbox_read_status` WRITE;
 /*!40000 ALTER TABLE `inbox_read_status` DISABLE KEYS */;
 INSERT INTO `inbox_read_status` VALUES (1,'56bd646a-44cf-4ae2-960c-d7fc24c528e5',10,'2024-07-07 20:29:02'),(3,'56bd646a-44cf-4ae2-960c-d7fc24c528e5',13,'2024-07-07 20:31:38'),(4,'56bd646a-44cf-4ae2-960c-d7fc24c528e5',14,'2024-07-07 20:34:02'),(1,'56bd646a-44cf-4ae2-960c-d7fc24c528f2',10,'2024-07-07 20:24:14'),(2,'56bd646a-44cf-4ae2-960c-d7fc24c528f3',11,'2024-07-07 20:30:31');
 /*!40000 ALTER TABLE `inbox_read_status` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Dumping data for table `interact_event`
---
-
-LOCK TABLES `interact_event` WRITE;
-/*!40000 ALTER TABLE `interact_event` DISABLE KEYS */;
-/*!40000 ALTER TABLE `interact_event` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Dumping data for table `interact_news`
---
-
-LOCK TABLES `interact_news` WRITE;
-/*!40000 ALTER TABLE `interact_news` DISABLE KEYS */;
-/*!40000 ALTER TABLE `interact_news` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -335,7 +308,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `permission` WRITE;
 /*!40000 ALTER TABLE `permission` DISABLE KEYS */;
-INSERT INTO `permission` VALUES (1,'User.Create','Tạo tài khoản','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(2,'User.Edit','Chỉnh sửa tài khoản (gồm khoá tài khoản)','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(3,'User.Role.Create','Tạo vai trò mới','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(4,'User.Role.Edit','Chỉnh sửa vai trò. Phân quyền (gán các quyền cụ thể cho từng vai trò)','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(5,'User.Role.Delete','Xoá vai trò','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(6,'AlumniVerify.Read','Xem danh sách xác thực cựu sinh viên','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(7,'AlumniVerify.Edit','Phê duyệt cựu sinh viên','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(8,'AlumniVerify.Create','Gửi xác thực cựu sinh viên','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(9,'News.Create','Tạo/Lên lịch đăng tin tức','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(10,'News.Edit','Chỉnh sức tin tức (Bao gồm ẩn)','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(11,'News.Delete','Xóa tin tức','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(12,'News.Comment.Create','Viết bình luận','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(13,'News.Comment.Delete','Xoá bình luận của tất cả mọi người','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(14,'Event.Create','Tạo sự kiện','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(15,'Event.Edit','Chỉnh sửa sự kiện (Bao gồm ẩn)','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(16,'Event.Delete','Xóa sự kiện','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(17,'Event.Participant.Create','Tham gia sự kiện','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(18,'Event.Participant.Delete','Hủy tham gia sự kiện','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(19,'Event.Comment.Create','Viết bình luận','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(20,'Event.Comment.Delete','Xoá bình luận của tất cả mọi người','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(21,'Hof.Create','Tạo bài viết Gương thành công','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(22,'Hof.Edit','Chỉnh sửa bài viết Gương thành công (Bao gồm ẩn)','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(23,'Hof.Delete','Xóa bài viết Gương thành công','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(24,'Counsel.Create','Tạo bài viết tư vấn/cố vấn','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(25,'Counsel.Delete','Xóa bài viết tư vấn/cố vấn của tất cả mọi người','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(26,'Counsel.Reaction.Create','Thả cảm xúc bài viết','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(27,'Counsel.Comment.Create','Viết bình luận','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(28,'Counsel.Comment.Delete','Xoá bình luận của tất cả mọi người trên tất cả các post','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(29,'Counsel.Vote','Bình chọn cuộc thăm dò ý kiến trong bài viết (gồm tạo, sửa và xóa) và thêm lựa chọn mới trong cuộc thăm dò (nếu có)','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(30,'Group.Create','Tạo nhóm','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(31,'Group.Delete','Xóa nhóm','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(32,'Group.Join','Tham gia nhóm','2024-07-07 20:04:34','2024-07-07 20:04:34',0),(33,'Profile.Edit','Chỉnh sửa thông tin cá nhân/Thay đổi mật khẩu','2024-07-07 20:04:34','2024-07-07 20:04:34',0);
+INSERT INTO `permission` VALUES (1,'User.Edit','Chỉnh sửa tài khoản (gồm khoá tài khoản)','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(2,'User.Role.Create','Tạo vai trò mới','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(3,'User.Role.Edit','Chỉnh sửa vai trò. Phân quyền (gán các quyền cụ thể cho từng vai trò)','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(4,'User.Role.Delete','Xoá vai trò','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(5,'AlumniVerify.Read','Xem danh sách xác thực cựu sinh viên','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(6,'AlumniVerify.Edit','Phê duyệt cựu sinh viên','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(7,'AlumniVerify.Create','Gửi xác thực cựu sinh viên','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(8,'News.Create','Tạo/Lên lịch đăng tin tức','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(9,'News.Edit','Chỉnh sức tin tức (Bao gồm ẩn)','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(10,'News.Delete','Xóa tin tức','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(11,'News.Comment.Create','Viết bình luận','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(12,'News.Comment.Delete','Xoá bình luận của tất cả mọi người','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(13,'Event.Create','Tạo sự kiện','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(14,'Event.Edit','Chỉnh sửa sự kiện (Bao gồm ẩn)','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(15,'Event.Delete','Xóa sự kiện','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(16,'Event.Participant.Create','Tham gia sự kiện','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(17,'Event.Participant.Delete','Hủy tham gia sự kiện','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(18,'Event.Comment.Create','Viết bình luận','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(19,'Event.Comment.Delete','Xoá bình luận của tất cả mọi người','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(20,'Hof.Create','Tạo bài viết Gương thành công','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(21,'Hof.Edit','Chỉnh sửa bài viết Gương thành công (Bao gồm ẩn)','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(22,'Hof.Delete','Xóa bài viết Gương thành công','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(23,'Counsel.Create','Tạo bài viết tư vấn/cố vấn','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(24,'Counsel.Delete','Xóa bài viết tư vấn/cố vấn của tất cả mọi người','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(25,'Counsel.Reaction.Create','Thả cảm xúc bài viết','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(26,'Counsel.Comment.Create','Viết bình luận','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(27,'Counsel.Comment.Delete','Xoá bình luận của tất cả mọi người trên tất cả các post','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(28,'Counsel.Vote','Bình chọn cuộc thăm dò ý kiến trong bài viết (gồm tạo, sửa và xóa) và thêm lựa chọn mới trong cuộc thăm dò (nếu có)','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(29,'Group.Create','Tạo nhóm','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(30,'Group.Delete','Xóa nhóm','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(31,'Group.Join','Tham gia nhóm','2024-07-09 22:29:51','2024-07-09 22:29:51',0),(32,'Profile.Edit','Chỉnh sửa thông tin cá nhân/Thay đổi mật khẩu','2024-07-09 22:29:51','2024-07-09 22:29:51',0);
 /*!40000 ALTER TABLE `permission` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -415,7 +388,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `role` WRITE;
 /*!40000 ALTER TABLE `role` DISABLE KEYS */;
-INSERT INTO `role` VALUES (1,'Admin',NULL,'2024-07-07 20:04:34','2024-07-07 20:04:34',0),(2,'FacultyManager',NULL,'2024-07-07 20:04:34','2024-07-07 20:04:34',0),(3,'Lecturer',NULL,'2024-07-07 20:04:34','2024-07-07 20:04:34',0),(4,'Alumni',NULL,'2024-07-07 20:04:34','2024-07-07 20:04:34',0),(5,'Guest',NULL,'2024-07-07 20:04:34','2024-07-07 20:04:34',0);
+INSERT INTO `role` VALUES (1,'Admin',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(2,'FacultyManager',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(3,'Lecturer',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(4,'Alumni',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(5,'Guest',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0);
 /*!40000 ALTER TABLE `role` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -425,7 +398,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `role_permission` WRITE;
 /*!40000 ALTER TABLE `role_permission` DISABLE KEYS */;
-INSERT INTO `role_permission` VALUES (1,1,0),(1,2,0),(1,3,0),(1,4,0),(1,5,0),(1,6,0),(1,7,0),(1,9,0),(1,10,0),(1,11,0),(1,12,0),(1,13,0),(1,14,0),(1,15,0),(1,16,0),(1,17,0),(1,18,0),(1,19,0),(1,20,0),(1,21,0),(1,22,0),(1,23,0),(1,24,0),(1,25,0),(1,26,0),(1,27,0),(1,28,0),(1,29,0),(1,30,0),(1,31,0),(1,32,0),(1,33,0);
+INSERT INTO `role_permission` VALUES (1,1,0),(1,2,0),(1,3,0),(1,4,0),(1,5,0),(1,6,0),(1,8,0),(1,9,0),(1,10,0),(1,11,0),(1,12,0),(1,13,0),(1,14,0),(1,15,0),(1,16,0),(1,17,0),(1,18,0),(1,19,0),(1,20,0),(1,21,0),(1,22,0),(1,23,0),(1,24,0),(1,25,0),(1,26,0),(1,27,0),(1,28,0),(1,29,0),(1,30,0),(1,31,0),(1,32,0),(2,5,0),(2,6,0),(2,8,0),(2,9,0),(2,10,0),(2,11,0),(2,12,0),(2,13,0),(2,14,0),(2,15,0),(2,16,0),(2,17,0),(2,18,0),(2,19,0),(2,20,0),(2,21,0),(2,22,0),(2,23,0),(2,24,0),(2,25,0),(2,26,0),(2,27,0),(2,28,0),(2,29,0),(2,30,0),(2,31,0),(2,32,0),(3,11,0),(3,16,0),(3,17,0),(3,18,0),(3,23,0),(3,25,0),(3,26,0),(3,28,0),(3,29,0),(3,31,0),(3,32,0),(4,11,0),(4,16,0),(4,17,0),(4,18,0),(4,23,0),(4,25,0),(4,26,0),(4,28,0),(4,29,0),(4,31,0),(4,32,0),(5,7,0),(5,32,0);
 /*!40000 ALTER TABLE `role_permission` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -530,21 +503,12 @@ INSERT INTO `tag_post_group` VALUES ('a760a40d-e83e-45e4-9b04-529b62600825',53),
 UNLOCK TABLES;
 
 --
--- Dumping data for table `teacher`
---
-
-LOCK TABLES `teacher` WRITE;
-/*!40000 ALTER TABLE `teacher` DISABLE KEYS */;
-/*!40000 ALTER TABLE `teacher` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping data for table `user`
 --
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES ('30ff6fa7-035f-42e4-aa13-55c1c94ded1e','admin@gmail.com','$2a$10$Y9z5lsuRMPY/wRCgZ/e3h.sdfTbtQDfw4dmK1GE6uyUbwBRoLveS.','ADMIN',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,2,'2024-04-03 12:01:23',NULL,'2024-07-07 16:41:23',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528e5','dnduy20@clc.fitus.edu.vn','$2a$10$qKJhcr4xfCT1kbtrVvZ6ke7DFsbu15VS/aLkM66XIOgeUDhjlc8pi','Đặng Nguyễn Duy','',1,NULL,'https://www.facebook.com/ninja2404/',1,NULL,'','https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528e5','https://storage.googleapis.com/hcmus-alumverse/images/users/cover/56bd646a-44cf-4ae2-960c-d7fc24c528e5',2,'2024-07-07 10:02:31','2024-07-09 21:26:24','2024-07-09 21:49:26',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f2','hcnguyen20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Huỳnh Cao Nguyên',NULL,NULL,NULL,'https://www.facebook.com/caonguyen0811',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f2',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:37:21','2024-07-09 21:34:56',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f3','thmphuc20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Trần Hồng Minh Phúc',NULL,NULL,NULL,'https://www.facebook.com/tranhongminhphuc.vn',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f3',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:38:45','2024-07-07 20:30:09',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f4','nnquynh20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Nguyễn Nhật Quỳnh',NULL,NULL,NULL,'https://facebook.com/nhat.quynh.927543',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f4',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:40:02','2024-07-07 16:50:08',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f5','tsamuel20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Trương Samuel',NULL,NULL,NULL,'https://www.facebook.com/samuel.truong.94',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f5',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:41:30','2024-07-07 17:15:06',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f6','guest1@gmail.com','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Guest 1',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:02:31','2024-07-07 10:02:31',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f7','guest2@gmail.com','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Guest 2',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:02:31','2024-07-07 10:02:31',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC');
+INSERT INTO `user` VALUES ('30ff6fa7-035f-42e4-aa13-55c1c94ded1e','admin@gmail.com','$2a$10$Y9z5lsuRMPY/wRCgZ/e3h.sdfTbtQDfw4dmK1GE6uyUbwBRoLveS.','ADMIN',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,2,'2024-04-03 12:01:23',NULL,'2024-07-09 22:24:48',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528e5','dnduy20@clc.fitus.edu.vn','$2a$10$qKJhcr4xfCT1kbtrVvZ6ke7DFsbu15VS/aLkM66XIOgeUDhjlc8pi','Đặng Nguyễn Duy','',1,NULL,'https://www.facebook.com/ninja2404/',1,NULL,'','https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528e5','https://storage.googleapis.com/hcmus-alumverse/images/users/cover/56bd646a-44cf-4ae2-960c-d7fc24c528e5',2,'2024-07-07 10:02:31','2024-07-09 21:26:24','2024-07-09 21:49:26',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f2','hcnguyen20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Huỳnh Cao Nguyên',NULL,NULL,NULL,'https://www.facebook.com/caonguyen0811',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f2',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:37:21','2024-07-09 21:34:56',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f3','thmphuc20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Trần Hồng Minh Phúc',NULL,NULL,NULL,'https://www.facebook.com/tranhongminhphuc.vn',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f3',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:38:45','2024-07-07 20:30:09',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f4','nnquynh20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Nguyễn Nhật Quỳnh',NULL,NULL,NULL,'https://facebook.com/nhat.quynh.927543',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f4',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:40:02','2024-07-07 16:50:08',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f5','tsamuel20@clc.fitus.edu.vn','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Trương Samuel',NULL,NULL,NULL,'https://www.facebook.com/samuel.truong.94',1,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/56bd646a-44cf-4ae2-960c-d7fc24c528f5',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:41:30','2024-07-07 17:15:06',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f6','guest1@gmail.com','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Guest 1',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:02:31','2024-07-07 10:02:31',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC'),('56bd646a-44cf-4ae2-960c-d7fc24c528f7','guest2@gmail.com','$2a$10$gu8wbwPnr1257OSEq/jrO.4wwe3GGYtDMTbxlO3u/UmlNa0.34unW','Guest 2',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none',NULL,2,'2024-07-07 10:02:31','2024-07-07 10:02:31','2024-07-07 10:02:31',0,'PUBLIC','PUBLIC','PUBLIC','PUBLIC','PUBLIC');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -625,4 +589,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-09 21:50:05
+-- Dump completed on 2024-07-09 22:39:24
