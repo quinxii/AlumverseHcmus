@@ -1211,6 +1211,7 @@ public class UserServiceController {
 		Optional<FriendRequestModel> existingFriendRequest = friendRequestRepository.findByUserIdAndFriendId(userId,
 				friendId);
 		if (existingFriendRequest.isPresent() && !existingFriendRequest.get().getIsDelete()) {
+			friendRequestRepository.delete(existingFriendRequest.get());
 			throw new AppException(23203, "Đã hủy lời mời", HttpStatus.CONFLICT);
 		}
 
@@ -1270,8 +1271,7 @@ public class UserServiceController {
 			}
 
 			FriendRequestModel friendRequest = existingFriendRequest.get();
-			friendRequest.setIsDelete(true);
-			friendRequestRepository.save(friendRequest);
+			friendRequestRepository.delete(friendRequest);
 
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		} else {
