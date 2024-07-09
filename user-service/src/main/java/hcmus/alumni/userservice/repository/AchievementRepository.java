@@ -10,7 +10,7 @@ import hcmus.alumni.userservice.dto.IAchievementDto;
 import hcmus.alumni.userservice.model.AchievementModel;
 
 public interface AchievementRepository extends JpaRepository<AchievementModel, String> {
-	@Query("SELECT a FROM AchievementModel a WHERE a.isDelete = false")
+	@Query("SELECT a FROM AchievementModel a WHERE a.userId = :id AND a.isDelete = false")
 	List<AchievementModel> findByUserId(String id);
 
 	Optional<IAchievementDto> findByAchievementId(String achievementId);

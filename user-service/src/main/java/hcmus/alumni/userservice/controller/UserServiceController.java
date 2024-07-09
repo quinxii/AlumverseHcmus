@@ -54,11 +54,11 @@ import hcmus.alumni.userservice.dto.AchievementDto;
 import hcmus.alumni.userservice.dto.AlumniDto;
 import hcmus.alumni.userservice.dto.EducationDto;
 import hcmus.alumni.userservice.dto.FriendIdRequestDto;
+import hcmus.alumni.userservice.dto.FriendRelationShipDto;
 import hcmus.alumni.userservice.dto.FriendRequestActionDTO;
 import hcmus.alumni.userservice.dto.IAchievementDto;
 import hcmus.alumni.userservice.dto.IAlumniProfileDto;
 import hcmus.alumni.userservice.dto.IEducationDto;
-import hcmus.alumni.userservice.dto.IFriendDto;
 import hcmus.alumni.userservice.dto.IFriendRequestDto;
 import hcmus.alumni.userservice.dto.IJobDto;
 import hcmus.alumni.userservice.dto.ISuggestionUserDto;
@@ -575,8 +575,8 @@ public class UserServiceController {
 		response.put("user", user);
 		response.put("alumni", optionalAlumni);
 		response.put("alumniVerification", alumniVerificationOptional);
-		
-		//add status for current user and Profile user
+
+		// add status for current user and Profile user
 		if (userId != null && id != null && !userId.equals(id)) {
 			String status = "Not Friend";
 			Optional<FriendRequestModel> optionalFriendRequest = friendRequestRepository
@@ -586,8 +586,7 @@ public class UserServiceController {
 				status = "Pending";
 			} else {
 				Optional<FriendModel> optionalFriend = friendRepository.findByUserIdAndFriendIdAndIsDelete(userId, id);
-				if (optionalFriend != null && !optionalFriend.isEmpty()
-						&& optionalFriend.isPresent()) {
+				if (optionalFriend != null && !optionalFriend.isEmpty() && optionalFriend.isPresent()) {
 					status = "true";
 				}
 
@@ -1127,7 +1126,7 @@ public class UserServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IFriendDto> friendsPage;
+			Page<FriendModel> friendsPage;
 
 			if (fullName == null || fullName.isEmpty()) {
 				friendsPage = friendRepository.getAllUserFriends(id, pageable);
@@ -1135,8 +1134,20 @@ public class UserServiceController {
 				friendsPage = friendRepository.getUserFriendsByFullName(id, fullName, pageable);
 			}
 
-			result.put("totalPages", friendsPage.getTotalPages());
-			result.put("friends", friendsPage.getContent());
+			Page<FriendRelationShipDto> dtoPage = friendsPage.map(friend -> {
+				FriendRelationShipDto dto = new FriendRelationShipDto();
+
+				if (friend.getUser().getId().equals(id)) {
+	                dto.setFriend(friend.getFriend());
+	            } else {
+	                dto.setFriend(friend.getUser());
+	            }
+
+	            return dto;
+			});
+
+			result.put("totalPages", dtoPage.getTotalPages());
+			result.put("friends", dtoPage.getContent());
 
 			return ResponseEntity.status(HttpStatus.OK).body(result);
 
@@ -1172,12 +1183,6 @@ public class UserServiceController {
 		}
 		FriendModel friend = optionalFriend.get();
 		friendRepository.delete(friend);
-		// Add Remove
-//		Optional<FriendModel> optionalReverseFriend = friendRepository.findByUserIdAndFriendIdAndIsDelete(friendId, userId);
-//	    if (optionalReverseFriend.isPresent()) {
-//	        FriendModel reverseFriend = optionalReverseFriend.get();
-//	        friendRepository.delete(reverseFriend);
-//	    }
 
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
