@@ -3,6 +3,7 @@
 
 gcp-key.json
 fcm-key.json
+.env
 
 ### Eclipse ###
 .metadata
