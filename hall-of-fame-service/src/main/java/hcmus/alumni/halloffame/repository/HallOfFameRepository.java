@@ -51,5 +51,7 @@ public interface HallOfFameRepository extends JpaRepository<HallOfFameModel, Str
             "join permission p on p.id = rp.permission_id and p.is_delete = false " +
             "where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
     List<String> getPermissions(List<String> role, String domain);
-
+	
+	@Query(value = "SELECT * FROM hall_of_fame ORDER BY RAND() LIMIT :number", nativeQuery = true)
+    List<HallOfFameModel> findRandomHofEntries(@Param("number") Integer number);
 }

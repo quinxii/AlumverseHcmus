@@ -4,13 +4,13 @@ import java.util.Date;
 
 public interface IFriendRequestDto {
 	
-	interface FriendRequest {
+	interface User {
         String getId();
         String getFullName();
         String getAvatarUrl();
     }
 
     Date getCreateAt();
-    FriendRequest getFriend();
+    User getUser();
     Boolean getIsDelete();
 }
