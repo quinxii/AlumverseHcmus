@@ -48,6 +48,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.userservice.common.NotificationType;
 import hcmus.alumni.userservice.common.Privacy;
 import hcmus.alumni.userservice.config.UserConfig;
 import hcmus.alumni.userservice.dto.AchievementDto;
@@ -86,6 +87,11 @@ import hcmus.alumni.userservice.model.RoleModel;
 import hcmus.alumni.userservice.model.SexModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
+import hcmus.alumni.userservice.model.notification.EntityTypeModel;
+import hcmus.alumni.userservice.model.notification.NotificationChangeModel;
+import hcmus.alumni.userservice.model.notification.NotificationModel;
+import hcmus.alumni.userservice.model.notification.NotificationObjectModel;
+import hcmus.alumni.userservice.model.notification.StatusNotificationModel;
 import hcmus.alumni.userservice.repository.AchievementRepository;
 import hcmus.alumni.userservice.repository.AlumniRepository;
 import hcmus.alumni.userservice.repository.EducationRepository;
@@ -99,6 +105,7 @@ import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
+import hcmus.alumni.userservice.utils.NotificationService;
 
 @RestController
 @RequestMapping("/user")
@@ -144,6 +151,9 @@ public class UserServiceController {
 
 	@Autowired
 	private FriendRequestRepository friendRequestRepository;
+
+	@Autowired
+	private NotificationService notificationService;
 
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
@@ -1184,6 +1194,9 @@ public class UserServiceController {
 		FriendModel friend = optionalFriend.get();
 		friendRepository.delete(friend);
 
+		notificationService.deleteNotification("friend", NotificationType.CREATE, userId);
+		notificationService.deleteNotification("friend", NotificationType.CREATE, friendId);
+
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
@@ -1212,6 +1225,7 @@ public class UserServiceController {
 				friendId);
 		if (existingFriendRequest.isPresent() && !existingFriendRequest.get().getIsDelete()) {
 			friendRequestRepository.delete(existingFriendRequest.get());
+			notificationService.deleteNotification("request_friend", NotificationType.CREATE, friendId);
 			throw new AppException(23203, "Đã hủy lời mời", HttpStatus.CONFLICT);
 		}
 
@@ -1223,6 +1237,11 @@ public class UserServiceController {
 		friendRequest.setIsDelete(false);
 
 		friendRequestRepository.save(friendRequest);
+
+		notificationService.createNotification("request_friend", NotificationType.CREATE, 
+			friendId, user, friend, 
+			user.getFullName() + " đã gửi một lời mời kết bạn", null);
+
 		return ResponseEntity.status(HttpStatus.CREATED).body("");
 	}
 
@@ -1262,6 +1281,12 @@ public class UserServiceController {
 			friendModel.setIsDelete(false);
 			friendRepository.save(friendModel);
 
+			notificationService.deleteNotification("request_friend", NotificationType.CREATE, user.getId());
+			String notificationMessage = optionalUser.get().getFullName() + " đã chấp nhận lời mời kết bạn";
+			notificationService.createNotification("friend", NotificationType.CREATE, 
+				friend.getId(), user, friend, 
+				notificationMessage,null);
+
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		} else if (action == FriendRequestAction.DENY) {
 			Optional<FriendRequestModel> existingFriendRequest = friendRequestRepository.findByUserIdAndFriendId(userId,
@@ -1272,6 +1297,12 @@ public class UserServiceController {
 
 			FriendRequestModel friendRequest = existingFriendRequest.get();
 			friendRequestRepository.delete(friendRequest);
+
+			notificationService.deleteNotification("request_friend", NotificationType.CREATE, userId);
+			String notificationMessage = optionalUser.get().getFullName() + " đã từ chối lời mời kết bạn";
+			notificationService.createNotification("friend", NotificationType.CREATE, 
+				friendId, optionalUser.get(), optionalFriend.get(), 
+				notificationMessage,null);
 
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		} else {
