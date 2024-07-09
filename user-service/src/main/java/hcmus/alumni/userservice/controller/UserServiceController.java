@@ -1300,7 +1300,7 @@ public class UserServiceController {
 
 			notificationService.deleteNotification("request_friend", NotificationType.CREATE, userId);
 			String notificationMessage = optionalUser.get().getFullName() + " đã từ chối lời mời kết bạn";
-			notificationService.createNotification("friend", NotificationType.CREATE, 
+			notificationService.createNotification("request_friend", NotificationType.DELETE, 
 				friendId, optionalUser.get(), optionalFriend.get(), 
 				notificationMessage,null);
 
