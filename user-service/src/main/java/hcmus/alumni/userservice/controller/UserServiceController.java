@@ -579,12 +579,15 @@ public class UserServiceController {
 
 		Map<String, Object> response = new HashMap<>();
 
-		Optional<IVerifyAlumniProfileDto> alumniVerificationOptional = verifyAlumniRepository
-				.findByUserIdAndIsDelete(id, false);
+		List<IVerifyAlumniProfileDto> alumniVerificationOptional = verifyAlumniRepository.findFirstByUserIdAndIsDelete(id, false);
 
 		response.put("user", user);
 		response.put("alumni", optionalAlumni);
-		response.put("alumniVerification", alumniVerificationOptional);
+		if (alumniVerificationOptional.size() > 0) {
+			response.put("alumniVerification", alumniVerificationOptional.get(0));
+		} else {
+			response.put("alumniVerification", null);
+		}
 
 		// add status for current user and Profile user
 		if (userId != null && id != null && !userId.equals(id)) {

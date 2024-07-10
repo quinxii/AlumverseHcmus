@@ -24,9 +24,9 @@ public interface VerifyAlumniRepository extends JpaRepository<VerifyAlumniModel,
 	Optional<VerifyAlumniModel> findByUserIdAndIsDeleteEquals(String userId, Boolean isDelete);
 
 	@Query("SELECT v.status AS status, v.studentId AS studentId, v.beginningYear AS beginningYear "
-			+ "FROM VerifyAlumniModel v WHERE v.user.id = :userId AND v.isDelete = :isDelete")
-	Optional<IVerifyAlumniProfileDto> findByUserIdAndIsDelete(@Param("userId") String userId,
-			@Param("isDelete") boolean isDelete);
+	        + "FROM VerifyAlumniModel v WHERE v.user.id = :userId AND v.isDelete = :isDelete ORDER BY v.createAt DESC")
+	List<IVerifyAlumniProfileDto> findFirstByUserIdAndIsDelete(@Param("userId") String userId,
+	        @Param("isDelete") boolean isDelete);
 
 	VerifyAlumniModel findByIdAndIsDeleteEqualsAndStatusEquals(String id, Boolean isDelete,
 			VerifyAlumniModel.Status status);
