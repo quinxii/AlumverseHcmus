@@ -19,4 +19,3 @@ WORKDIR /app
 COPY --from=builder app/target/service-discovery.jar /app/
 # Command to run the Java application
 CMD ["java", "-jar", "/app/service-discovery.jar"]
-# Expose port 8080 to enable communication with the container

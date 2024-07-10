@@ -16,9 +16,10 @@ RUN mvn package -Dmaven.test.skip=true
 FROM eclipse-temurin:17
 # Copy only the JAR and dependencies from the builder stage
 WORKDIR /app
-COPY fcm-key.json /app
-COPY gcp-key.json /app
+COPY ../fcm-key.json /app
+COPY ../gcp-key.json /app
+ENV GCP_SERVICE_ACCOUNT_KEY_PATH=/app/gcp-key.json 
+ENV FCM_SERVICE_ACCOUNT_KEY_PATH=/app/fcm-key.json
 COPY --from=builder app/target/news-service.jar /app/
 # Command to run the Java application
-CMD ["java", "-Deureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka", "-jar", "/app/news-service.jar"]
-# Expose port 8080 to enable communication with the container
+CMD ["java", "-jar", "/app/news-service.jar"]

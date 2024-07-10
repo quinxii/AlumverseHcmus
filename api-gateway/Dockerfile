@@ -18,5 +18,4 @@ FROM eclipse-temurin:17
 WORKDIR /app
 COPY --from=builder app/target/api-gateway.jar /app/
 # Command to run the Java application
-CMD ["java", "-Deureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka", "-jar", "/app/api-gateway.jar"]
-# Expose port 8080 to enable communication with the container
+CMD ["java", "-jar", "/app/api-gateway.jar"]
