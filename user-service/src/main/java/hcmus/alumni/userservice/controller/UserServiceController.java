@@ -1238,6 +1238,7 @@ public class UserServiceController {
 
 		friendRequestRepository.save(friendRequest);
 
+		notificationService.deleteNotification("request_friend", NotificationType.DELETE, user.getId());
 		notificationService.createNotification("request_friend", NotificationType.CREATE, 
 			friendId, user, friend, 
 			user.getFullName() + " đã gửi một lời mời kết bạn", null);
