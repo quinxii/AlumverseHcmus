@@ -1,31 +1,17 @@
 package hcmus.alumni.notification.controller;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.notification.dto.IUserSubscriptionTokenDto;
 import hcmus.alumni.notification.dto.NotificationDto;
@@ -122,6 +107,10 @@ public class NotificationServiceController {
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						notification.setNotificationMessage(notification.getActor().getFullName() + " đã gửi một lời mời kết bạn");
 						break;
+					case "friend":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						notification.setNotificationMessage(notification.getActor().getFullName() + " đã chấp nhận lời mời kết bạn");
+						break;
 					case "comment_event":
 						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
 						notification.setNotificationMessage(notification.getActor().getFullName() + " đã bình luận về bình luận của bạn");
@@ -205,6 +194,13 @@ public class NotificationServiceController {
 								notificationRepository.findGroupMemberById(notification.getNotifier().getId(), notification.getEntityId());
 						notification.setNotificationMessage("Yêu cầu tham gia nhóm " + group.get().getName() + " đã " + 
 								(optionalGroupMember.isPresent() ? "được chấp thuận" : "bị từ chối"));
+						break;
+				}
+			} else if (NotificationType.DELETE.equals(notification.getNotificationType())) {
+				switch (notification.getEntityTable()) {
+					case "request_friend":
+						notification.setNotificationImageUrl(notification.getActor().getAvatarUrl());
+						notification.setNotificationMessage(notification.getActor().getFullName() + " đã từ chối lời mời kết bạn");
 						break;
 				}
 			}
