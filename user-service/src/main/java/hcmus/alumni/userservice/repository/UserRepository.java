@@ -11,14 +11,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import hcmus.alumni.userservice.dto.ISuggestionUserDto;
 import hcmus.alumni.userservice.dto.IUserProfileDto;
-import hcmus.alumni.userservice.dto.UserSearchDto;
+import hcmus.alumni.userservice.dto.IUserSearchDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 
 public interface UserRepository extends JpaRepository<UserModel, String> {
 	@Query("SELECT u FROM UserModel u WHERE u.id = :id")
-	Optional<UserSearchDto> findByIdCustom(String id);
+	Optional<IUserSearchDto> findByIdCustom(String id);
 
 	Optional<UserModel> findById(String id);
 
@@ -54,10 +55,26 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	@Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
 	String findAvatarUrlByUserId(@Param("userId") String userId);
 
+	@Query(value = "SELECT u.id, u.full_name AS fullName, u.email, u.avatar_url AS avatarUrl, u.status_id AS statusId "
+			+ "FROM user u "
+			+ "LEFT JOIN request_friend fr1 ON u.id = fr1.user_id AND fr1.friend_id = :currentUserId AND fr1.is_delete = false "
+			+ "LEFT JOIN request_friend fr2 ON u.id = fr2.friend_id AND fr2.user_id = :currentUserId AND fr2.is_delete = false "
+			+ "LEFT JOIN friend f1 ON u.id = f1.user_id AND :currentUserId = f1.friend_id AND f1.is_delete = false "
+			+ "LEFT JOIN friend f2 ON u.id = f2.friend_id AND :currentUserId = f2.user_id AND f2.is_delete = false "
+			+ "WHERE (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
+			+ "AND (:email IS NULL OR u.email LIKE CONCAT('%', :email, '%')) " + "AND u.id != :currentUserId "
+			+ "AND fr1.user_id IS NULL " + "AND fr2.friend_id IS NULL " + "AND f1.friend_id IS NULL " + "AND f2.user_id IS NULL ", countQuery = "SELECT COUNT(u.id) " + "FROM user u "
+					+ "LEFT JOIN request_friend fr ON u.id = fr.user_id AND fr.friend_id = :currentUserId AND fr.is_delete = false "
+					+ "LEFT JOIN friend f ON u.id = f.friend_id AND f.is_delete = false "
+					+ "WHERE (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
+					+ "AND (:email IS NULL OR u.email LIKE CONCAT('%', :email, '%')) " + "AND u.id != :currentUserId "
+					+ "AND fr.user_id IS NULL " + "AND f.friend_id IS NULL", nativeQuery = true)
+	Page<ISuggestionUserDto> getSuggestionUsers(String fullName, String email, String currentUserId, Pageable pageable);
+
 	@Query("SELECT DISTINCT u " + "FROM UserModel u " + "LEFT JOIN u.roles r "
 			+ "WHERE (:fullName IS NULL OR u.fullName LIKE %:fullName%) "
 			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleIds IS NULL OR r.id in :roleIds)")
-	Page<UserSearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
+	Page<IUserSearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
 			@Param("roleIds") List<Integer> roleIds, Pageable pageable);
 
 	@Query("SELECT COUNT(u) FROM UserModel u JOIN u.roles r WHERE r.id in :roleIds")
@@ -67,7 +84,7 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	Long countAllUsers();
 
 	@Query("SELECT u FROM UserModel u")
-	Page<UserSearchDto> findAllUsers(Pageable pageable);
+	Page<IUserSearchDto> findAllUsers(Pageable pageable);
 
 	@Query("SELECT u FROM UserModel u WHERE u.id = :id")
 	Optional<IUserProfileDto> findUserProfileById(@Param("id") String id);

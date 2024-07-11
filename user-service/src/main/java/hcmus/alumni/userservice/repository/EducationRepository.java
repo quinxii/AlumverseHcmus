@@ -10,7 +10,7 @@ import hcmus.alumni.userservice.dto.IEducationDto;
 import hcmus.alumni.userservice.model.EducationModel;
 
 public interface EducationRepository extends JpaRepository<EducationModel, String> {
-	@Query("SELECT e FROM EducationModel e WHERE e.isDelete = false")
+	@Query("SELECT e FROM EducationModel e WHERE e.userId = :id AND e.isDelete = false")
 	List<EducationModel> findByUserId(String id);
 
 	Optional<EducationModel> findByUserIdAndSchoolName(String userId, String schoolName);
