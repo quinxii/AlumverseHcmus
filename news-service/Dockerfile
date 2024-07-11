@@ -16,10 +16,11 @@ RUN mvn package -Dmaven.test.skip=true
 FROM eclipse-temurin:17
 # Copy only the JAR and dependencies from the builder stage
 WORKDIR /app
-COPY ../fcm-key.json /app
-COPY ../gcp-key.json /app
-ENV GCP_SERVICE_ACCOUNT_KEY_PATH=/app/gcp-key.json 
+COPY fcm-key.json /app
+COPY gcp-key.json /app
+ENV GCP_SERVICE_ACCOUNT_KEY_PATH=/app/gcp-key.json
 ENV FCM_SERVICE_ACCOUNT_KEY_PATH=/app/fcm-key.json
 COPY --from=builder app/target/news-service.jar /app/
 # Command to run the Java application
-CMD ["java", "-jar", "/app/news-service.jar"]
+# Set JVM memory limits based on Heroku's plan
+CMD ["java", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/news-service.jar"]

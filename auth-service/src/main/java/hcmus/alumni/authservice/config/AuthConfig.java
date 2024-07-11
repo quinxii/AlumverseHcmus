@@ -23,10 +23,11 @@ public class AuthConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		return http.csrf().disable().authorizeHttpRequests() // temp
-				.antMatchers("/auth/**").permitAll() // Cho phép tất cả mọi người truy cập vào địa chỉ này
-				.anyRequest().authenticated() // Tất cả các request khác đều cần phải xác thực mới được truy cập
-				.and().build();
+		return http.csrf(csrf -> csrf.disable())
+				.authorizeHttpRequests(
+						auth -> auth.requestMatchers("/auth/**").permitAll() // Cho phép tất cả mọi ng truy cập
+								.anyRequest().authenticated()) // Tất cả các request khác đều phải xác thựcc75
+				.build();
 	}
 
 	@Bean

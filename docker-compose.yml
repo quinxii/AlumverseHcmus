@@ -3,7 +3,7 @@ services:
   service-discovery:
     build: ./service-discovery
     image: service-discovery
-    hostname: eureka
+    hostname: localhost
     ports:
       - "8761:8761"
     networks:
