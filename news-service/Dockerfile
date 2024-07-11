@@ -23,4 +23,4 @@ ENV FCM_SERVICE_ACCOUNT_KEY_PATH=/app/fcm-key.json
 COPY --from=builder app/target/news-service.jar /app/
 # Command to run the Java application
 # Set JVM memory limits based on Heroku's plan
-CMD ["java", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/news-service.jar"]
+CMD ["java", "-Xmx200M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/news-service.jar"]

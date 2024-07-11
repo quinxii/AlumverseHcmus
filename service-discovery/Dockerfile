@@ -18,4 +18,4 @@ FROM eclipse-temurin:17
 WORKDIR /app
 COPY --from=builder app/target/service-discovery.jar /app/
 # Command to run the Java application
-CMD ["java", "-XX:+UseContainerSupport", "-jar", "/app/service-discovery.jar"]
+CMD ["java", "-Xmx200M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "/app/service-discovery.jar"]
