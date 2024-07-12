@@ -111,6 +111,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>group-service</finalName>
 	</build>
 
 </project>
