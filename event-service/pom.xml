@@ -105,6 +105,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>event-service</finalName>
 	</build>
 
 </project>
