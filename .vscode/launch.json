@@ -95,16 +95,6 @@
             "name": "Spring Boot-MessageServiceApplication<message-service>",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "mainClass": "hcmus.alumni.message.MessagesServiceApplication",
-            "projectName": "message-service",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
-        },
-        {
-            "type": "java",
-            "name": "Spring Boot-MessageServiceApplication<message-service>",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
             "mainClass": "hcmus.alumni.message.MessageServiceApplication",
             "projectName": "message-service",
             "args": "",
