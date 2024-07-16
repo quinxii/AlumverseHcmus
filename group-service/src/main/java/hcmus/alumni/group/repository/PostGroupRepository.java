@@ -1,6 +1,5 @@
 package hcmus.alumni.group.repository;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 

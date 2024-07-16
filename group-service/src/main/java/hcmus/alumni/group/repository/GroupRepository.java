@@ -1,7 +1,6 @@
 package hcmus.alumni.group.repository;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -14,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import hcmus.alumni.group.dto.response.IGroupDto;
 import hcmus.alumni.group.model.GroupModel;
-import hcmus.alumni.group.model.UserModel;
 import hcmus.alumni.group.common.Privacy;
 
 public interface GroupRepository extends JpaRepository<GroupModel, String> {
@@ -61,7 +59,8 @@ public interface GroupRepository extends JpaRepository<GroupModel, String> {
         "FROM GroupModel g " +
         "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
         "LEFT JOIN RequestJoinGroupModel rjg ON rjg.id.group.id = g.id AND rjg.id.user.id = :requestingUserId AND rjg.isDelete = false " +
-        "WHERE g.id = :id")
+		"WHERE g.id = :id " +
+		"AND g.status.id = 2")
 	Optional<IGroupDto> findGroupById(@Param("id") String id, @Param("requestingUserId") String requestingUserId, boolean canDelete);
 	
 	@Query("SELECT gm.id.group FROM GroupMemberModel gm WHERE gm.id.user.id = :userId AND gm.isDelete = false")

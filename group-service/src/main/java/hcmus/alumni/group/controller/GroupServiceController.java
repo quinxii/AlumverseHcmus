@@ -493,8 +493,6 @@ public class GroupServiceController {
     		@PathVariable String userId,
     		@RequestHeader("userId") String requestingUserId,
     		@RequestBody GroupMemberModel updatedGroupMember) {
-		Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-		GroupMemberModel member = optionalMember.get();
 		if (requestingUserId.equals(userId)) {
 			throw new AppException(70800, "Không thể thay đổi vai trò của bản thân", HttpStatus.BAD_REQUEST);
 		}
@@ -516,9 +514,6 @@ public class GroupServiceController {
     		@PathVariable String id, 
     		@PathVariable String userId,
     		@RequestHeader("userId") String requestingUserId) {
-    	Optional<GroupMemberModel> optionalMember = groupMemberRepository.findByGroupIdAndUserId(id, requestingUserId);
-    	GroupMemberModel member = optionalMember.get();
-        
     	int delete = groupMemberRepository.deleteGroupMember(id, userId);
     	
     	if (delete != 0) {
