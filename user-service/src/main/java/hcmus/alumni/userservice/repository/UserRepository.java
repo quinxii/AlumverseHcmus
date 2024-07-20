@@ -55,7 +55,7 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	@Query("SELECT u.avatarUrl FROM UserModel u WHERE u.id = :userId")
 	String findAvatarUrlByUserId(@Param("userId") String userId);
 
-	@Query(value = "SELECT u.id, u.full_name AS fullName, u.email, u.avatar_url AS avatarUrl, u.status_id AS statusId "
+	@Query(value = "SELECT u.id, u.full_name AS fullName, u.email, u.avatar_url AS avatarUrl, u.status_id AS statusId, u.faculty_id AS facultyId, u.graduation_year AS graduationYear "
 			+ "FROM user u "
 			+ "LEFT JOIN request_friend fr1 ON u.id = fr1.user_id AND fr1.friend_id = :currentUserId AND fr1.is_delete = false "
 			+ "LEFT JOIN request_friend fr2 ON u.id = fr2.friend_id AND fr2.user_id = :currentUserId AND fr2.is_delete = false "
@@ -63,7 +63,11 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 			+ "LEFT JOIN friend f2 ON u.id = f2.friend_id AND :currentUserId = f2.user_id AND f2.is_delete = false "
 			+ "WHERE (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
 			+ "AND (:email IS NULL OR u.email LIKE CONCAT('%', :email, '%')) " + "AND u.id != :currentUserId "
-			+ "AND fr1.user_id IS NULL " + "AND fr2.friend_id IS NULL " + "AND f1.friend_id IS NULL " + "AND f2.user_id IS NULL ", countQuery = "SELECT COUNT(u.id) " + "FROM user u "
+			+ "AND fr1.user_id IS NULL " + "AND fr2.friend_id IS NULL " + "AND f1.friend_id IS NULL "
+			+ "AND f2.user_id IS NULL "
+			+ "ORDER BY (u.faculty_id = (SELECT faculty_id FROM user WHERE id = :currentUserId)) DESC, "
+			+ "(u.graduation_year = (SELECT graduation_year FROM user WHERE id = :currentUserId)) DESC, "
+			+ "u.full_name", countQuery = "SELECT COUNT(u.id) " + "FROM user u "
 					+ "LEFT JOIN request_friend fr ON u.id = fr.user_id AND fr.friend_id = :currentUserId AND fr.is_delete = false "
 					+ "LEFT JOIN friend f ON u.id = f.friend_id AND f.is_delete = false "
 					+ "WHERE (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
@@ -73,7 +77,8 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 
 	@Query("SELECT DISTINCT u " + "FROM UserModel u " + "LEFT JOIN u.roles r "
 			+ "WHERE (:fullName IS NULL OR u.fullName LIKE %:fullName%) "
-			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleIds IS NULL OR r.id in :roleIds)")
+			+ "AND (:email IS NULL OR u.email LIKE :email%) " + "AND (:roleIds IS NULL OR r.id in :roleIds) "
+			+ "AND u.statusId = 2")
 	Page<IUserSearchDto> searchUsers(@Param("fullName") String fullName, @Param("email") String email,
 			@Param("roleIds") List<Integer> roleIds, Pageable pageable);
 
