@@ -73,7 +73,7 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	        + "AND fr2.friend_id IS NULL "
 	        + "AND f1.friend_id IS NULL "
 	        + "AND f2.user_id IS NULL "
-	        + "ORDER BY sameGraduationYear DESC, sameFaculty DESC, u.full_name ASC",
+	        + "ORDER BY sameFaculty DESC, sameGraduationYear DESC, u.full_name ASC",
 	       countQuery = "SELECT COUNT(u.id) "
 	               + "FROM user u "
 	               + "LEFT JOIN alumni a ON u.id = a.user_id "
