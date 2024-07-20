@@ -106,6 +106,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>news-service</finalName>
 	</build>
 
 </project>

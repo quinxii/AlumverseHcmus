@@ -3,7 +3,6 @@ package hcmus.alumni.news.config;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import jakarta.servlet.FilterChain;
@@ -12,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -30,11 +30,10 @@ public class PreAuthenticatedUserRoleHeaderFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-		List<String> roles = Collections.list(request.getHeaders("roles"));
 		String userId = request.getHeader("userId");
 
 		// Create authentication object with extracted roles
-		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, getAuthorities(roles));
+		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, getAuthorities(userId));
 
 		// Set the authentication object to SecurityContextHolder
 		SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -43,8 +42,8 @@ public class PreAuthenticatedUserRoleHeaderFilter extends OncePerRequestFilter {
 		filterChain.doFilter(request, response);
 	}
 
-	public Collection<? extends GrantedAuthority> getAuthorities(List<String> roles) {
-		List<String> permissions = newsRepository.getPermissions(roles, "News");
+	public Collection<? extends GrantedAuthority> getAuthorities(String userId) {
+		List<String> permissions = newsRepository.getPermissions(userId, "News");
 		List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
 		for (String permission : permissions) {

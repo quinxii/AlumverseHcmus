@@ -2,10 +2,10 @@ package hcmus.alumni.userservice.model;
 
 import java.io.Serializable;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.EmbeddedId;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.EmbeddedId;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

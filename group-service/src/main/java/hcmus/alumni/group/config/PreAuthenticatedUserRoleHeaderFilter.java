@@ -32,11 +32,11 @@ public class PreAuthenticatedUserRoleHeaderFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		List<String> roles = Collections.list(request.getHeaders("roles"));
+		
 		String userId = request.getHeader("userId");
 
 		// Create authentication object with extracted roles
-		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, getAuthorities(roles));
+		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, getAuthorities(userId));
 
 		// Set the authentication object to SecurityContextHolder
 		SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -45,8 +45,8 @@ public class PreAuthenticatedUserRoleHeaderFilter extends OncePerRequestFilter {
 		filterChain.doFilter(request, response);
 	}
 
-	public Collection<? extends GrantedAuthority> getAuthorities(List<String> roles) {
-		List<String> permissions = groupRepository.getPermissions(roles, "Group");
+	public Collection<? extends GrantedAuthority> getAuthorities(String userId) {
+		List<String> permissions = groupRepository.getPermissions(userId, "Group");
 		List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 		for (String permission : permissions) {
 			authorities.add(new SimpleGrantedAuthority(permission));

@@ -31,18 +31,18 @@ public class PreAuthenticatedUserRoleHeaderFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		
-		List<String> roles = Collections.list(request.getHeaders("roles"));
+		
         String userId = request.getHeader("userId");
 
-		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, getAuthorities(roles));
+		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, getAuthorities(userId));
 
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 
 		filterChain.doFilter(request, response);
 	}
 
-	public Collection<? extends GrantedAuthority> getAuthorities(List<String> roles) {
-		List<String> permissions = hofRepository.getPermissions(roles, "Hof");
+	public Collection<? extends GrantedAuthority> getAuthorities(String userId) {
+		List<String> permissions = hofRepository.getPermissions(userId, "Hof");
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
 

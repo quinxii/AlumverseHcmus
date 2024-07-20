@@ -18,11 +18,11 @@ import hcmus.alumni.group.model.UserModel;
 import hcmus.alumni.group.common.Privacy;
 
 public interface GroupRepository extends JpaRepository<GroupModel, String> {
-	@Query(value = "select distinct p.name from role_permission rp " +
-		"join role r on r.id = rp.role_id and r.is_delete = false " +
-		"join permission p on p.id = rp.permission_id and p.is_delete = false " +
-		"where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
-	 List<String> getPermissions(List<String> role, String domain);
+    @Query(value = "select distinct p.name from role_permission rp " +
+            "join permission p on p.id = rp.permission_id and p.is_delete = false " +
+            "join role r on r.id = rp.role_id and r.is_delete = false " +
+            "where r.id in (select role_id from user_role where user_id = :userId) and p.name like :domain% and rp.is_delete = false;", nativeQuery = true)
+    List<String> getPermissions(String userId, String domain);
 	 
 	@Query(value = "select count(*) > 0 from `group` where id = :groupId and creator = :userId", nativeQuery = true)
 	Long isGroupOwner(String groupId, String userId);

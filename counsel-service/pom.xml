@@ -111,6 +111,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>counsel-service</finalName>
 	</build>
 
 </project>

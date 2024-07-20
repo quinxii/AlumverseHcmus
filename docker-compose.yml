@@ -1,0 +1,30 @@
+version: "3"
+services:
+  service-discovery:
+    build: ./service-discovery
+    image: service-discovery
+    hostname: localhost
+    ports:
+      - "8761:8761"
+    networks:
+      - alumverse-network
+  api-gateway:
+    build: ./api-gateway
+    image: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - alumverse-network
+    depends_on:
+      - service-discovery
+  news-service:
+    build: ./news-service
+    image: news-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    env_file: "./.env"
+
+networks:
+  alumverse-network:

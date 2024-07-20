@@ -81,9 +81,9 @@ public interface PostAdviseRepository extends JpaRepository<PostAdviseModel, Str
 			"where id = :postId", nativeQuery = true)
 	boolean isAllowAddOptions(String postId);
 
-	@Query(value = "select distinct p.name from role_permission rp " +
-			"join role r on r.id = rp.role_id and r.is_delete = false " +
-			"join permission p on p.id = rp.permission_id and p.is_delete = false " +
-			"where r.name in :role and p.name like :domain% and rp.is_delete = false", nativeQuery = true)
-	List<String> getPermissions(List<String> role, String domain);
+    @Query(value = "select distinct p.name from role_permission rp " +
+            "join permission p on p.id = rp.permission_id and p.is_delete = false " +
+            "join role r on r.id = rp.role_id and r.is_delete = false " +
+            "where r.id in (select role_id from user_role where user_id = :userId) and p.name like :domain% and rp.is_delete = false;", nativeQuery = true)
+    List<String> getPermissions(String userId, String domain);
 }

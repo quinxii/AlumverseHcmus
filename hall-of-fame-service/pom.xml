@@ -101,6 +101,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>hall-of-fame-service</finalName>
 	</build>
 
 </project>

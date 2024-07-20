@@ -109,6 +109,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>message-service</finalName>
 	</build>
 
 </project>
