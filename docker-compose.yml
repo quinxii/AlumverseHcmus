@@ -2,29 +2,124 @@ version: "3"
 services:
   service-discovery:
     build: ./service-discovery
-    image: service-discovery
-    hostname: localhost
+    image: localhost.service-discovery
+    hostname: eureka
     ports:
       - "8761:8761"
     networks:
       - alumverse-network
+
   api-gateway:
     build: ./api-gateway
-    image: api-gateway
+    image: localhost.api-gateway
     ports:
       - "8080:8080"
     networks:
       - alumverse-network
     depends_on:
       - service-discovery
-  news-service:
-    build: ./news-service
-    image: news-service
+    environment:
+      - DOMAIN_NAME=api-gateway
+      - EUREKA_URL=http://eureka:8761
+      
+  auth-service:
+    build: ./auth-service
+    image: localhost.auth-service
     networks:
       - alumverse-network
     depends_on:
       - api-gateway
-    env_file: "./.env"
+    environment:
+      - DOMAIN_NAME=auth-service
+      - EUREKA_URL=http://eureka:8761
+
+  user-service:
+    build: ./user-service
+    image: localhost.user-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=user-service
+      - EUREKA_URL=http://eureka:8761
+
+  news-service:
+    build: ./news-service
+    image: localhost.news-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=news-service
+      - EUREKA_URL=http://eureka:8761
+
+  event-service:
+    build: ./event-service
+    image: localhost.event-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=event-service
+      - EUREKA_URL=http://eureka:8761
+
+  hof-service:
+    build: ./hof-service
+    image: localhost.hof-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=hof-service
+      - EUREKA_URL=http://eureka:8761
+
+  counsel-service:
+    build: ./counsel-service
+    image: localhost.counsel-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=counsel-service
+      - EUREKA_URL=http://eureka:8761
+
+  group-service:
+    build: ./group-service
+    image: localhost.group-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=group-service
+      - EUREKA_URL=http://eureka:8761
+
+  message-service:
+    build: ./message-service
+    image: localhost.message-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=message-service
+      - EUREKA_URL=http://eureka:8761
+
+  notification-service:
+    build: ./notification-service
+    image: localhost.notification-service
+    networks:
+      - alumverse-network
+    depends_on:
+      - api-gateway
+    environment:
+      - DOMAIN_NAME=notification-service
+      - EUREKA_URL=http://eureka:8761
 
 networks:
   alumverse-network:

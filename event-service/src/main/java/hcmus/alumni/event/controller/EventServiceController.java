@@ -391,7 +391,7 @@ public class EventServiceController {
 	
 	@GetMapping("/is-participated")
 	public ResponseEntity<List<Object>> checkParticipated(
-	        @RequestHeader("userId") String userId,
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 	        @RequestParam List<String> eventIds) {
 		List<Object> resultList = new ArrayList<>();
 	    for (String eventId : eventIds) {
@@ -474,7 +474,7 @@ public class EventServiceController {
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getEventComments(
 			Authentication authentication,
-			@RequestHeader("userId") String userId,
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -484,7 +484,7 @@ public class EventServiceController {
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
 		boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
 			canDelete = true;
 		}
 
@@ -499,7 +499,7 @@ public class EventServiceController {
 	@GetMapping("/comments/{commentId}/children")
 	public ResponseEntity<HashMap<String, Object>> getEventChildrenComments(
 			Authentication authentication,
-			@RequestHeader("userId") String userId,
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@PathVariable String commentId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
@@ -515,7 +515,7 @@ public class EventServiceController {
 		}
 		
 		boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
 			canDelete = true;
 		}
 
@@ -653,14 +653,14 @@ public class EventServiceController {
 	@GetMapping("/{eventId}/comments/{commentId}")
 	public ResponseEntity<Map<String, Object>> getSingleCommentOfAPost(
 			Authentication authentication,
-			@RequestHeader("userId") String userId,
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@PathVariable String eventId,
 			@PathVariable String commentId) {
 		HashMap<String, Object> result = new HashMap<String, Object>();
 	
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
 			canDelete = true;
 		}
 	

@@ -1,9 +1,11 @@
 package hcmus.alumni.apigateway;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,28 +40,41 @@ public class AuthenticationGatewayFilterFactory
 	public GatewayFilter apply(Config config) {
 		return ((exchange, chain) -> {
 			ServerHttpRequest req = exchange.getRequest();
-			if (routeValidator.isSecured.test(req)) {
-				// header contains token or not
-				if (!req.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-					return this.onError(exchange, HttpStatus.UNAUTHORIZED);
-				}
-
-				String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
-				if (authHeader != null && authHeader.startsWith("Bearer ")) {
-					authHeader = authHeader.substring(7);
-				}
-				try {
-					if (jwtUtils.validateToken(authHeader)) {
-						req = updateRequest(exchange, authHeader);
-					}
-					
-				} catch (Exception e) {
-					return this.onError(exchange, HttpStatus.FORBIDDEN);
-				}
-
+			if (routeValidator.isPublic.test(req)) {
+				return chain.filter(exchange);
 			}
-			return chain.filter(exchange.mutate().request(req).build());
+
+			if (routeValidator.isSemiPublic.test(req)) {
+				return handleJwt(exchange, chain, req, true);
+			}
+
+			return handleJwt(exchange, chain, req, false);
 		});
+	}
+
+	private Mono<Void> handleJwt(ServerWebExchange exchange, GatewayFilterChain chain, ServerHttpRequest req,
+			boolean isOptional) {
+		List<String> authHeaders = req.getHeaders().get(HttpHeaders.AUTHORIZATION);
+		if (authHeaders != null && !authHeaders.isEmpty()) {
+			String authHeader = authHeaders.get(0);
+			if (authHeader != null && authHeader.startsWith("Bearer ")) {
+				authHeader = authHeader.substring(7);
+			}
+
+			try {
+				if (jwtUtils.validateToken(authHeader)) {
+					req = updateRequest(exchange, authHeader);
+				}
+			} catch (Exception e) {
+				return this.onError(exchange, HttpStatus.FORBIDDEN);
+			}
+		} else {
+			if (isOptional) {
+				return chain.filter(exchange);
+			}
+			return this.onError(exchange, HttpStatus.UNAUTHORIZED);
+		}
+		return chain.filter(exchange.mutate().request(req).build());
 	}
 
 	private Mono<Void> onError(ServerWebExchange exchange, HttpStatus httpStatus) {
