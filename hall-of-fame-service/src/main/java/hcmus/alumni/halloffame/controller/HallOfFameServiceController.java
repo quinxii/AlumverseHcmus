@@ -258,7 +258,7 @@ public class HallOfFameServiceController {
 	@GetMapping("/rand")
 	public ResponseEntity<HashMap<String, Object>> getRandomHof(
 			@RequestParam(value = "number", defaultValue = "8") Integer number) {
-		List<HallOfFameModel> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
+		List<IHallOfFameDto> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("hof", optionalHallOfFame);
