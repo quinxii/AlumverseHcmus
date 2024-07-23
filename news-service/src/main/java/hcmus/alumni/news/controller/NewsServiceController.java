@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -26,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,12 +46,14 @@ import hcmus.alumni.news.repository.notification.NotificationChangeRepository;
 import hcmus.alumni.news.repository.notification.NotificationObjectRepository;
 import hcmus.alumni.news.repository.notification.NotificationRepository;
 import hcmus.alumni.news.repository.UserRepository;
+import hcmus.alumni.news.common.CommentNewsPermissions;
 import hcmus.alumni.news.common.NotificationType;
 import hcmus.alumni.news.model.notification.EntityTypeModel;
 import hcmus.alumni.news.model.notification.NotificationChangeModel;
 import hcmus.alumni.news.model.notification.NotificationModel;
 import hcmus.alumni.news.model.notification.NotificationObjectModel;
 import hcmus.alumni.news.model.notification.StatusNotificationModel;
+import hcmus.alumni.news.dto.CommentNewsDto;
 import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
 import hcmus.alumni.news.exception.AppException;
@@ -64,10 +68,15 @@ import hcmus.alumni.news.repository.NewsRepository;
 import hcmus.alumni.news.repository.TagRepository;
 import hcmus.alumni.news.utils.ImageUtils;
 import hcmus.alumni.news.utils.NotificationService;
+import jakarta.persistence.EntityManager;
 
 @RestController
 @RequestMapping("/news")
 public class NewsServiceController {
+	@Autowired
+	private final ModelMapper mapper = new ModelMapper();
+	@Autowired
+	private EntityManager entityManager;
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
@@ -77,9 +86,9 @@ public class NewsServiceController {
 	@Autowired
 	private CommentNewsRepository commentNewsRepository;
 	@Autowired
-	private EntityTypeRepository entityTypeRepository;  
+	private EntityTypeRepository entityTypeRepository;
 	@Autowired
-	private NotificationObjectRepository notificationObjectRepository; 
+	private NotificationObjectRepository notificationObjectRepository;
 	@Autowired
 	private NotificationChangeRepository notificationChangeRepository;
 	@Autowired
@@ -301,10 +310,10 @@ public class NewsServiceController {
 		NewsModel news = optionalNews.get();
 		news.setStatus(new StatusPostModel(4));
 		newsRepository.save(news);
-		
+
 		List<String> commentIds = commentNewsRepository.findByNewsId(id);
 		notificationService.deleteNotificationsByEntityIds(commentIds);
-		
+
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
@@ -401,7 +410,8 @@ public class NewsServiceController {
 
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
 			canDelete = true;
 		}
 
@@ -434,7 +444,8 @@ public class NewsServiceController {
 
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
 			canDelete = true;
 		}
 
@@ -449,19 +460,25 @@ public class NewsServiceController {
 
 	@PreAuthorize("hasAnyAuthority('News.Comment.Create')")
 	@PostMapping("/{id}/comments")
-	public ResponseEntity<String> createComment(
+	@Transactional
+	public ResponseEntity<HashMap<String, Object>> createComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentNewsModel comment) {
 		if (comment.getContent() == null || comment.getContent().equals("")) {
 			throw new AppException(41200, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
 		comment.setId(UUID.randomUUID().toString());
 		comment.setNews(new NewsModel(id));
 		comment.setCreator(new UserModel(creator));
 
 		try {
-			commentNewsRepository.save(comment);
+			CommentNewsModel savedCmt = commentNewsRepository.saveAndFlush(comment);
+			entityManager.refresh(savedCmt);
+			savedCmt.setPermissions(new CommentNewsPermissions(true, true));
+			result.put("comment", mapper.map(savedCmt, CommentNewsDto.class));
 		} catch (JpaObjectRetrievalFailureException e) {
 			throw new AppException(41201, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		} catch (DataIntegrityViolationException e) {
@@ -471,27 +488,33 @@ public class NewsServiceController {
 		if (comment.getParentId() != null) {
 			commentNewsRepository.commentCountIncrement(comment.getParentId(), 1);
 			// Fetch the parent comment
-			CommentNewsModel parentComment = commentNewsRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(41202, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
-			
+			CommentNewsModel parentComment = commentNewsRepository.findById(comment.getParentId())
+					.orElseThrow(() -> new AppException(41202, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
+
 			if (!parentComment.getCreator().getId().equals(creator)) {
 				// Create NotificationObject
-				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_news", NotificationType.CREATE)
-				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_news", NotificationType.CREATE, null)));
-				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				EntityTypeModel entityType = entityTypeRepository
+						.findByEntityTableAndNotificationType("comment_news", NotificationType.CREATE)
+						.orElseGet(() -> entityTypeRepository
+								.save(new EntityTypeModel(null, "comment_news", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType,
+						comment.getId(), new Date(), false);
 				notificationObject = notificationObjectRepository.save(notificationObject);
-				
+
 				// Create NotificationChange
-				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject,
+						new UserModel(creator), false);
 				notificationChangeRepository.save(notificationChange);
-				
+
 				// Create Notification
-				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				NotificationModel notification = new NotificationModel(null, notificationObject,
+						parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
-				
+
 				Optional<UserModel> optionalUser = userRepository.findById(creator);
 				firebaseService.sendNotification(
-						notification, notificationChange, notificationObject, 
-						optionalUser.get().getAvatarUrl(), 
+						notification, notificationChange, notificationObject,
+						optionalUser.get().getAvatarUrl(),
 						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getNews().getId());
 			}
@@ -499,7 +522,7 @@ public class NewsServiceController {
 			newsRepository.commentCountIncrement(id, 1);
 		}
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+		return ResponseEntity.status(HttpStatus.CREATED).body(result);
 	}
 
 	@PreAuthorize("1 == @commentNewsRepository.isCommentOwner(#commentId, #userId)")
@@ -581,7 +604,8 @@ public class NewsServiceController {
 
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("News.Comment.Delete"))) {
 			canDelete = true;
 		}
 
