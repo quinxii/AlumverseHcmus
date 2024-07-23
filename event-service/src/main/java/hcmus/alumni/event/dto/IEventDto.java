@@ -38,4 +38,5 @@ public interface IEventDto {
 	Integer getMinimumParticipants();
 	Integer getMaximumParticipants();
 	Integer getChildrenCommentNumber();
+	boolean getIsParticipated();
 }

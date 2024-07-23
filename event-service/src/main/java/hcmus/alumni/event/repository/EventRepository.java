@@ -17,27 +17,30 @@ import hcmus.alumni.event.model.EventModel;
 
 public interface EventRepository extends JpaRepository<EventModel, String> {
     @Query(value = "select distinct p.name from role_permission rp " +
-            "join permission p on p.id = rp.permission_id and p.is_delete = false " +
-            "join role r on r.id = rp.role_id and r.is_delete = false " +
-            "where r.id in (select role_id from user_role where user_id = :userId) and p.name like :domain% and rp.is_delete = false;", nativeQuery = true)
+			"join permission p on p.id = rp.permission_id and p.is_delete = false " +
+			"join role r on r.id = rp.role_id and r.is_delete = false " +
+			"where r.id in (select role_id from user_role where user_id = :userId) and p.name like :domain% and rp.is_delete = false;", nativeQuery = true)
     List<String> getPermissions(String userId, String domain);
 	
-	@Query("SELECT DISTINCT e " +
-        "FROM EventModel e " +
-        "LEFT JOIN e.status s " +
-        "LEFT JOIN e.faculty f " +
-        "LEFT JOIN e.tags t " +
-        "WHERE (:statusId IS NULL OR s.id = :statusId) " +
-        "AND (:facultyId IS NULL OR f.id = :facultyId) " +
-        "AND e.title LIKE %:title% " +
-        "AND (CASE " +
-        "       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
-        "       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
-        "       ELSE true " +
-        "   END) " +
-		"AND s.id != 4 " +
-        "AND (:tagNames IS NULL OR t.name IN :tagNames)")
+	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " +
+			"FROM EventModel e " +
+			"LEFT JOIN e.status s " +
+			"LEFT JOIN e.faculty f " +
+			"LEFT JOIN e.tags t " +
+			"LEFT JOIN ParticipantEventModel p " + 
+			"ON p.id.eventId = e.id AND p.id.userId = :userId " + 
+			"WHERE (:statusId IS NULL OR s.id = :statusId) " +
+			"AND (:facultyId IS NULL OR f.id = :facultyId) " +
+			"AND e.title LIKE %:title% " +
+			"AND (CASE " +
+			"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
+			"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
+			"       ELSE true " +
+			"   END) " +
+			"AND s.id != 4 " +
+			"AND (:tagNames IS NULL OR t.name IN :tagNames)")
 	Page<IEventDto> searchEvents(
+			@Param("userId") String userId,
 			@Param("title") String title,
 			@Param("statusId") Integer statusId,
 			@Param("facultyId") Integer facultyId,
@@ -46,36 +49,44 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			@Param("mode") Integer mode,
 			Pageable pageable);
 	
-	@Query("SELECT e " +
+	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " +
 			"FROM EventModel e " +
+			"LEFT JOIN ParticipantEventModel p " + 
+			"ON p.id.eventId = e.id AND p.id.userId = :userId " + 
 			"WHERE e.id = :id")
-	Optional<IEventDto> findEventById(String id);
+	Optional<IEventDto> findEventById(String id, @Param("userId") String userId);
 
     @Transactional
     @Modifying
     @Query("UPDATE EventModel e SET e.views = e.views + 1 WHERE e.id = :id")
     int incrementEventViews(String id);
 
-    @Query("SELECT e " + 
-		"FROM EventModel e " + 
-    	"JOIN e.status s " + 
-		"WHERE s.id = 2 AND e.organizationTime >= :startDate")
+    @Query("SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " + 
+			"FROM EventModel e " + 
+			"JOIN e.status s " + 
+			"LEFT JOIN ParticipantEventModel p " + 
+			"ON p.id.eventId = e.id AND p.id.userId = :userId " + 
+			"WHERE s.id = 2 AND e.organizationTime >= :startDate")
     Page<IEventDto> getHotEvents(
-    		Date startDate,
-		    Pageable pageable);
+			@Param("userId") String userId,
+			Date startDate,
+			Pageable pageable);
     
-	@Query("SELECT e " + 
-		"FROM EventModel e " + 
-		"LEFT JOIN ParticipantEventModel p " + 
-		"ON p.id.eventId = e.id " + 
-		"WHERE p.id.userId = :userId " + 
-		"AND (CASE " +
-		"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
-		"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
-		"       ELSE true " +
-		"   END)")
+	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN requestingParticipant IS NOT NULL THEN true ELSE false END) " + 
+			"FROM EventModel e " + 
+			"LEFT JOIN ParticipantEventModel requestedParticipant " + 
+			"ON requestedParticipant.id.eventId = e.id " + 
+			"LEFT JOIN ParticipantEventModel requestingParticipant " + 
+			"ON requestingParticipant.id.eventId = e.id AND requestingParticipant.id.userId = :requestingUserId " + 
+			"WHERE requestedParticipant.id.userId = :requestedUserId " + 
+			"AND (CASE " +
+			"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
+			"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
+			"       ELSE true " +
+			"   END)")
 	Page<IEventDto> getUserParticipatedEvents(
-			@Param("userId") String userId, 
+			@Param("requestingUserId") String requestingUserId,
+			@Param("requestedUserId") String requestedUserId,
 			@Param("startDate") Date startDate,
 			@Param("mode") Integer mode,
 			Pageable pageable);

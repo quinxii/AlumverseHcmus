@@ -96,8 +96,33 @@ public class EventModel implements Serializable {
 	
 	@Column(name = "children_comment_number", columnDefinition = "INT DEFAULT(0)")
 	private Integer childrenCommentNumber = 0;
+
+	@Transient
+	boolean isParticipated;
 	
 	public EventModel(String id) {
 		this.id = id;
+	}
+
+	public EventModel(EventModel copy, boolean isParticipated) {
+		this.id = copy.id;
+		this.creator = copy.creator;
+		this.title = copy.title;
+		this.content = copy.content;
+		this.thumbnail = copy.thumbnail;
+		this.organizationLocation = copy.organizationLocation;
+		this.organizationTime = copy.organizationTime;
+		this.faculty = copy.faculty;
+		this.tags = new HashSet<>(copy.tags);
+		this.createAt = copy.createAt;
+		this.updateAt = copy.updateAt;
+		this.publishedAt = copy.publishedAt;
+		this.status = copy.status;
+		this.views = copy.views;
+		this.participants = copy.participants;
+		this.minimumParticipants = copy.minimumParticipants;
+		this.maximumParticipants = copy.maximumParticipants;
+		this.childrenCommentNumber = copy.childrenCommentNumber;
+		this.isParticipated = isParticipated;
 	}
 }
