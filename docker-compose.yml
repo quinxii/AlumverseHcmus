@@ -67,7 +67,7 @@ services:
       - EUREKA_URL=http://eureka:8761
 
   hof-service:
-    build: ./hof-service
+    build: ./hall-of-fame-service
     image: localhost.hof-service
     networks:
       - alumverse-network

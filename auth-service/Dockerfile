@@ -16,8 +16,6 @@ RUN mvn package -Dmaven.test.skip=true
 FROM eclipse-temurin:17
 # Copy only the JAR and dependencies from the builder stage
 WORKDIR /app
-COPY gcp-key.json /app
-ENV GCP_SERVICE_ACCOUNT_KEY_PATH=/app/gcp-key.json
 COPY --from=builder app/target/auth-service.jar /app/
 # Command to run the Java application
 # Set JVM memory limits based on Heroku's plan
