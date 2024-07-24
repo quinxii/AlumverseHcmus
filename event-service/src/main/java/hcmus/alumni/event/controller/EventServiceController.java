@@ -112,7 +112,7 @@ public class EventServiceController {
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
-			@RequestHeader("userId") String userId,
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -154,7 +154,7 @@ public class EventServiceController {
 	@GetMapping("/{id}")
 	public ResponseEntity<IEventDto> getEventById(
 			@PathVariable String id,
-			@RequestHeader("userId") String userId) {
+			@RequestHeader(value = "userId", defaultValue = "") String userId) {
 		
 	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId);
 	    if (optionalEvent.isEmpty()) {
@@ -357,7 +357,7 @@ public class EventServiceController {
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotEvents(
-			@RequestHeader("userId") String userId,
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
 	    if (limit <= 0 || limit > 5) {
 	        limit = 5;
@@ -376,7 +376,7 @@ public class EventServiceController {
 	
 	@GetMapping("/participated")
 	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
-			@RequestHeader("userId") String requestingUserId,
+			@RequestHeader(value = "userId", defaultValue = "") String requestingUserId,
 			@RequestParam(value = "requestedUserId", required = true, defaultValue = "") String requestedUserId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
