@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Iterator;
 
+import org.modelmapper.ModelMapper;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -26,7 +28,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.event.dto.CommentEventDto;
 import hcmus.alumni.event.dto.ICommentEventDto;
 import hcmus.alumni.event.dto.IEventDto;
 import hcmus.alumni.event.dto.IParticipantEventDto;
@@ -60,8 +62,8 @@ import hcmus.alumni.event.utils.NotificationService;
 import hcmus.alumni.event.utils.FirebaseService;
 import hcmus.alumni.event.exception.AppException;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
+import hcmus.alumni.event.common.CommentEventPermissions;
 import hcmus.alumni.event.common.NotificationType;
 import hcmus.alumni.event.model.notification.EntityTypeModel;
 import hcmus.alumni.event.model.notification.NotificationChangeModel;
@@ -76,8 +78,10 @@ import hcmus.alumni.event.repository.notification.NotificationRepository;
 @RestController
 @RequestMapping("/events")
 public class EventServiceController {
-	@PersistenceContext
-	private EntityManager em;
+	@Autowired
+	private final ModelMapper mapper = new ModelMapper();
+	@Autowired
+	private EntityManager entityManager;
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
@@ -89,9 +93,9 @@ public class EventServiceController {
 	@Autowired
 	private CommentEventRepository commentEventRepository;
 	@Autowired
-	private EntityTypeRepository entityTypeRepository;  
+	private EntityTypeRepository entityTypeRepository;
 	@Autowired
-	private NotificationObjectRepository notificationObjectRepository; 
+	private NotificationObjectRepository notificationObjectRepository;
 	@Autowired
 	private NotificationChangeRepository notificationChangeRepository;
 	@Autowired
@@ -108,15 +112,16 @@ public class EventServiceController {
 	
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
-	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-	        @RequestParam(value = "title", required = false, defaultValue = "") String title,
-	        @RequestParam(value = "orderBy", required = false, defaultValue = "organizationTime") String orderBy,
-	        @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-	        @RequestParam(value = "facultyId", required = false) Integer facultyId,
-	        @RequestParam(value = "tagNames", required = false) List<String> tagNames,
-	        @RequestParam(value = "statusId", required = false) Integer statusId,
-	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "title", required = false, defaultValue = "") String title,
+			@RequestParam(value = "orderBy", required = false, defaultValue = "organizationTime") String orderBy,
+			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+			@RequestParam(value = "facultyId", required = false) Integer facultyId,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
+			@RequestParam(value = "statusId", required = false) Integer statusId,
+			@RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
 	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 	    	pageSize = MAXIMUM_PAGES;
 	    }
@@ -133,7 +138,7 @@ public class EventServiceController {
 	        
 	        Calendar cal = Calendar.getInstance();
 	        Date startDate = cal.getTime();
-	        events = eventRepository.searchEvents(title, statusId, facultyId, tagNames, startDate, mode, pageable);
+	        events = eventRepository.searchEvents(userId, title, statusId, facultyId, tagNames, startDate, mode, pageable);
 
 	        result.put("totalPages", events.getTotalPages());
 	        result.put("events", events.getContent());
@@ -148,9 +153,10 @@ public class EventServiceController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<IEventDto> getEventById(
-			@PathVariable String id) {
+			@PathVariable String id,
+			@RequestHeader(value = "userId", defaultValue = "") String userId) {
 		
-	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
+	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId);
 	    if (optionalEvent.isEmpty()) {
 	    	throw new AppException(50200, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 	    }
@@ -345,13 +351,14 @@ public class EventServiceController {
 
 		List<String> commentIds = commentEventRepository.findByEventId(id);
 		notificationService.deleteNotificationsByEntityIds(commentIds);
-	    
+
 	    return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotEvents(
-	        @RequestParam(value = "limit", defaultValue = "5") Integer limit) {
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
+			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
 	    if (limit <= 0 || limit > 5) {
 	        limit = 5;
 	    }
@@ -359,7 +366,7 @@ public class EventServiceController {
 	    Date startDate = cal.getTime();
 
 	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
-	    Page<IEventDto> events = eventRepository.getHotEvents(startDate, pageable);
+	    Page<IEventDto> events = eventRepository.getHotEvents(userId, startDate, pageable);
 
 	    HashMap<String, Object> result = new HashMap<>();
 	    result.put("events", events.getContent());
@@ -369,10 +376,11 @@ public class EventServiceController {
 	
 	@GetMapping("/participated")
 	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
-	        @RequestHeader("userId") String userId,
-	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-	        @RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
+			@RequestHeader(value = "userId", defaultValue = "") String requestingUserId,
+			@RequestParam(value = "requestedUserId", required = true, defaultValue = "") String requestedUserId,
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
+			@RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
 	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 	    	pageSize = MAXIMUM_PAGES;
 	    }
@@ -381,7 +389,7 @@ public class EventServiceController {
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
 	    Calendar cal = Calendar.getInstance();
         Date startDate = cal.getTime();
-        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(userId, startDate, mode, pageable);
+        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(requestingUserId, requestedUserId, startDate, mode, pageable);
 
         result.put("totalPages", events.getTotalPages());
         result.put("events", events.getContent());
@@ -389,28 +397,11 @@ public class EventServiceController {
 	    return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 	
-	@GetMapping("/is-participated")
-	public ResponseEntity<List<Object>> checkParticipated(
-			@RequestHeader(value = "userId", defaultValue = "") String userId,
-	        @RequestParam List<String> eventIds) {
-		List<Object> resultList = new ArrayList<>();
-	    for (String eventId : eventIds) {
-			boolean isParticipated = !participantEventRepository.findById(new ParticipantEventId(eventId, userId))
-			.filter(participantEventModel -> !participantEventModel.isDelete())
-			.isEmpty();
-			Map<String, Object> resultObject = new HashMap<>();
-			resultObject.put("eventId", eventId);
-			resultObject.put("isParticipated", isParticipated);
-			resultList.add(resultObject);
-	    }
-	    return ResponseEntity.ok(resultList);
-	}
-	
 	@GetMapping("/{id}/participants")
 	public ResponseEntity<Map<String, Object>> getParticipantsListById(
 			@PathVariable String id,
-	        @RequestParam(value = "page", required = false, defaultValue = "0") int page,
-	        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
+			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
 	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 	    	pageSize = MAXIMUM_PAGES;
 	    }
@@ -436,11 +427,10 @@ public class EventServiceController {
 	        @PathVariable String id,
 	        @RequestHeader("userId") String userId,
 	        @RequestBody ParticipantEventModel participantEvent) {
-		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id);
+		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId);
 		if (optionalEvent.isEmpty()) 
 			throw new AppException(51000, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
-		Optional<ParticipantEventModel> existingParticipant = participantEventRepository.findById(new ParticipantEventId(id, userId));
-		if (existingParticipant.isPresent() && !existingParticipant.get().isDelete())
+		if (optionalEvent.get().getIsParticipated())
 			throw new AppException(51001, "Đã tham gia sự kiện", HttpStatus.BAD_REQUEST);
 		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants()) 
 			throw new AppException(51002, "Số lượng người tham gia sự kiện đã đạt mức tối đa", HttpStatus.BAD_REQUEST);
@@ -484,7 +474,8 @@ public class EventServiceController {
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		
 		boolean canDelete = false;
-		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
 			canDelete = true;
 		}
 
@@ -515,7 +506,8 @@ public class EventServiceController {
 		}
 		
 		boolean canDelete = false;
-		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
 			canDelete = true;
 		}
 
@@ -529,19 +521,25 @@ public class EventServiceController {
 
 	@PreAuthorize("hasAnyAuthority('Event.Comment.Create')")
 	@PostMapping("/{id}/comments")
-	public ResponseEntity<CommentEventModel> createComment(
+	@Transactional
+	public ResponseEntity<HashMap<String, Object>> createComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentEventModel comment) {
 		if (comment.getContent() == null || comment.getContent().equals("")) {
 			throw new AppException(51400, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
+
+		HashMap<String, Object> result = new HashMap<String, Object>();
 		
 		comment.setId(UUID.randomUUID().toString());
 		comment.setEvent(new EventModel(id));
 		comment.setCreator(new UserModel(creator));
 		
 		try {
-			commentEventRepository.save(comment);
+			CommentEventModel savedCmt = commentEventRepository.saveAndFlush(comment);
+			entityManager.refresh(savedCmt);
+			savedCmt.setPermissions(new CommentEventPermissions(true, true));
+			result.put("comment", mapper.map(savedCmt, CommentEventDto.class));
 		} catch (JpaObjectRetrievalFailureException e) {
 			throw new AppException(51401, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 		} catch (DataIntegrityViolationException e) {
@@ -551,27 +549,32 @@ public class EventServiceController {
 		if (comment.getParentId() != null) {
 			commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
 			// Fetch the parent comment
-			CommentEventModel parentComment = commentEventRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(51402, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
-			
+			CommentEventModel parentComment = commentEventRepository.findById(comment.getParentId())
+					.orElseThrow(() -> new AppException(51402, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
 			if (!parentComment.getCreator().getId().equals(creator)) {
 				// Create NotificationObject
-				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_event", NotificationType.CREATE)
-				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_event", NotificationType.CREATE, null)));
-				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				EntityTypeModel entityType = entityTypeRepository
+						.findByEntityTableAndNotificationType("comment_event", NotificationType.CREATE)
+				        .orElseGet(() -> entityTypeRepository
+							.save(new EntityTypeModel(null, "comment_event", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, 
+						comment.getId(), new Date(), false);
 				notificationObject = notificationObjectRepository.save(notificationObject);
 				
 				// Create NotificationChange
-				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, 
+						new UserModel(creator), false);
 				notificationChangeRepository.save(notificationChange);
 				
 				// Create Notification
-				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				NotificationModel notification = new NotificationModel(null, notificationObject, 
+						parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
 				
 				Optional<UserModel> optionalUser = userRepository.findById(creator);
 				firebaseService.sendNotification(
-						notification, notificationChange, notificationObject, 
-						optionalUser.get().getAvatarUrl(), 
+						notification, notificationChange, notificationObject,
+						optionalUser.get().getAvatarUrl(),
 						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getEvent().getId());
 			}
@@ -579,7 +582,7 @@ public class EventServiceController {
 	    	eventRepository.commentCountIncrement(id, 1);
 	    }
 		
-		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+		return ResponseEntity.status(HttpStatus.CREATED).body(result);
 	}
 
 	@PreAuthorize("1 == @commentEventRepository.isCommentOwner(#commentId, #creator)")
@@ -660,7 +663,8 @@ public class EventServiceController {
 	
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
-		if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
+		if (authentication != null && authentication.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
 			canDelete = true;
 		}
 	
