@@ -28,7 +28,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			"LEFT JOIN e.faculty f " +
 			"LEFT JOIN e.tags t " +
 			"LEFT JOIN ParticipantEventModel p " + 
-			"ON p.id.eventId = e.id AND p.id.userId = :userId " + 
+			"ON p.id.eventId = e.id AND p.id.userId = :userId AND p.isDelete = false " + 
 			"WHERE (:statusId IS NULL OR s.id = :statusId) " +
 			"AND (:facultyId IS NULL OR f.id = :facultyId) " +
 			"AND e.title LIKE %:title% " +
@@ -52,7 +52,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " +
 			"FROM EventModel e " +
 			"LEFT JOIN ParticipantEventModel p " + 
-			"ON p.id.eventId = e.id AND p.id.userId = :userId " + 
+			"ON p.id.eventId = e.id AND p.id.userId = :userId AND p.isDelete = false " + 
 			"WHERE e.id = :id")
 	Optional<IEventDto> findEventById(String id, @Param("userId") String userId);
 
@@ -65,7 +65,7 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			"FROM EventModel e " + 
 			"JOIN e.status s " + 
 			"LEFT JOIN ParticipantEventModel p " + 
-			"ON p.id.eventId = e.id AND p.id.userId = :userId " + 
+			"ON p.id.eventId = e.id AND p.id.userId = :userId AND p.isDelete = false " + 
 			"WHERE s.id = 2 AND e.organizationTime >= :startDate")
     Page<IEventDto> getHotEvents(
 			@Param("userId") String userId,
@@ -75,9 +75,10 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN requestingParticipant IS NOT NULL THEN true ELSE false END) " + 
 			"FROM EventModel e " + 
 			"LEFT JOIN ParticipantEventModel requestedParticipant " + 
-			"ON requestedParticipant.id.eventId = e.id " + 
+			"ON requestedParticipant.id.eventId = e.id AND requestedParticipant.isDelete = false " + 
 			"LEFT JOIN ParticipantEventModel requestingParticipant " + 
-			"ON requestingParticipant.id.eventId = e.id AND requestingParticipant.id.userId = :requestingUserId " + 
+			"ON requestingParticipant.id.eventId = e.id " + 
+			"AND requestingParticipant.id.userId = :requestingUserId AND requestingParticipant.isDelete = false " + 
 			"WHERE requestedParticipant.id.userId = :requestedUserId " + 
 			"AND (CASE " +
 			"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
