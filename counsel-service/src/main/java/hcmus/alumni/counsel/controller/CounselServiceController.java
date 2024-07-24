@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto;
 import hcmus.alumni.counsel.dto.request.ReactRequestDto;
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.TagRequestDto;
 import hcmus.alumni.counsel.dto.request.PostAdviseRequestDto.VoteRequestDto;
+import hcmus.alumni.counsel.dto.response.CommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.response.ICommentPostAdviseDto;
 import hcmus.alumni.counsel.dto.response.ICommentWithPostDto;
 import hcmus.alumni.counsel.dto.response.IInteractPostAdviseDto;
@@ -80,6 +82,8 @@ import hcmus.alumni.counsel.utils.ImageUtils;
 import hcmus.alumni.counsel.repository.UserRepository;
 import hcmus.alumni.counsel.utils.FirebaseService;
 import hcmus.alumni.counsel.utils.NotificationService;
+import jakarta.persistence.EntityManager;
+import hcmus.alumni.counsel.common.CommentPostAdvisePermissions;
 import hcmus.alumni.counsel.common.NotificationType;
 
 @RestController
@@ -87,6 +91,8 @@ import hcmus.alumni.counsel.common.NotificationType;
 public class CounselServiceController {
 	@Autowired
 	private final ModelMapper mapper = new ModelMapper();
+	@Autowired
+	private EntityManager entityManager;
 
 	@Autowired
 	private UserRepository userRepository;
@@ -103,9 +109,9 @@ public class CounselServiceController {
 	@Autowired
 	private TagRepository tagRepository;
 	@Autowired
-	private EntityTypeRepository entityTypeRepository;  
+	private EntityTypeRepository entityTypeRepository;
 	@Autowired
-	private NotificationObjectRepository notificationObjectRepository; 
+	private NotificationObjectRepository notificationObjectRepository;
 	@Autowired
 	private NotificationChangeRepository notificationChangeRepository;
 	@Autowired
@@ -426,11 +432,11 @@ public class CounselServiceController {
 
 		postAdvise.setStatus(new StatusPostModel(4));
 		postAdviseRepository.save(postAdvise);
-		
+
 		List<String> entityIds = commentPostAdviseRepository.findByPostAdviseId(id);
 		entityIds.add(id);
 		notificationService.deleteNotificationsByEntityIds(entityIds);
-		
+
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
@@ -500,19 +506,25 @@ public class CounselServiceController {
 
 	@PreAuthorize("hasAnyAuthority('Counsel.Comment.Create')")
 	@PostMapping("/{id}/comments")
-	public ResponseEntity<String> createComment(
+	@Transactional
+	public ResponseEntity<HashMap<String, Object>> createComment(
 			@RequestHeader("userId") String creator,
 			@PathVariable String id, @RequestBody CommentPostAdviseModel comment) {
 		if (comment.getContent() == null || comment.getContent().equals("")) {
 			throw new AppException(60900, "Nội dung bình luận không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
+		HashMap<String, Object> result = new HashMap<String, Object>();
+
 		comment.setId(UUID.randomUUID().toString());
 		comment.setPostAdvise(new PostAdviseModel(id));
 		comment.setCreator(new UserModel(creator));
 
 		try {
-			commentPostAdviseRepository.save(comment);
+			CommentPostAdviseModel savedCmt = commentPostAdviseRepository.saveAndFlush(comment);
+			entityManager.refresh(savedCmt);
+			savedCmt.setPermissions(new CommentPostAdvisePermissions(true, true));
+			result.put("comment", mapper.map(savedCmt, CommentPostAdviseDto.class));
 		} catch (JpaObjectRetrievalFailureException e) {
 			throw new AppException(40901, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND);
 		} catch (DataIntegrityViolationException e) {
@@ -521,63 +533,74 @@ public class CounselServiceController {
 
 		if (comment.getParentId() != null) {
 			commentPostAdviseRepository.commentCountIncrement(comment.getParentId(), 1);
-			
+
 			// Fetch the parent comment
-			CommentPostAdviseModel parentComment = commentPostAdviseRepository.findById(comment.getParentId()).orElseThrow(() -> new AppException(40902, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
-			
+			CommentPostAdviseModel parentComment = commentPostAdviseRepository.findById(comment.getParentId())
+					.orElseThrow(() -> new AppException(40902, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND));
+
 			if (!parentComment.getCreator().getId().equals(creator)) {
 				// Create NotificationObject
-				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_post_advise", NotificationType.CREATE)
-				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_post_advise", NotificationType.CREATE, null)));
-				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				EntityTypeModel entityType = entityTypeRepository
+						.findByEntityTableAndNotificationType("comment_post_advise", NotificationType.CREATE)
+						.orElseGet(() -> entityTypeRepository
+								.save(new EntityTypeModel(null, "comment_post_advise", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType,
+						comment.getId(), new Date(), false);
 				notificationObject = notificationObjectRepository.save(notificationObject);
-				
+
 				// Create NotificationChange
-				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject,
+						new UserModel(creator), false);
 				notificationChangeRepository.save(notificationChange);
-				
+
 				// Create Notification
-				NotificationModel notification = new NotificationModel(null, notificationObject, parentComment.getCreator(), new StatusNotificationModel(1));
+				NotificationModel notification = new NotificationModel(null, notificationObject,
+						parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
-				
+
 				Optional<UserModel> optionalUser = userRepository.findById(creator);
 				firebaseService.sendNotification(
-						notification, notificationChange, notificationObject, 
-						optionalUser.get().getAvatarUrl(), 
+						notification, notificationChange, notificationObject,
+						optionalUser.get().getAvatarUrl(),
 						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getPostAdvise().getId());
 			}
 		} else {
 			postAdviseRepository.commentCountIncrement(id, 1);
-			
+
 			// Fetch the parent post
 			PostAdviseModel parentPost = postAdviseRepository.findById(comment.getPostAdvise().getId()).get();
-			
+
 			if (!parentPost.getCreator().getId().equals(creator)) {
 				// Create NotificationObject
-				EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("comment_post_advise", NotificationType.CREATE)
-				        .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "comment_post_advise", NotificationType.CREATE, null)));
-				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, comment.getId(), new Date(), false);
+				EntityTypeModel entityType = entityTypeRepository
+						.findByEntityTableAndNotificationType("comment_post_advise", NotificationType.CREATE)
+						.orElseGet(() -> entityTypeRepository
+								.save(new EntityTypeModel(null, "comment_post_advise", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType,
+						comment.getId(), new Date(), false);
 				notificationObject = notificationObjectRepository.save(notificationObject);
-				
+
 				// Create NotificationChange
-				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creator), false);
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject,
+						new UserModel(creator), false);
 				notificationChangeRepository.save(notificationChange);
-				
+
 				// Create Notification
-				NotificationModel notification = new NotificationModel(null, notificationObject, parentPost.getCreator(), new StatusNotificationModel(1));
+				NotificationModel notification = new NotificationModel(null, notificationObject,
+						parentPost.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
-				
+
 				Optional<UserModel> optionalUser = userRepository.findById(creator);
 				firebaseService.sendNotification(
-						notification, notificationChange, notificationObject, 
-						optionalUser.get().getAvatarUrl(), 
+						notification, notificationChange, notificationObject,
+						optionalUser.get().getAvatarUrl(),
 						optionalUser.get().getFullName() + " đã bình luận về bài viết của bạn",
 						comment.getPostAdvise().getId());
 			}
 		}
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(null);
+		return ResponseEntity.status(HttpStatus.CREATED).body(result);
 	}
 
 	@PreAuthorize("1 == @commentPostAdviseRepository.isCommentOwner(#commentId, #userId)")
@@ -639,7 +662,7 @@ public class CounselServiceController {
 				postAdviseRepository.commentCountIncrement(originalComment.getPostAdvise().getId(), -1);
 			}
 		}
-		
+
 		// Delete notifications for the comment and its children
 		List<String> allCommentIds = commentPostAdviseRepository.findByParentIds(allParentId);
 		allCommentIds.add(commentId);
@@ -689,39 +712,44 @@ public class CounselServiceController {
 			throw new AppException(61301, "postId hoặc reactId không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		postAdviseRepository.reactionCountIncrement(id, 1);
-		
+
 		// Notification creation logic
-	    PostAdviseModel postAdvise = postAdviseRepository.findById(id).get();
-	    
-	    if (!creatorId.equals(postAdvise.getCreator().getId())) {
-	        EntityTypeModel entityType = entityTypeRepository.findByEntityTableAndNotificationType("interact_post_advise", NotificationType.CREATE)
-	                .orElseGet(() -> entityTypeRepository.save(new EntityTypeModel(null, "interact_post_advise", NotificationType.CREATE, null)));
-	        
-	        Optional<NotificationObjectModel> optionalNotificationObject = notificationObjectRepository
-	                .findByEntityTypeAndEntityId(entityType, postAdvise.getId());
-	        
-	        if (optionalNotificationObject.isPresent()) {
-	            NotificationObjectModel notificationObject = optionalNotificationObject.get();
-	            notificationChangeRepository.updateActorIdByNotificationObject(notificationObject.getId(), creatorId);
-	            notificationRepository.updateStatusByNotificationObject(notificationObject.getId(), 1);
-	        } else {
-	            NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, postAdvise.getId(), new Date(), false);
-	            notificationObject = notificationObjectRepository.save(notificationObject);
+		PostAdviseModel postAdvise = postAdviseRepository.findById(id).get();
 
-	            NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, new UserModel(creatorId), false);
-	            notificationChangeRepository.save(notificationChange);
+		if (!creatorId.equals(postAdvise.getCreator().getId())) {
+			EntityTypeModel entityType = entityTypeRepository
+					.findByEntityTableAndNotificationType("interact_post_advise", NotificationType.CREATE)
+					.orElseGet(() -> entityTypeRepository
+							.save(new EntityTypeModel(null, "interact_post_advise", NotificationType.CREATE, null)));
 
-	            NotificationModel notification = new NotificationModel(null, notificationObject, postAdvise.getCreator(), new StatusNotificationModel((byte) 1));
-	            notificationRepository.save(notification);
-	            
-	            Optional<UserModel> optionalUser = userRepository.findById(creatorId);
-	            firebaseService.sendNotification(
+			Optional<NotificationObjectModel> optionalNotificationObject = notificationObjectRepository
+					.findByEntityTypeAndEntityId(entityType, postAdvise.getId());
+
+			if (optionalNotificationObject.isPresent()) {
+				NotificationObjectModel notificationObject = optionalNotificationObject.get();
+				notificationChangeRepository.updateActorIdByNotificationObject(notificationObject.getId(), creatorId);
+				notificationRepository.updateStatusByNotificationObject(notificationObject.getId(), 1);
+			} else {
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType,
+						postAdvise.getId(), new Date(), false);
+				notificationObject = notificationObjectRepository.save(notificationObject);
+
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject,
+						new UserModel(creatorId), false);
+				notificationChangeRepository.save(notificationChange);
+
+				NotificationModel notification = new NotificationModel(null, notificationObject,
+						postAdvise.getCreator(), new StatusNotificationModel((byte) 1));
+				notificationRepository.save(notification);
+
+				Optional<UserModel> optionalUser = userRepository.findById(creatorId);
+				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject,
-						optionalUser.get().getAvatarUrl(), 
+						optionalUser.get().getAvatarUrl(),
 						optionalUser.get().getFullName() + " đã bày tỏ cảm xúc về bài viết của bạn",
 						null);
-	        }
-	    }
+			}
+		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
@@ -767,11 +795,11 @@ public class CounselServiceController {
 		InteractPostAdviseModel interactPostAdvise = optionalInteractPostAdvise.get();
 		interactPostAdvise.setIsDelete(true);
 		postAdviseRepository.reactionCountIncrement(id, -1);
-		
+
 		List<String> entityIds = new ArrayList<String>();
 		entityIds.add(id);
 		notificationService.deleteNotificationsByEntityIds(entityIds);
-		
+
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
 
