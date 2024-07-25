@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import hcmus.alumni.userservice.dto.IAchievementDto;
+import hcmus.alumni.userservice.dto.profile.IAchievementDto;
 import hcmus.alumni.userservice.model.AchievementModel;
 
 public interface AchievementRepository extends JpaRepository<AchievementModel, String> {

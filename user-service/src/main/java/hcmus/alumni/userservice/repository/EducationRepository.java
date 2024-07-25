@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import hcmus.alumni.userservice.dto.IEducationDto;
+import hcmus.alumni.userservice.dto.profile.IEducationDto;
 import hcmus.alumni.userservice.model.EducationModel;
 
 public interface EducationRepository extends JpaRepository<EducationModel, String> {

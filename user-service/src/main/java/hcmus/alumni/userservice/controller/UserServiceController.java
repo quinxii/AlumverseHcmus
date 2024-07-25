@@ -26,6 +26,7 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Selection;
 
 import org.apache.commons.lang.StringUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,26 +53,29 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.userservice.common.NotificationType;
 import hcmus.alumni.userservice.common.Privacy;
 import hcmus.alumni.userservice.config.UserConfig;
-import hcmus.alumni.userservice.dto.AchievementDto;
-import hcmus.alumni.userservice.dto.AlumniDto;
-import hcmus.alumni.userservice.dto.EducationDto;
-import hcmus.alumni.userservice.dto.FriendIdRequestDto;
-import hcmus.alumni.userservice.dto.FriendRelationShipDto;
-import hcmus.alumni.userservice.dto.FriendRequestActionDTO;
-import hcmus.alumni.userservice.dto.IAchievementDto;
-import hcmus.alumni.userservice.dto.IAlumniProfileDto;
-import hcmus.alumni.userservice.dto.IEducationDto;
-import hcmus.alumni.userservice.dto.IFriendRequestDto;
-import hcmus.alumni.userservice.dto.IJobDto;
-import hcmus.alumni.userservice.dto.ISuggestionUserDto;
-import hcmus.alumni.userservice.dto.IUserProfileDto;
-import hcmus.alumni.userservice.dto.IUserSearchDto;
-import hcmus.alumni.userservice.dto.IVerifyAlumniProfileDto;
-import hcmus.alumni.userservice.dto.JobDto;
-import hcmus.alumni.userservice.dto.ProfileRequestDto;
-import hcmus.alumni.userservice.dto.UserDto;
-import hcmus.alumni.userservice.dto.VerifyAlumniDto;
-import hcmus.alumni.userservice.dto.VerifyAlumniRequestDto;
+import hcmus.alumni.userservice.dto.friend.FriendIdRequestDto;
+import hcmus.alumni.userservice.dto.friend.FriendRelationShipDto;
+import hcmus.alumni.userservice.dto.friend.FriendRequestActionDTO;
+import hcmus.alumni.userservice.dto.friend.IFriendRequestDto;
+import hcmus.alumni.userservice.dto.profile.AchievementDto;
+import hcmus.alumni.userservice.dto.profile.AchievementRequestDto;
+import hcmus.alumni.userservice.dto.profile.EducationDto;
+import hcmus.alumni.userservice.dto.profile.EducationRequestDto;
+import hcmus.alumni.userservice.dto.profile.IAchievementDto;
+import hcmus.alumni.userservice.dto.profile.IAlumniProfileDto;
+import hcmus.alumni.userservice.dto.profile.IEducationDto;
+import hcmus.alumni.userservice.dto.profile.IJobDto;
+import hcmus.alumni.userservice.dto.profile.IUserProfileDto;
+import hcmus.alumni.userservice.dto.profile.JobDto;
+import hcmus.alumni.userservice.dto.profile.JobRequestDto;
+import hcmus.alumni.userservice.dto.profile.ProfileRequestDto;
+import hcmus.alumni.userservice.dto.role.UserDto;
+import hcmus.alumni.userservice.dto.user.ISuggestionUserDto;
+import hcmus.alumni.userservice.dto.user.IUserSearchDto;
+import hcmus.alumni.userservice.dto.verifyAlumni.AlumniDto;
+import hcmus.alumni.userservice.dto.verifyAlumni.IVerifyAlumniProfileDto;
+import hcmus.alumni.userservice.dto.verifyAlumni.VerifyAlumniDto;
+import hcmus.alumni.userservice.dto.verifyAlumni.VerifyAlumniRequestDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.AchievementModel;
 import hcmus.alumni.userservice.model.AlumniModel;
@@ -112,6 +117,8 @@ import hcmus.alumni.userservice.utils.NotificationService;
 public class UserServiceController {
 	@PersistenceContext
 	private EntityManager em;
+	@Autowired
+	private final ModelMapper mapper = new ModelMapper();
 
 	@Autowired
 	private UserRepository userRepository;
@@ -163,20 +170,21 @@ public class UserServiceController {
 	@GetMapping("/alumni-verification/count")
 	public ResponseEntity<Long> getPendingAlumniVerificationCount(@RequestParam String status) {
 		switch (status) {
-		case "pending":
-			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.PENDING));
-		case "resolved":
-			return ResponseEntity.status(HttpStatus.OK).body(
-					verifyAlumniRepository.countByIsDeleteEqualsAndStatusNot(false, VerifyAlumniModel.Status.PENDING));
-		case "approved":
-			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.APPROVED));
-		case "denied":
-			return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
-					.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.DENIED));
-		default:
-			throw new AppException(20100, "status không hợp lệ", HttpStatus.BAD_REQUEST);
+			case "pending":
+				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.PENDING));
+			case "resolved":
+				return ResponseEntity.status(HttpStatus.OK).body(
+						verifyAlumniRepository.countByIsDeleteEqualsAndStatusNot(false,
+								VerifyAlumniModel.Status.PENDING));
+			case "approved":
+				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.APPROVED));
+			case "denied":
+				return ResponseEntity.status(HttpStatus.OK).body(verifyAlumniRepository
+						.countByIsDeleteEqualsAndStatusEquals(false, VerifyAlumniModel.Status.DENIED));
+			default:
+				throw new AppException(20100, "status không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -222,20 +230,20 @@ public class UserServiceController {
 		// Where
 		Predicate statusPredication = null;
 		switch (status) {
-		case "pending":
-			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.PENDING);
-			break;
-		case "resolved":
-			statusPredication = cb.notEqual(root.get("status"), VerifyAlumniModel.Status.PENDING);
-			break;
-		case "approved":
-			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.APPROVED);
-			break;
-		case "denied":
-			statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.DENIED);
-			break;
-		default:
-			throw new AppException(20200, "status không hợp lệ", HttpStatus.BAD_REQUEST);
+			case "pending":
+				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.PENDING);
+				break;
+			case "resolved":
+				statusPredication = cb.notEqual(root.get("status"), VerifyAlumniModel.Status.PENDING);
+				break;
+			case "approved":
+				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.APPROVED);
+				break;
+			case "denied":
+				statusPredication = cb.equal(root.get("status"), VerifyAlumniModel.Status.DENIED);
+				break;
+			default:
+				throw new AppException(20200, "status không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		Predicate isDeletePredicate = cb.equal(root.get("isDelete"), false);
 		Predicate criteriaPredicate = null;
@@ -579,7 +587,8 @@ public class UserServiceController {
 
 		Map<String, Object> response = new HashMap<>();
 
-		List<IVerifyAlumniProfileDto> alumniVerificationOptional = verifyAlumniRepository.findFirstByUserIdAndIsDelete(id, false);
+		List<IVerifyAlumniProfileDto> alumniVerificationOptional = verifyAlumniRepository
+				.findFirstByUserIdAndIsDelete(id, false);
 
 		response.put("user", user);
 		response.put("alumni", optionalAlumni);
@@ -771,7 +780,9 @@ public class UserServiceController {
 	}
 
 	@PostMapping("profile/job")
-	public ResponseEntity<String> createJob(@RequestHeader String userId, @RequestBody JobDto newJobDto) {
+	@Transactional
+	public ResponseEntity<HashMap<String, Object>> createJob(@RequestHeader String userId,
+			@RequestBody JobRequestDto newJobDto) {
 		Optional<UserModel> optionalUser = userRepository.findById(userId);
 		if (optionalUser.isEmpty()) {
 			throw new AppException(21900, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
@@ -818,14 +829,17 @@ public class UserServiceController {
 			newJob.setIsWorking(newJobDto.getIsWorking());
 		}
 
-		jobRepository.save(newJob);
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		JobModel savedJob = jobRepository.saveAndFlush(newJob);
+		em.refresh(savedJob);
+		result.put("job", mapper.map(savedJob, JobDto.class));
 
-		return ResponseEntity.status(HttpStatus.CREATED).body("");
+		return ResponseEntity.status(HttpStatus.CREATED).body(result);
 	}
 
 	@PutMapping("profile/job/{jobId}")
 	public ResponseEntity<String> updateJob(@RequestHeader String userId, @PathVariable String jobId,
-			@RequestBody JobDto updatedJobDto) {
+			@RequestBody JobRequestDto updatedJobDto) {
 
 		Optional<JobModel> optionalJob = jobRepository.findByUserIdAndJobId(userId, jobId);
 		if (optionalJob.isEmpty()) {
@@ -898,8 +912,9 @@ public class UserServiceController {
 	}
 
 	@PostMapping("/profile/education")
-	public ResponseEntity<String> createEducation(@RequestHeader String userId,
-			@RequestBody EducationDto newEducationDto) {
+	@Transactional
+	public ResponseEntity<HashMap<String, Object>> createEducation(@RequestHeader String userId,
+			@RequestBody EducationRequestDto newEducationDto) {
 		Optional<UserModel> optionalUser = userRepository.findById(userId);
 		if (optionalUser.isEmpty()) {
 			throw new AppException(22300, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
@@ -911,6 +926,7 @@ public class UserServiceController {
 		if (newEducationDto.getDegree() == null || newEducationDto.getDegree().isBlank()) {
 			throw new AppException(22302, "Tên bằng cấp không được để trống", HttpStatus.BAD_REQUEST);
 		}
+		System.out.println(newEducationDto.getIsLearning());
 
 		Optional<EducationModel> optionalEdu = educationRepository.findByUserIdAndSchoolNameAndDegree(userId,
 				newEducationDto.getSchoolName(), newEducationDto.getDegree());
@@ -946,14 +962,17 @@ public class UserServiceController {
 			newEdu.setIsLearning(newEducationDto.getIsLearning());
 		}
 
-		educationRepository.save(newEdu);
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		EducationModel savedEdu = educationRepository.saveAndFlush(newEdu);
+		em.refresh(savedEdu);
+		result.put("education", mapper.map(savedEdu, EducationDto.class));
 
-		return ResponseEntity.status(HttpStatus.CREATED).body("");
+		return ResponseEntity.status(HttpStatus.CREATED).body(result);
 	}
 
 	@PutMapping("/profile/education/{educationId}")
 	public ResponseEntity<String> updateEducation(@RequestHeader String userId, @PathVariable String educationId,
-			@RequestBody EducationDto updatedEducationDto) {
+			@RequestBody EducationRequestDto updatedEducationDto) {
 
 		Optional<EducationModel> optionalEdu = educationRepository.findByUserIdAndEducationId(userId, educationId);
 		if (optionalEdu.isEmpty()) {
@@ -1027,8 +1046,9 @@ public class UserServiceController {
 	}
 
 	@PostMapping("/profile/achievement")
-	public ResponseEntity<String> createAchievement(@RequestHeader String userId,
-			@RequestBody AchievementDto newAchievementDto) {
+	@Transactional
+	public ResponseEntity<HashMap<String, Object>> createAchievement(@RequestHeader String userId,
+			@RequestBody AchievementRequestDto newAchievementDto) {
 		Optional<UserModel> optionalUser = userRepository.findById(userId);
 		if (optionalUser.isEmpty()) {
 			throw new AppException(22700, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
@@ -1074,14 +1094,17 @@ public class UserServiceController {
 			newAchievement.setPrivacy(Privacy.valueOf(newAchievementDto.getPrivacy().toUpperCase()));
 		}
 
-		achievementRepository.save(newAchievement);
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		AchievementModel savedAchievement = achievementRepository.saveAndFlush(newAchievement);
+		em.refresh(savedAchievement);
+		result.put("achievement", mapper.map(savedAchievement, AchievementDto.class));
 
-		return ResponseEntity.status(HttpStatus.CREATED).body("");
+		return ResponseEntity.status(HttpStatus.CREATED).body(result);
 	}
 
 	@PutMapping("/profile/achievement/{achievementId}")
 	public ResponseEntity<String> updateAchievement(@RequestHeader String userId, @PathVariable String achievementId,
-			@RequestBody AchievementDto updatedAchievementDto) {
+			@RequestBody AchievementRequestDto updatedAchievementDto) {
 
 		Optional<AchievementModel> optionalAchievement = achievementRepository.findByUserIdAndAchievementId(userId,
 				achievementId);
@@ -1151,12 +1174,12 @@ public class UserServiceController {
 				FriendRelationShipDto dto = new FriendRelationShipDto();
 
 				if (friend.getUser().getId().equals(id)) {
-	                dto.setFriend(friend.getFriend());
-	            } else {
-	                dto.setFriend(friend.getUser());
-	            }
+					dto.setFriend(friend.getFriend());
+				} else {
+					dto.setFriend(friend.getUser());
+				}
 
-	            return dto;
+				return dto;
 			});
 
 			result.put("totalPages", dtoPage.getTotalPages());
@@ -1243,9 +1266,9 @@ public class UserServiceController {
 
 		notificationService.deleteNotification("request_friend", NotificationType.DELETE, user.getId());
 		notificationService.deleteNotification("request_friend", NotificationType.DELETE, friend.getId());
-		notificationService.createNotification("request_friend", NotificationType.CREATE, 
-			friendId, user, friend, 
-			user.getFullName() + " đã gửi một lời mời kết bạn", null);
+		notificationService.createNotification("request_friend", NotificationType.CREATE,
+				friendId, user, friend,
+				user.getFullName() + " đã gửi một lời mời kết bạn", null);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body("");
 	}
@@ -1288,9 +1311,9 @@ public class UserServiceController {
 
 			notificationService.deleteNotification("request_friend", NotificationType.CREATE, user.getId());
 			String notificationMessage = optionalUser.get().getFullName() + " đã chấp nhận lời mời kết bạn";
-			notificationService.createNotification("friend", NotificationType.CREATE, 
-				friend.getId(), user, friend, 
-				notificationMessage,null);
+			notificationService.createNotification("friend", NotificationType.CREATE,
+					friend.getId(), user, friend,
+					notificationMessage, null);
 
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		} else if (action == FriendRequestAction.DENY) {
@@ -1305,9 +1328,9 @@ public class UserServiceController {
 
 			notificationService.deleteNotification("request_friend", NotificationType.CREATE, userId);
 			String notificationMessage = optionalUser.get().getFullName() + " đã từ chối lời mời kết bạn";
-			notificationService.createNotification("request_friend", NotificationType.DELETE, 
-				friendId, optionalUser.get(), optionalFriend.get(), 
-				notificationMessage,null);
+			notificationService.createNotification("request_friend", NotificationType.DELETE,
+					friendId, optionalUser.get(), optionalFriend.get(),
+					notificationMessage, null);
 
 			return ResponseEntity.status(HttpStatus.OK).body("");
 		} else {

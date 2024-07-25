@@ -20,10 +20,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import hcmus.alumni.userservice.dto.IPermissionDto;
-import hcmus.alumni.userservice.dto.IRoleDto;
-import hcmus.alumni.userservice.dto.IRoleWithoutPermissionsDto;
-import hcmus.alumni.userservice.dto.RoleRequestDto;
+import hcmus.alumni.userservice.dto.role.IPermissionDto;
+import hcmus.alumni.userservice.dto.role.IRoleDto;
+import hcmus.alumni.userservice.dto.role.IRoleWithoutPermissionsDto;
+import hcmus.alumni.userservice.dto.role.RoleRequestDto;
 import hcmus.alumni.userservice.exception.AppException;
 import hcmus.alumni.userservice.model.PermissionModel;
 import hcmus.alumni.userservice.model.RoleModel;
