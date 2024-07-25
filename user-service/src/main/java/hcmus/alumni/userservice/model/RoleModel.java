@@ -21,7 +21,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import hcmus.alumni.userservice.dto.RoleRequestDto;
+import hcmus.alumni.userservice.dto.role.RoleRequestDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;

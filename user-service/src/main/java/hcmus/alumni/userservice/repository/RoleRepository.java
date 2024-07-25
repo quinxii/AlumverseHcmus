@@ -10,8 +10,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
-import hcmus.alumni.userservice.dto.IRoleDto;
-import hcmus.alumni.userservice.dto.IRoleWithoutPermissionsDto;
+import hcmus.alumni.userservice.dto.role.IRoleDto;
+import hcmus.alumni.userservice.dto.role.IRoleWithoutPermissionsDto;
 import hcmus.alumni.userservice.model.RoleModel;
 
 public interface RoleRepository extends JpaRepository<RoleModel, Integer> {

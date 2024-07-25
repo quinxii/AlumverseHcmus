@@ -11,9 +11,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import hcmus.alumni.userservice.dto.ISuggestionUserDto;
-import hcmus.alumni.userservice.dto.IUserProfileDto;
-import hcmus.alumni.userservice.dto.IUserSearchDto;
+import hcmus.alumni.userservice.dto.profile.IUserProfileDto;
+import hcmus.alumni.userservice.dto.user.ISuggestionUserDto;
+import hcmus.alumni.userservice.dto.user.IUserSearchDto;
 import hcmus.alumni.userservice.model.FacultyModel;
 import hcmus.alumni.userservice.model.UserModel;
 

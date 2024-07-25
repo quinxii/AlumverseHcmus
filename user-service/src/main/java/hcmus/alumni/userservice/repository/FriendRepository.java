@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import hcmus.alumni.userservice.dto.FriendRelationShipDto;
+import hcmus.alumni.userservice.dto.friend.FriendRelationShipDto;
 import hcmus.alumni.userservice.model.FriendId;
 import hcmus.alumni.userservice.model.FriendModel;
 

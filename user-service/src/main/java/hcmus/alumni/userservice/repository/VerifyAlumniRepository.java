@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import hcmus.alumni.userservice.dto.IVerifyAlumniDto;
-import hcmus.alumni.userservice.dto.IVerifyAlumniProfileDto;
+import hcmus.alumni.userservice.dto.verifyAlumni.IVerifyAlumniDto;
+import hcmus.alumni.userservice.dto.verifyAlumni.IVerifyAlumniProfileDto;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel.Status;
 
