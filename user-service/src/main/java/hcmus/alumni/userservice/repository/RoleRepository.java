@@ -37,4 +37,5 @@ public interface RoleRepository extends JpaRepository<RoleModel, Integer> {
             "where r.id in (select role_id from user_role where user_id = :userId) and p.name like :domain% and rp.is_delete = false;", nativeQuery = true)
     List<String> getPermissions(String userId, String domain);
     
+    RoleModel findByName(String name);
 }

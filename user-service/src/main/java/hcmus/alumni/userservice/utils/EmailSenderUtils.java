@@ -3,6 +3,8 @@ package hcmus.alumni.userservice.utils;
 import java.io.IOException;
 import java.util.HashMap;
 
+import hcmus.alumni.userservice.repository.EmailActivationCodeRepository;
+import hcmus.alumni.userservice.repository.EmailResetCodeRepository;
 import models.SendEnhancedRequestBody;
 import models.SendEnhancedResponseBody;
 import models.SendRequestMessage;
@@ -11,6 +13,9 @@ import services.SendService;
 
 public class EmailSenderUtils {
 
+    private UserUtils userUtils = UserUtils.getInstance();
+    private EmailActivationCodeGeneratorUtils authorizationCodeGeneratorUtils = EmailActivationCodeGeneratorUtils
+            .getInstance();
     private static volatile EmailSenderUtils instance = null;
 
     private EmailSenderUtils() {
@@ -47,33 +52,52 @@ public class EmailSenderUtils {
         sendEnhancedRequestBody.setMessage(sendRequestMessage);
 
         SendEnhancedResponseBody response = new SendService().sendEnhancedMessage(sendEnhancedRequestBody);
-        System.out.println("Password sent successfully to " + userEmail);
-
     }
 
-    // public void sendPasswordResetEmail(String userEmail, String resetUrl) {
-    //     Courier.init("PK_PROD_D8HF91KG5AM7G4HBKFEECG9KARHM");
+    public void sendEmail(EmailActivationCodeRepository emailActivationCodeRepository, String userEmail)
+            throws IOException {
+        String authorizeCode = authorizationCodeGeneratorUtils.generateAuthorizeCode();
 
-    //     SendEnhancedRequestBody sendEnhancedRequestBody = new SendEnhancedRequestBody();
-    //     SendRequestMessage sendRequestMessage = new SendRequestMessage();
-    //     HashMap<String, String> to = new HashMap<String, String>();
-    //     to.put("email", userEmail);
-    //     sendRequestMessage.setTo(to);
-    //     sendRequestMessage.setTemplate("KGA5V18RZ8428BPEA18A0ABTRQRX");
+        Courier.init("pk_prod_D8HF91KG5AM7G4HBKFEECG9KARHM");
 
-    //     HashMap<String, Object> data = new HashMap<>();
-    //     data.put("recipientName", userEmail);
-    //     data.put("resetUrl", resetUrl);
+        SendEnhancedRequestBody sendEnhancedRequestBody = new SendEnhancedRequestBody();
+        SendRequestMessage sendRequestMessage = new SendRequestMessage();
+        HashMap<String, String> to = new HashMap<String, String>();
+        to.put("email", userEmail);
+        sendRequestMessage.setTo(to);
+        sendRequestMessage.setTemplate("KGA5V18RZ8428BPEA18A0ABTRQRX");
 
-    //     sendRequestMessage.setData(data);
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        data.put("recipientName", userEmail);
+        data.put("authorizeCode", authorizeCode);
 
-    //     sendEnhancedRequestBody.setMessage(sendRequestMessage);
+        sendRequestMessage.setData(data);
+        sendEnhancedRequestBody.setMessage(sendRequestMessage);
 
-    //     try {
-    //         SendEnhancedResponseBody response = new SendService().sendEnhancedMessage(sendEnhancedRequestBody);
-    //         System.out.println("Password reset email sent successfully to " + userEmail);
-    //     } catch (IOException e) {
-    //         System.err.println("Error sending password reset email: " + e.getMessage());
-    //     }
-    // }
+        SendEnhancedResponseBody response = new SendService().sendEnhancedMessage(sendEnhancedRequestBody);
+        userUtils.saveActivationCode(emailActivationCodeRepository, userEmail, authorizeCode);
+    }
+
+    public void sendPasswordResetEmail(EmailResetCodeRepository emailResetCodeRepository, String userEmail)
+            throws IOException {
+        String resetCode = authorizationCodeGeneratorUtils.generateAuthorizeCode();
+        Courier.init("pk_prod_D8HF91KG5AM7G4HBKFEECG9KARHM");
+
+        SendEnhancedRequestBody sendEnhancedRequestBody = new SendEnhancedRequestBody();
+        SendRequestMessage sendRequestMessage = new SendRequestMessage();
+        HashMap<String, String> to = new HashMap<String, String>();
+        to.put("email", userEmail);
+        sendRequestMessage.setTo(to);
+        sendRequestMessage.setTemplate("N3S5AP8ECR46S8HNWBNCJ08XRXY1");
+
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("recipientName", userEmail);
+        data.put("resetCode", resetCode);
+
+        sendRequestMessage.setData(data);
+        sendEnhancedRequestBody.setMessage(sendRequestMessage);
+
+        SendEnhancedResponseBody response = new SendService().sendEnhancedMessage(sendEnhancedRequestBody);
+        userUtils.saveResetCode(emailResetCodeRepository, userEmail, resetCode);
+    }
 }

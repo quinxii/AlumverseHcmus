@@ -1,0 +1,141 @@
+package hcmus.alumni.userservice.utils;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import hcmus.alumni.userservice.model.EmailActivationCodeModel;
+import hcmus.alumni.userservice.model.EmailResetCodeModel;
+import hcmus.alumni.userservice.repository.EmailActivationCodeRepository;
+import hcmus.alumni.userservice.repository.EmailResetCodeRepository;
+import hcmus.alumni.userservice.repository.UserRepository;
+
+public class UserUtils {
+	private static volatile UserUtils instance  = null;
+	private static final int TIME_LIMIT_MINUTES = 1;
+	
+	@Autowired
+	private UserRepository userRepository;
+	
+	private UserUtils() {
+        super();
+    }
+	
+	public static UserUtils getInstance() {
+        if (instance == null) {
+            synchronized (UserUtils.class) {
+                if (instance == null) {
+                    instance = new UserUtils();
+                }
+            }
+        }
+        return instance;
+    }
+	
+	public boolean saveActivationCode(EmailActivationCodeRepository emailActivationCodeRepository, String email, String activationCode) {
+	    Date dt = new Date();
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	    String currentTime = sdf.format(dt);
+	    
+	    if (emailActivationCodeRepository == null) {
+	        System.err.println("EmailActivationCodeRepository is null");
+	        return false; 
+	    }
+	    
+	    EmailActivationCodeModel existingCode = emailActivationCodeRepository.findByEmail(email);
+
+	    if (existingCode != null) {
+	        // Update the existing email activation code
+	        existingCode.setActivationCode(activationCode);
+	        existingCode.setCreatedAt(currentTime); 
+	        emailActivationCodeRepository.save(existingCode);
+	        System.out.println("Activation code updated for email: " + email);
+	        return true;
+	    } else {
+	        // Create a new email activation code
+	        EmailActivationCodeModel newActivationCode = new EmailActivationCodeModel();
+	        newActivationCode.setEmail(email);
+	        newActivationCode.setActivationCode(activationCode);
+	        newActivationCode.setCreatedAt(currentTime);
+	        emailActivationCodeRepository.save(newActivationCode);
+	        System.out.println("New activation code saved for email: " + email);
+	        return true;
+	    }
+	}
+
+	public boolean saveResetCode(EmailResetCodeRepository emailResetCodeRepository, String email, String resetCode) {
+	    Date dt = new Date();
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	    String currentTime = sdf.format(dt);
+	    
+	    if (emailResetCodeRepository == null) {
+	        System.err.println("EmailResetCodeRepository is null");
+	        return false; 
+	    }
+	    
+	    EmailResetCodeModel existingCode = emailResetCodeRepository.findByEmail(email);
+
+	    if (existingCode != null) {
+	        existingCode.setResetCode(resetCode);
+	        existingCode.setCreatedAt(currentTime); 
+	        emailResetCodeRepository.save(existingCode);
+	        System.out.println("Reset code updated for email: " + email);
+	        return true;
+	    } else {
+	        EmailResetCodeModel newActivationCode = new EmailResetCodeModel();
+	        newActivationCode.setEmail(email);
+	        newActivationCode.setResetCode(resetCode);
+	        newActivationCode.setCreatedAt(currentTime);
+	        emailResetCodeRepository.save(newActivationCode);
+	        System.out.println("New reset code saved for email: " + email);
+	        return true;
+	    }
+	}
+	
+	public boolean checkActivationCode(EmailActivationCodeRepository emailActivationCodeRepository, String email, String activationCode) {
+	    EmailActivationCodeModel expectedActivateCode = emailActivationCodeRepository.findByEmail(email);
+	    
+	    if (expectedActivateCode == null) {
+	        return false;
+	    }
+	    
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	    Date createdAt;
+	    long diffInMinutes = 0; 
+		try {
+			createdAt = sdf.parse(expectedActivateCode.getCreatedAt());
+			long diffInMilliseconds = Math.abs(new Date().getTime() - createdAt.getTime());
+			diffInMinutes = diffInMilliseconds / (1000 * 60);
+		} catch (ParseException pe) {
+			pe.printStackTrace();
+			return false;
+		}
+	    
+	    return email.equals(expectedActivateCode.getEmail()) && activationCode.equals(expectedActivateCode.getActivationCode()) && diffInMinutes < TIME_LIMIT_MINUTES;
+	}
+
+	public boolean checkResetCode(EmailResetCodeRepository emailResetCodeRepository, String email, String resetCode) {
+	    EmailResetCodeModel expectedActivateCode = emailResetCodeRepository.findByEmail(email);
+	    
+	    if (expectedActivateCode == null) {
+	        return false;
+	    }
+	    
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	    Date createdAt;
+	    long diffInMinutes = 0; 
+		try {
+			createdAt = sdf.parse(expectedActivateCode.getCreatedAt());
+			long diffInMilliseconds = Math.abs(new Date().getTime() - createdAt.getTime());
+			diffInMinutes = diffInMilliseconds / (1000 * 60);
+		} catch (ParseException pe) {
+			pe.printStackTrace();
+			return false;
+		}
+	    
+	    return email.equals(expectedActivateCode.getEmail()) && resetCode.equals(expectedActivateCode.getResetCode()) && diffInMinutes < TIME_LIMIT_MINUTES;
+	}
+
+}
