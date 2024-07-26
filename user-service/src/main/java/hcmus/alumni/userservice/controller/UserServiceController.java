@@ -36,7 +36,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,7 +51,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.userservice.common.NotificationType;
 import hcmus.alumni.userservice.common.Privacy;
-import hcmus.alumni.userservice.config.UserConfig;
 import hcmus.alumni.userservice.dto.friend.FriendIdRequestDto;
 import hcmus.alumni.userservice.dto.friend.FriendRelationShipDto;
 import hcmus.alumni.userservice.dto.friend.FriendRequestActionDTO;
@@ -87,28 +85,20 @@ import hcmus.alumni.userservice.model.FriendRequestAction;
 import hcmus.alumni.userservice.model.FriendRequestId;
 import hcmus.alumni.userservice.model.FriendRequestModel;
 import hcmus.alumni.userservice.model.JobModel;
-import hcmus.alumni.userservice.model.PasswordHistoryModel;
 import hcmus.alumni.userservice.model.RoleModel;
 import hcmus.alumni.userservice.model.SexModel;
 import hcmus.alumni.userservice.model.UserModel;
 import hcmus.alumni.userservice.model.VerifyAlumniModel;
-import hcmus.alumni.userservice.model.notification.EntityTypeModel;
-import hcmus.alumni.userservice.model.notification.NotificationChangeModel;
-import hcmus.alumni.userservice.model.notification.NotificationModel;
-import hcmus.alumni.userservice.model.notification.NotificationObjectModel;
-import hcmus.alumni.userservice.model.notification.StatusNotificationModel;
 import hcmus.alumni.userservice.repository.AchievementRepository;
 import hcmus.alumni.userservice.repository.AlumniRepository;
 import hcmus.alumni.userservice.repository.EducationRepository;
 import hcmus.alumni.userservice.repository.FriendRepository;
 import hcmus.alumni.userservice.repository.FriendRequestRepository;
 import hcmus.alumni.userservice.repository.JobRepository;
-import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.RoleRepository;
 import hcmus.alumni.userservice.repository.StatusUserGroupRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.repository.VerifyAlumniRepository;
-import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 import hcmus.alumni.userservice.utils.NotificationService;
 
@@ -136,12 +126,6 @@ public class UserServiceController {
 	private ImageUtils imageUtils;
 
 	@Autowired
-	private PasswordEncoder passwordEncoder;
-
-	@Autowired
-	private PasswordHistoryRepository passwordHistoryRepository;
-
-	@Autowired
 	private AlumniRepository alumniRepository;
 
 	@Autowired
@@ -161,8 +145,6 @@ public class UserServiceController {
 
 	@Autowired
 	private NotificationService notificationService;
-
-	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
 	private final static int MAXIMUM_PAGES = 50;
 
@@ -412,55 +394,6 @@ public class UserServiceController {
 		}
 
 		return ResponseEntity.ok("");
-	}
-
-	@PreAuthorize("hasAnyAuthority('User.Create')")
-	@PostMapping("")
-	public ResponseEntity<String> adminCreateUser(@RequestBody UserModel req) {
-		if (req.getEmail() == null || req.getEmail().equals("")) {
-			throw new AppException(20600, "Email không được để trống", HttpStatus.BAD_REQUEST);
-		}
-		if (req.getFullName() == null || req.getFullName().equals("")) {
-			throw new AppException(20601, "Họ tên không được để trống", HttpStatus.BAD_REQUEST);
-		}
-		if (req.getRoles() == null || req.getRoles().size() == 0) {
-			throw new AppException(20602, "Vai trò không được để trống", HttpStatus.BAD_REQUEST);
-		}
-
-		UserModel newUser = new UserModel();
-		newUser.setId(UUID.randomUUID().toString());
-		newUser.setEmail(req.getEmail());
-		String pwd = UserConfig.generateRandomPassword(10);
-		newUser.setPass(passwordEncoder.encode(pwd));
-		newUser.setFullName(req.getFullName());
-		PasswordHistoryModel passwordHistory = new PasswordHistoryModel(newUser.getId(), newUser.getPass(), true,
-				new Date());
-
-		Set<RoleModel> roles = new HashSet<>();
-		for (RoleModel role : req.getRoles()) {
-			Optional<RoleModel> roleModelOptional = roleRepository.findById(role.getId());
-			if (!roleModelOptional.isPresent()) {
-				throw new AppException(20603, "Vai trò không tồn tại", HttpStatus.NOT_FOUND);
-
-			}
-			roles.add(roleModelOptional.get());
-		}
-
-		newUser.setRoles(roles);
-
-		try {
-			userRepository.save(newUser);
-			passwordHistoryRepository.save(passwordHistory);
-			emailSenderUtils.sendPasswordEmail(req.getEmail(), pwd);
-		} catch (DataIntegrityViolationException e) {
-			System.err.println(e);
-			throw new AppException(20604, "Email đã tồn tại", HttpStatus.BAD_REQUEST);
-		} catch (IOException e) {
-			System.err.println(e);
-			throw new AppException(20605, "Lỗi khi gửi email", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-		return ResponseEntity.status(HttpStatus.CREATED).body("");
 	}
 
 	@PreAuthorize("hasAnyAuthority('User.Edit')")

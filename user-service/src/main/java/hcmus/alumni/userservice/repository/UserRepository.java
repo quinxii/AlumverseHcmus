@@ -1,5 +1,6 @@
 package hcmus.alumni.userservice.repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,40 +57,38 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	String findAvatarUrlByUserId(@Param("userId") String userId);
 
 	@Query(value = "SELECT u.id, u.full_name AS fullName, u.email, u.avatar_url AS avatarUrl, u.status_id AS statusId, "
-	        + "u.faculty_id AS facultyId, a.graduation_year AS graduationYear, "
-	        + "(u.faculty_id = (SELECT user.faculty_id FROM user WHERE user.id = :currentUserId)) AS sameFaculty, "
-	        + "(a.graduation_year = (SELECT alumni.graduation_year FROM alumni WHERE alumni.user_id = :currentUserId)) AS sameGraduationYear "
-	        + "FROM user u "
-	        + "LEFT JOIN alumni a ON u.id = a.user_id "
-	        + "LEFT JOIN request_friend fr1 ON u.id = fr1.user_id AND fr1.friend_id = :currentUserId AND fr1.is_delete = false "
-	        + "LEFT JOIN request_friend fr2 ON u.id = fr2.friend_id AND fr2.user_id = :currentUserId AND fr2.is_delete = false "
-	        + "LEFT JOIN friend f1 ON u.id = f1.user_id AND :currentUserId = f1.friend_id AND f1.is_delete = false "
-	        + "LEFT JOIN friend f2 ON u.id = f2.friend_id AND :currentUserId = f2.user_id AND f2.is_delete = false "
-	        + "WHERE u.status_id = 2 "
-	        + "AND (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
-	        + "AND (:email IS NULL OR u.email LIKE CONCAT('%', :email, '%')) "
-	        + "AND u.id != :currentUserId "
-	        + "AND fr1.user_id IS NULL "
-	        + "AND fr2.friend_id IS NULL "
-	        + "AND f1.friend_id IS NULL "
-	        + "AND f2.user_id IS NULL "
-	        + "ORDER BY sameFaculty DESC, sameGraduationYear DESC, u.full_name ASC",
-	       countQuery = "SELECT COUNT(u.id) "
-	               + "FROM user u "
-	               + "LEFT JOIN alumni a ON u.id = a.user_id "
-	               + "LEFT JOIN request_friend fr1 ON u.id = fr1.user_id AND fr1.friend_id = :currentUserId AND fr1.is_delete = false "
-	               + "LEFT JOIN request_friend fr2 ON u.id = fr2.friend_id AND fr2.user_id = :currentUserId AND fr2.is_delete = false "
-	               + "LEFT JOIN friend f1 ON u.id = f1.user_id AND :currentUserId = f1.friend_id AND f1.is_delete = false "
-	               + "LEFT JOIN friend f2 ON u.id = f2.friend_id AND :currentUserId = f2.user_id AND f2.is_delete = false "
-	               + "WHERE u.status_id = 2 "
-	               + "AND (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
-	               + "AND (:email IS NULL OR u.email LIKE CONCAT('%', :email, '%')) "
-	               + "AND u.id != :currentUserId "
-	               + "AND fr1.user_id IS NULL "
-	               + "AND fr2.friend_id IS NULL "
-	               + "AND f1.friend_id IS NULL "
-	               + "AND f2.user_id IS NULL",
-	       nativeQuery = true)
+			+ "u.faculty_id AS facultyId, a.graduation_year AS graduationYear, "
+			+ "(u.faculty_id = (SELECT user.faculty_id FROM user WHERE user.id = :currentUserId)) AS sameFaculty, "
+			+ "(a.graduation_year = (SELECT alumni.graduation_year FROM alumni WHERE alumni.user_id = :currentUserId)) AS sameGraduationYear "
+			+ "FROM user u "
+			+ "LEFT JOIN alumni a ON u.id = a.user_id "
+			+ "LEFT JOIN request_friend fr1 ON u.id = fr1.user_id AND fr1.friend_id = :currentUserId AND fr1.is_delete = false "
+			+ "LEFT JOIN request_friend fr2 ON u.id = fr2.friend_id AND fr2.user_id = :currentUserId AND fr2.is_delete = false "
+			+ "LEFT JOIN friend f1 ON u.id = f1.user_id AND :currentUserId = f1.friend_id AND f1.is_delete = false "
+			+ "LEFT JOIN friend f2 ON u.id = f2.friend_id AND :currentUserId = f2.user_id AND f2.is_delete = false "
+			+ "WHERE u.status_id = 2 "
+			+ "AND (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
+			+ "AND (:email IS NULL OR u.email LIKE CONCAT('%', :email, '%')) "
+			+ "AND u.id != :currentUserId "
+			+ "AND fr1.user_id IS NULL "
+			+ "AND fr2.friend_id IS NULL "
+			+ "AND f1.friend_id IS NULL "
+			+ "AND f2.user_id IS NULL "
+			+ "ORDER BY sameFaculty DESC, sameGraduationYear DESC, u.full_name ASC", countQuery = "SELECT COUNT(u.id) "
+					+ "FROM user u "
+					+ "LEFT JOIN alumni a ON u.id = a.user_id "
+					+ "LEFT JOIN request_friend fr1 ON u.id = fr1.user_id AND fr1.friend_id = :currentUserId AND fr1.is_delete = false "
+					+ "LEFT JOIN request_friend fr2 ON u.id = fr2.friend_id AND fr2.user_id = :currentUserId AND fr2.is_delete = false "
+					+ "LEFT JOIN friend f1 ON u.id = f1.user_id AND :currentUserId = f1.friend_id AND f1.is_delete = false "
+					+ "LEFT JOIN friend f2 ON u.id = f2.friend_id AND :currentUserId = f2.user_id AND f2.is_delete = false "
+					+ "WHERE u.status_id = 2 "
+					+ "AND (:fullName IS NULL OR u.full_name LIKE CONCAT('%', :fullName, '%')) "
+					+ "AND (:email IS NULL OR u.email LIKE CONCAT('%', :email, '%')) "
+					+ "AND u.id != :currentUserId "
+					+ "AND fr1.user_id IS NULL "
+					+ "AND fr2.friend_id IS NULL "
+					+ "AND f1.friend_id IS NULL "
+					+ "AND f2.user_id IS NULL", nativeQuery = true)
 	Page<ISuggestionUserDto> getSuggestionUsers(String fullName, String email, String currentUserId, Pageable pageable);
 
 	@Query("SELECT DISTINCT u " + "FROM UserModel u " + "LEFT JOIN u.roles r "
@@ -110,4 +109,9 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 
 	@Query("SELECT u FROM UserModel u WHERE u.id = :id")
 	Optional<IUserProfileDto> findUserProfileById(@Param("id") String id);
+
+	@Transactional
+	@Modifying
+	@Query("UPDATE UserModel u SET u.lastLogin = :lastLogin WHERE u.email = :email")
+	int setLastLogin(@Param("email") String email, @Param("lastLogin") Date lastLogin);
 }

@@ -1,9 +1,11 @@
 package hcmus.alumni.userservice.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -115,11 +117,22 @@ public class UserModel implements Serializable {
     private Privacy facultyPrivacy = Privacy.PUBLIC;
 
     public UserModel() {
+        id = UUID.randomUUID().toString();
+        roles.add(new RoleModel(5));
     }
 
     public UserModel(String email, String pass) {
+        id = UUID.randomUUID().toString();
         this.email = email;
         this.pass = pass;
+        roles.add(new RoleModel(5));
     }
 
+    public ArrayList<String> getRolesName() {
+        ArrayList<String> rolesName = new ArrayList<String>();
+        for (RoleModel role : roles) {
+            rolesName.add(role.getName());
+        }
+        return rolesName;
+    }
 }
