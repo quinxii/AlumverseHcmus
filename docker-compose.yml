@@ -1,16 +1,33 @@
 version: "3"
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database:/docker-entrypoint-initdb.d:ro # Mount the directory with SQL scripts
+    networks:
+      - alumverse-network
+
   service-discovery:
     build: ./service-discovery
+    container_name: service-discovery
     image: localhost.service-discovery
     hostname: eureka
     ports:
       - "8761:8761"
     networks:
       - alumverse-network
+    depends_on:
+      - mysql
 
   api-gateway:
     build: ./api-gateway
+    container_name: api-gateway
     image: localhost.api-gateway
     ports:
       - "8080:8080"
@@ -21,20 +38,18 @@ services:
     environment:
       - DOMAIN_NAME=api-gateway
       - EUREKA_URL=http://eureka:8761
-      
-  auth-service:
-    build: ./auth-service
-    image: localhost.auth-service
-    networks:
-      - alumverse-network
-    depends_on:
-      - api-gateway
-    environment:
-      - DOMAIN_NAME=auth-service
-      - EUREKA_URL=http://eureka:8761
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/api-gateway.jar
 
   user-service:
     build: ./user-service
+    container_name: user-service
     image: localhost.user-service
     networks:
       - alumverse-network
@@ -43,9 +58,19 @@ services:
     environment:
       - DOMAIN_NAME=user-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/user-service.jar
 
   news-service:
     build: ./news-service
+    container_name: news-service
     image: localhost.news-service
     networks:
       - alumverse-network
@@ -54,9 +79,19 @@ services:
     environment:
       - DOMAIN_NAME=news-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/news-service.jar
 
   event-service:
     build: ./event-service
+    container_name: event-service
     image: localhost.event-service
     networks:
       - alumverse-network
@@ -65,9 +100,19 @@ services:
     environment:
       - DOMAIN_NAME=event-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/event-service.jar
 
   hof-service:
     build: ./hall-of-fame-service
+    container_name: hall-of-fame-service
     image: localhost.hof-service
     networks:
       - alumverse-network
@@ -76,9 +121,19 @@ services:
     environment:
       - DOMAIN_NAME=hof-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/hof-service.jar
 
   counsel-service:
     build: ./counsel-service
+    container_name: counsel-service
     image: localhost.counsel-service
     networks:
       - alumverse-network
@@ -87,9 +142,19 @@ services:
     environment:
       - DOMAIN_NAME=counsel-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/counsel-service.jar
 
   group-service:
     build: ./group-service
+    container_name: group-service
     image: localhost.group-service
     networks:
       - alumverse-network
@@ -98,9 +163,19 @@ services:
     environment:
       - DOMAIN_NAME=group-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/group-service.jar
 
   message-service:
     build: ./message-service
+    container_name: message-service
     image: localhost.message-service
     networks:
       - alumverse-network
@@ -109,9 +184,19 @@ services:
     environment:
       - DOMAIN_NAME=message-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/message-service.jar
 
   notification-service:
     build: ./notification-service
+    container_name: notification-service
     image: localhost.notification-service
     networks:
       - alumverse-network
@@ -120,6 +205,18 @@ services:
     environment:
       - DOMAIN_NAME=notification-service
       - EUREKA_URL=http://eureka:8761
+      - DB_CONNECTION_URL=jdbc:mysql://mysql:3306/alumverse_hcmus
+    command: >
+      java
+      -Xmx200M
+      -Xms100M
+      -XX:+UseContainerSupport
+      -jar
+      -Dspring.profiles.active=default
+      /app/notification-service.jar
 
 networks:
   alumverse-network:
+
+volumes:
+  mysql_data:
