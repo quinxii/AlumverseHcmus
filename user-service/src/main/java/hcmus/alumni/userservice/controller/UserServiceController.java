@@ -195,6 +195,7 @@ public class UserServiceController {
 
 		// Select
 		Selection<String> idSelection = root.get("id");
+		Selection<Object> userIdSelection = userJoin.get("id").alias("userId");
 		Selection<String> studentIdSelection = root.get("studentId");
 		Selection<Integer> beginningYearSelection = root.get("beginningYear");
 		Selection<String> socialMediaLinkSelection = root.get("socialMediaLink");
@@ -205,7 +206,8 @@ public class UserServiceController {
 		Selection<String> avatarUrlSelection = userJoin.get("avatarUrl");
 		Selection<String> facultyNameSelection = facultyJoin.get("name");
 
-		cq.multiselect(idSelection, studentIdSelection, beginningYearSelection, socialMediaLinkSelection,
+		cq.multiselect(idSelection, userIdSelection, studentIdSelection, beginningYearSelection,
+				socialMediaLinkSelection,
 				commentSelection, statusSelection, emailSelection, fullNameSelection, avatarUrlSelection,
 				facultyNameSelection);
 

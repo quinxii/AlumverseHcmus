@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class VerifyAlumniDto {
 	private String id;
+	private String userId;
 	private String studentId;
 	private Integer beginningYear;
 	private String socialMediaLink;
