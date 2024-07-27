@@ -7,6 +7,6 @@ import lombok.Data;
 public class VerifyAlumniRequestDto {
     private String studentId;
     private Integer beginningYear;
-    private FacultyModel faculty;
+    private Integer facultyId;
     private String socialMediaLink;
 }

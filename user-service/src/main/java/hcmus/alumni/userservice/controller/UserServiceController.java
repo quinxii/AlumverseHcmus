@@ -608,10 +608,12 @@ public class UserServiceController {
 			@RequestBody VerifyAlumniRequestDto requestDto) {
 
 		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-				.findTopByUserIdAndStatusAndIsDeleteEqualsOrderByCreateAtDesc(userId, VerifyAlumniModel.Status.PENDING, false);
+				.findTopByUserIdAndStatusAndIsDeleteEqualsOrderByCreateAtDesc(userId, VerifyAlumniModel.Status.PENDING,
+						false);
 
 		VerifyAlumniModel alumniVerification = alumniVerificationOptional.orElseThrow(
-				() -> new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên đang chờ phê duyệt", HttpStatus.NOT_FOUND));
+				() -> new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên đang chờ phê duyệt",
+						HttpStatus.NOT_FOUND));
 
 		boolean isUpdated = false;
 
@@ -623,8 +625,8 @@ public class UserServiceController {
 			alumniVerification.setBeginningYear(requestDto.getBeginningYear());
 			isUpdated = true;
 		}
-		if (requestDto.getFaculty() != null) {
-			alumniVerification.setFaculty(requestDto.getFaculty());
+		if (requestDto.getFacultyId() != null) {
+			alumniVerification.setFaculty(new FacultyModel(requestDto.getFacultyId()));
 			isUpdated = true;
 		}
 		if (StringUtils.isNotEmpty(requestDto.getSocialMediaLink())) {
