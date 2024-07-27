@@ -608,19 +608,12 @@ public class UserServiceController {
 			@RequestBody VerifyAlumniRequestDto requestDto) {
 
 		Optional<VerifyAlumniModel> alumniVerificationOptional = verifyAlumniRepository
-				.findTopByUserIdAndIsDeleteEqualsOrderByCreateAtDesc(userId, false);
+				.findTopByUserIdAndStatusAndIsDeleteEqualsOrderByCreateAtDesc(userId, VerifyAlumniModel.Status.PENDING,
+						false);
 
 		VerifyAlumniModel alumniVerification = alumniVerificationOptional.orElseThrow(
-				() -> new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên", HttpStatus.NOT_FOUND));
-
-		if (alumniVerification.getStatus() == VerifyAlumniModel.Status.PENDING) {
-			throw new AppException(21401, "Không thể cập nhật thông tin khi đang trong quá trình xác thực",
-					HttpStatus.BAD_REQUEST);
-		}
-		if (alumniVerification.getStatus() == VerifyAlumniModel.Status.APPROVED) {
-			throw new AppException(21402, "Không thể cập nhật thông tin vì người dùng đã được xác thực",
-					HttpStatus.BAD_REQUEST);
-		}
+				() -> new AppException(21400, "Không tìm thấy thông tin xác nhận cựu sinh viên đang chờ phê duyệt",
+						HttpStatus.NOT_FOUND));
 
 		boolean isUpdated = false;
 
@@ -632,10 +625,19 @@ public class UserServiceController {
 			alumniVerification.setBeginningYear(requestDto.getBeginningYear());
 			isUpdated = true;
 		}
+		if (requestDto.getFacultyId() != null) {
+			alumniVerification.setFaculty(new FacultyModel(requestDto.getFacultyId()));
+			isUpdated = true;
+		}
+		if (StringUtils.isNotEmpty(requestDto.getSocialMediaLink())) {
+			alumniVerification.setSocialMediaLink(requestDto.getSocialMediaLink());
+			isUpdated = true;
+		}
 
 		if (isUpdated) {
 			verifyAlumniRepository.save(alumniVerification);
 		}
+
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
