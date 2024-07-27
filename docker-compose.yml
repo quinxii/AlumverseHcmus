@@ -129,7 +129,7 @@ services:
       -XX:+UseContainerSupport
       -jar
       -Dspring.profiles.active=default
-      /app/hof-service.jar
+      /app/hall-of-fame-service.jar
 
   counsel-service:
     build: ./counsel-service
