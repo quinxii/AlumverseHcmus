@@ -58,6 +58,9 @@ public class AuthController {
 	@PostMapping("/login")
 	public ResponseEntity<Map<String, Object>> login(@RequestParam String email, @RequestParam String pass) {
 		UserModel user = userRepository.findByEmail(email);
+		if (user == null) {
+			throw new AppException(10102, "Email hoặc mật khẩu không hợp lệ", HttpStatus.UNAUTHORIZED);
+		}
 		boolean isMatch = passwordEncoder.matches(pass, user.getPass());
 
 		if (isMatch) {
