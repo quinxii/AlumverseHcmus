@@ -1,0 +1,104 @@
+spring:
+  application:
+    name: api-gateway
+
+  ##GATEWAY CONFIGURATIONS
+
+  cloud:
+    gateway:
+      routes:
+        ## user service
+        - id: user
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**,/roles/**,/auth/**
+          filters:
+            - name: Authentication
+            
+        ## event service
+        - id: event
+          uri: lb://event-service
+          predicates:
+            - Path=/events/**
+          filters:
+            - name: Authentication
+            
+        ## hall of fame service
+        - id: hof
+          uri: lb://hof-service
+          predicates:
+            - Path=/hof/**
+          filters:
+            - name: Authentication
+   
+        ## news service
+        - id: news
+          uri: lb://news-service
+          predicates:
+            - Path=/news/**
+          filters:
+            - name: Authentication
+            
+        ## group service
+        - id: group
+          uri: lb://group-service
+          predicates:
+            - Path=/groups/**
+          filters:
+            - name: Authentication
+
+        ## counsel service
+        - id: counsel
+          uri: lb://counsel-service
+          predicates:
+            - Path=/counsel/**
+          filters:
+            - name: Authentication
+            
+        ## notification service
+        - id: notification
+          uri: lb://notification-service
+          predicates:
+            - Path=/notification/**
+          filters:
+            - name: Authentication
+
+        ## message service
+        - id: message
+          uri: lb://message-service
+          predicates:
+            - Path=/messages/**
+          filters:
+            - name: Authentication
+        
+        ## message service with websocket
+        - id: message-ws
+          uri: lb:ws://message-service  # Use 'ws' for websocket and service name
+          predicates:
+            - Path=/ws/**
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+              allowedOriginPatterns: "http://localhost:[*],https://alumverse.vercel.app/"
+              allowedMethods: "*"
+              allowedHeaders: "*"
+server:
+  port: ${PORT:8080}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://user:1@localhost:8761}/eureka/
+
+---
+spring:
+  config:
+    activate:
+      on-profile: heroku
+eureka:
+  instance:
+    hostname: ${DOMAIN_NAME}
+    non-secure-port: 80

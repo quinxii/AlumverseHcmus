@@ -1,61 +1,41 @@
 package hcmus.alumni.userservice.model;
 
-public class SexModel {
-    private String id;
+import java.io.Serializable;
+import java.util.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "[sex]")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class SexModel implements Serializable{
+	private static final long serialVersionUID = 1L;
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "id", nullable = false, columnDefinition = "TINYINT")
+    private Integer id;
+	
+	@Column(name = "name", length = 50, nullable = false, unique = true)
     private String name;
+	
+	@Column(name = "description", columnDefinition = "TINYTEXT")
     private String description;
-    private boolean isDeleted;
-
-    // Constructor
-    public SexModel(String id, String name, String description, boolean isDeleted) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.isDeleted = isDeleted;
-    }
-
-    // Getters and Setters
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        isDeleted = deleted;
-    }
-
-    // toString method
-    @Override
-    public String toString() {
-        return "SexModel{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", isDeleted=" + isDeleted +
-                '}';
-    }
+	
+	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
+    private Boolean isDelete;
+	
+	public SexModel(Integer id) {
+		this.id = id;
+	}
 }
-

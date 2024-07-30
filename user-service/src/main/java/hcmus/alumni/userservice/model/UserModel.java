@@ -1,304 +1,138 @@
 package hcmus.alumni.userservice.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import hcmus.alumni.userservice.common.Privacy;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Entity
 @Table(name = "[user]")
+@AllArgsConstructor
+@Data
 public class UserModel implements Serializable {
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Id
-    @Column(name = "id", nullable = false)
+    @Id
+    @Column(name = "id", length = 36, nullable = false)
     private String id;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
 
-    @Column(name = "pass", nullable = false)
+    @Column(name = "pass", length = 60, nullable = false)
     private String pass;
 
-    @Column(name = "role_id", nullable = false)
-    private String roleId;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<RoleModel> roles = new HashSet<>();
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", length = 100)
     private String fullName;
 
-    @Column(name = "phone")
+    @Column(name = "phone", length = 15)
     private String phone;
 
-    @Column(name = "sex_id", nullable = false)
-    private String sexId;
+    @OneToOne
+    @JoinColumn(name = "sex_id") // Foreign key constraint
+    private SexModel sex;
 
     @Column(name = "dob")
     private Date dob;
-    
+
+    @Column(name = "social_media_link", columnDefinition = "TINYTEXT")
+    private String socialMediaLink;
+
+    @OneToOne
+    @JoinColumn(name = "faculty_id") // Foreign key constraint
+    private FacultyModel faculty;
+
+    @Column(name = "degree", length = 50)
+    private String degree;
+
     @Column(name = "about_me", columnDefinition = "TEXT")
     private String aboutMe;
 
-    @Column(name = "avatar_url")
-    private String avatarUrl;
+    @Column(name = "avatar_url", columnDefinition = "TINYTEXT")
+    private String avatarUrl = "https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none";
 
-    @Column(name = "cover_url")
+    @Column(name = "cover_url", columnDefinition = "TINYTEXT")
     private String coverUrl;
 
-    @Column(name = "status_id", nullable = false)
-    private String statusId;
+    @Column(name = "status_id")
+    private Integer statusId;
 
+    @CreationTimestamp
     @Column(name = "create_at")
     private Date createAt;
 
+    @UpdateTimestamp
     @Column(name = "update_at")
     private Date updateAt;
 
     @Column(name = "last_login")
     private Date lastLogin;
 
-    @Column(name = "online_status", nullable = false)
+    @Column(name = "online_status")
     private boolean onlineStatus;
 
-    @Column(name = "email_privacy", nullable = false)
+    @Column(name = "email_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy emailPrivacy;
+    private Privacy emailPrivacy = Privacy.PUBLIC;
 
-    @Column(name = "phone_privacy", nullable = false)
+    @Column(name = "phone_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy phonePrivacy;
+    private Privacy phonePrivacy = Privacy.PUBLIC;
 
-    @Column(name = "sex_privacy", nullable = false)
+    @Column(name = "sex_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy sexPrivacy;
+    private Privacy sexPrivacy = Privacy.PUBLIC;
 
-    @Column(name = "dob_privacy", nullable = false)
+    @Column(name = "dob_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
     @Enumerated(EnumType.STRING)
-    private Privacy dobPrivacy;
+    private Privacy dobPrivacy = Privacy.PUBLIC;
 
+    @Column(name = "faculty_privacy", columnDefinition = "ENUM('PUBLIC', 'FRIEND', 'ONLYME') DEFAULT('PUBLIC')")
+    @Enumerated(EnumType.STRING)
+    private Privacy facultyPrivacy = Privacy.PUBLIC;
 
-    // Constructors, getters, and setters
-    public UserModel(String id, String email, String pass, String roleId, String fullName, String phone, String sexId,
-    		Date dob, String aboutMe, String avatarUrl, String coverUrl, String statusId, Date createAt, Date updateAt,
-    		Date lastLogin, boolean onlineStatus, Privacy emailPrivacy, Privacy phonePrivacy, Privacy sexPrivacy,
-    		Privacy dobPrivacy) {
-    	super();
-    	this.id = id;
-    	this.email = email;
-    	this.pass = pass;
-    	this.roleId = roleId;
-    	this.fullName = fullName;
-    	this.phone = phone;
-    	this.sexId = sexId;
-    	this.dob = dob;
-    	this.aboutMe = aboutMe;
-    	this.avatarUrl = avatarUrl;
-    	this.coverUrl = coverUrl;
-    	this.statusId = statusId;
-    	this.createAt = createAt;
-    	this.updateAt = updateAt;
-    	this.lastLogin = lastLogin;
-    	this.onlineStatus = onlineStatus;
-    	this.emailPrivacy = emailPrivacy;
-    	this.phonePrivacy = phonePrivacy;
-    	this.sexPrivacy = sexPrivacy;
-    	this.dobPrivacy = dobPrivacy;
+    public UserModel() {
+        id = UUID.randomUUID().toString();
+        roles.add(new RoleModel(5));
     }
-    
-    
-	public UserModel() {
-		this.id = "";
-    	this.email = "";
-    	this.pass = "";
-    	this.roleId = "";
-    	this.fullName = "";
-    	this.phone = "";
-    	this.sexId = "";
-    	this.dob = null;
-    	this.aboutMe = "";
-    	this.avatarUrl = "";
-    	this.coverUrl = "";
-    	this.statusId = "";
-    	this.createAt = null;
-    	this.updateAt = null;
-    	this.lastLogin = null;
-    	this.onlineStatus = false;
-    	this.emailPrivacy = null;
-    	this.phonePrivacy = null;
-    	this.sexPrivacy = null;
-    	this.dobPrivacy = null;
-	}
 
+    public UserModel(String email, String pass) {
+        id = UUID.randomUUID().toString();
+        this.email = email;
+        this.pass = pass;
+        roles.add(new RoleModel(5));
+    }
 
-
-	public String getId() {
-		return id;
-	}
-
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getPass() {
-		return pass;
-	}
-
-	public void setPass(String pass) {
-		this.pass = pass;
-	}
-
-	public String getRoleId() {
-		return roleId;
-	}
-
-	public void setRoleId(String roleId) {
-		this.roleId = roleId;
-	}
-
-	public String getFullName() {
-		return fullName;
-	}
-
-	public void setFullName(String fullName) {
-		this.fullName = fullName;
-	}
-
-	public String getPhone() {
-		return phone;
-	}
-
-	public void setPhone(String phone) {
-		this.phone = phone;
-	}
-
-	public String getSexId() {
-		return sexId;
-	}
-
-	public void setSexId(String sexId) {
-		this.sexId = sexId;
-	}
-
-	public Date getDob() {
-		return dob;
-	}
-
-	public void setDob(Date dob) {
-		this.dob = dob;
-	}
-
-	public String getAboutMe() {
-		return aboutMe;
-	}
-
-	public void setAboutMe(String aboutMe) {
-		this.aboutMe = aboutMe;
-	}
-
-	public String getAvatarUrl() {
-		return avatarUrl;
-	}
-
-	public void setAvatarUrl(String avatarUrl) {
-		this.avatarUrl = avatarUrl;
-	}
-
-	public String getCoverUrl() {
-		return coverUrl;
-	}
-
-	public void setCoverUrl(String coverUrl) {
-		this.coverUrl = coverUrl;
-	}
-
-	public String getStatusId() {
-		return statusId;
-	}
-
-	public void setStatusId(String statusId) {
-		this.statusId = statusId;
-	}
-
-	public Date getCreateAt() {
-		return createAt;
-	}
-
-	public void setCreateAt(Date createAt) {
-		this.createAt = createAt;
-	}
-
-	public Date getUpdateAt() {
-		return updateAt;
-	}
-
-	public void setUpdateAt(Date updateAt) {
-		this.updateAt = updateAt;
-	}
-
-	public Date getLastLogin() {
-		return lastLogin;
-	}
-
-	public void setLastLogin(Date lastLogin) {
-		this.lastLogin = lastLogin;
-	}
-
-	public boolean isOnlineStatus() {
-		return onlineStatus;
-	}
-
-	public void setOnlineStatus(boolean onlineStatus) {
-		this.onlineStatus = onlineStatus;
-	}
-
-	public Privacy getEmailPrivacy() {
-		return emailPrivacy;
-	}
-
-	public void setEmailPrivacy(Privacy emailPrivacy) {
-		this.emailPrivacy = emailPrivacy;
-	}
-
-	public Privacy getPhonePrivacy() {
-		return phonePrivacy;
-	}
-
-	public void setPhonePrivacy(Privacy phonePrivacy) {
-		this.phonePrivacy = phonePrivacy;
-	}
-
-	public Privacy getSexPrivacy() {
-		return sexPrivacy;
-	}
-
-	public void setSexPrivacy(Privacy sexPrivacy) {
-		this.sexPrivacy = sexPrivacy;
-	}
-
-	public Privacy getDobPrivacy() {
-		return dobPrivacy;
-	}
-
-	public void setDobPrivacy(Privacy dobPrivacy) {
-		this.dobPrivacy = dobPrivacy;
-	}
-
+    public ArrayList<String> getRolesName() {
+        ArrayList<String> rolesName = new ArrayList<String>();
+        for (RoleModel role : roles) {
+            rolesName.add(role.getName());
+        }
+        return rolesName;
+    }
 }

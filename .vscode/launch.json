@@ -1,0 +1,114 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-ServiceDiscoveryApplication<service-discovery>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.servicediscovery.ServiceDiscoveryApplication",
+            "projectName": "service-discovery",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ApiGatewayApplication<api-gateway>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.apigateway.ApiGatewayApplication",
+            "projectName": "api-gateway",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-NewsServiceApplication<news-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.news.NewsServiceApplication",
+            "projectName": "news-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-CounselServiceApplication<counsel-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.counsel.CounselServiceApplication",
+            "projectName": "counsel-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-AuthServiceApplication<auth-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.authservice.AuthServiceApplication",
+            "projectName": "auth-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-UserServiceApplication<user-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.userservice.UserServiceApplication",
+            "projectName": "user-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-EventServiceApplication<event-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.event.EventServiceApplication",
+            "projectName": "event-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-HallOfFameServiceApplication<hall-of-fame-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.halloffame.HallOfFameServiceApplication",
+            "projectName": "hall-of-fame-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-GroupServiceApplication<group-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.group.GroupServiceApplication",
+            "projectName": "group-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-MessageServiceApplication<message-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.message.MessageServiceApplication",
+            "projectName": "message-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-NotificationServiceApplication<notification-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "hcmus.alumni.notification.NotificationServiceApplication",
+            "projectName": "notification-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

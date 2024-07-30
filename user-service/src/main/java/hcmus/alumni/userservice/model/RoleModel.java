@@ -1,106 +1,104 @@
 package hcmus.alumni.userservice.model;
 
+import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-public class RoleModel {
-    private String id;
-    private String name;
-    private String slug;
-    private String description;
-    private Date createdAt;
-    private Date updatedAt;
-    private String content;
-    private boolean isDeleted;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
 
-    // Constructor
-    public RoleModel(String id, String name, String slug, String description, Date createdAt, Date updatedAt, String content, boolean isDeleted) {
-        this.id = id;
-        this.name = name;
-        this.slug = slug;
-        this.description = description;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.content = content;
-        this.isDeleted = isDeleted;
-    }
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-    // Getters and Setters
-    public String getId() {
-        return id;
-    }
+import hcmus.alumni.userservice.dto.role.RoleRequestDto;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+@Entity
+@Table(name = "[role]")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class RoleModel implements Serializable {
+	private static final long serialVersionUID = 1L;
 
-    public String getName() {
-        return name;
-    }
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", nullable = false, columnDefinition = "TINYINT")
+	private Integer id;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	@Column(name = "name", length = 100, nullable = false, unique = true)
+	private String name;
 
-    public String getSlug() {
-        return slug;
-    }
+	@Column(name = "description", length = 100)
+	private String description;
 
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
+	@CreationTimestamp
+	@Column(name = "create_at")
+	private Date createAt;
 
-    public String getDescription() {
-        return description;
-    }
+	@UpdateTimestamp
+	@Column(name = "update_at")
+	private Date updateAt;
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
+	private Boolean isDelete = false;
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
+	@Getter(value = AccessLevel.NONE)
+	@OrderBy("id ASC")
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "role_permission", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
+	private Set<PermissionModel> permissions = new HashSet<>();
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
+	public RoleModel(Integer id) {
+		this.id = id;
+	}
 
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
+	public RoleModel(RoleRequestDto role) {
+		this.name = role.getName();
+		this.description = role.getDescription();
+		role.getPermissions().forEach(permission -> {
+			this.permissions.add(new PermissionModel(permission.getId()));
+		});
+	}
 
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+	public RoleModel(RoleRequestDto role, Integer id) {
+		this.id = id;
+		this.name = role.getName();
+		this.description = role.getDescription();
+		role.getPermissions().forEach(permission -> {
+			this.permissions.add(new PermissionModel(permission.getId()));
+		});
+	}
 
-    public String getContent() {
-        return content;
-    }
+	public void clearPermissions() {
+		this.permissions.clear();
+	}
 
-    public void setContent(String content) {
-        this.content = content;
-    }
+	public void addPermission(PermissionModel permission) {
+		this.permissions.add(permission);
+	}
 
-    public boolean isDeleted() {
-        return isDeleted;
-    }
+	public void addPermissions(List<PermissionModel> permissions) {
+		this.permissions.addAll(permissions);
+	}
 
-    public void setDeleted(boolean deleted) {
-        isDeleted = deleted;
-    }
-
-    // toString method
-    @Override
-    public String toString() {
-        return "RoleModel{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", slug='" + slug + '\'' +
-                ", description='" + description + '\'' +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", content='" + content + '\'' +
-                ", isDeleted=" + isDeleted +
-                '}';
-    }
+	public void removePermission(PermissionModel permission) {
+		this.permissions.remove(permission);
+	}
+	
 }
