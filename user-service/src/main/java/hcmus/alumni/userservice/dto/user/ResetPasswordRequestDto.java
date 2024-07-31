@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class ResetPasswordRequestDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    String email;
     String oldPassword;
     String newPassword;
 }
