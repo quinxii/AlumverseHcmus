@@ -15,7 +15,6 @@ public class RouteValidator {
 			new ApiEndpoint(HttpMethod.POST, "/auth/signup"),
 			new ApiEndpoint(HttpMethod.POST, "/auth/send-authorize-code"),
 			new ApiEndpoint(HttpMethod.POST, "/auth/verify-authorize-code"),
-			new ApiEndpoint(HttpMethod.POST, "/auth/reset-password"),
 			new ApiEndpoint(HttpMethod.POST, "/auth/forgot-password"),
 			new ApiEndpoint(HttpMethod.POST, "/auth/verify-reset-code"));
 

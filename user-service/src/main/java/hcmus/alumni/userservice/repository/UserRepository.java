@@ -22,11 +22,14 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	@Query("SELECT u FROM UserModel u WHERE u.id = :id")
 	Optional<IUserSearchDto> findByIdCustom(String id);
 
+	@Query("SELECT u FROM UserModel u WHERE u.id = :id AND u.statusId = 2")
 	Optional<UserModel> findById(String id);
 
 	UserModel findByEmailAndPass(String email, String pass);
 
 	UserModel findByEmail(String email);
+
+	UserModel findByEmailAndStatusId(String email, Integer statusId);
 
 	@Query("SELECT u FROM UserModel u WHERE u.id = :userId")
 	UserModel findUserById(@Param("userId") String userId);

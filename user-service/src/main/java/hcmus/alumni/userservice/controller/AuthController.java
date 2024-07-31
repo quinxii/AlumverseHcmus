@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -103,7 +104,7 @@ public class AuthController {
 
 	@PostMapping("/send-authorize-code")
 	public ResponseEntity<String> sendAuthorizeCode(@RequestParam String email) {
-		UserModel existingUser = userRepository.findByEmail(email);
+		UserModel existingUser = userRepository.findByEmailAndStatusId(email, 2);
 		if (existingUser != null) {
 			throw new AppException(10300, "Email đã tồn tại", HttpStatus.CONFLICT);
 		}
@@ -138,9 +139,16 @@ public class AuthController {
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
-	@PostMapping("/reset-password")
-	public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequestDto req) {
-		UserModel user = userRepository.findByEmail(req.getEmail());
+	@PostMapping("/change-password")
+	public ResponseEntity<String> resetPassword(
+			@RequestHeader String userId,
+			@RequestBody ResetPasswordRequestDto req) {
+		System.out.println(userId);
+		UserModel user = userRepository.findById(userId).orElse(null);
+		if (req.getNewPassword() == null || req.getNewPassword().isBlank()) {
+			throw new AppException(10502, "Mật khẩu mới không được để trống", HttpStatus.BAD_REQUEST);
+		}
+
 		if (user == null) {
 			throw new AppException(10500, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND);
 		}
@@ -175,7 +183,7 @@ public class AuthController {
 			throw new AppException(10600, "Email không được để trống", HttpStatus.BAD_REQUEST);
 		}
 
-		UserModel user = userRepository.findByEmail(email);
+		UserModel user = userRepository.findByEmailAndStatusId(email, 2);
 		if (user == null) {
 			throw new AppException(10601, "Email không tồn tại", HttpStatus.BAD_REQUEST);
 		}
@@ -205,7 +213,7 @@ public class AuthController {
 
 		}
 
-		UserModel user = userRepository.findByEmail(email);
+		UserModel user = userRepository.findByEmailAndStatusId(email, 2);
 		if (user == null) {
 			throw new AppException(10703, "Email không tồn tại", HttpStatus.BAD_REQUEST);
 		}

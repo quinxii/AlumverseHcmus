@@ -1326,11 +1326,24 @@ public class UserServiceController {
 			result.put("totalPages", users.getTotalPages());
 			result.put("users", users.getContent());
 		} catch (IllegalArgumentException e) {
-			throw new AppException(21000, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+			throw new AppException(23500, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
-			throw new AppException(21001, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(23501, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
+	@DeleteMapping("/self")
+	public ResponseEntity<HashMap<String, Object>> deleteOwnAccount(@RequestHeader("userId") String userId) {
+		Optional<UserModel> optionalUser = userRepository.findById(userId);
+		if (optionalUser.isEmpty()) {
+			throw new AppException(23600, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND);
+		}
+
+		UserModel user = optionalUser.get();
+		user.setStatusId(3);
+		userRepository.save(user);
+
+		return ResponseEntity.status(HttpStatus.OK).body(null);
+	}
 }
