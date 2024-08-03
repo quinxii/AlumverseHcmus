@@ -56,6 +56,7 @@ import hcmus.alumni.news.model.notification.StatusNotificationModel;
 import hcmus.alumni.news.dto.CommentNewsDto;
 import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
+import hcmus.alumni.news.dto.INewsListDto;
 import hcmus.alumni.news.exception.AppException;
 import hcmus.alumni.news.model.CommentNewsModel;
 import hcmus.alumni.news.model.FacultyModel;
@@ -125,6 +126,9 @@ public class NewsServiceController {
 		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
+		if (title.isBlank()) {
+			title = null;
+		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		if (tagNames != null) {
 			for (int i = 0; i < tagNames.size(); i++) {
@@ -134,7 +138,7 @@ public class NewsServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<INewsDto> news = null;
+			Page<INewsListDto> news = null;
 
 			news = newsRepository.searchNews(title, facultyId, tagNames, statusId, pageable);
 
@@ -360,7 +364,7 @@ public class NewsServiceController {
 		List<Long> tagIds = optionalNews.get().getTags().stream().map(TagModel::getId).collect(Collectors.toList());
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
-		Page<INewsDto> news = newsRepository.getRelatedNews(id, facultyId, tagIds, pageable);
+		Page<INewsListDto> news = newsRepository.getRelatedNews(id, facultyId, tagIds, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());
@@ -387,7 +391,7 @@ public class NewsServiceController {
 		Date startDate = cal.getTime();
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
-		Page<INewsDto> news = newsRepository.getHotNews(startDate, endDate, pageable);
+		Page<INewsListDto> news = newsRepository.getHotNews(startDate, endDate, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());
