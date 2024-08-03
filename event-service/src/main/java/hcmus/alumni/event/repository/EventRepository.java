@@ -52,6 +52,32 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 
 	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " +
 			"FROM EventModel e " +
+			"LEFT JOIN e.status s " +
+			"LEFT JOIN e.faculty f " +
+			"LEFT JOIN e.tags t " +
+			"LEFT JOIN ParticipantEventModel p " +
+			"ON p.id.eventId = e.id AND p.id.userId = :userId AND p.isDelete = false " +
+			"WHERE (:statusId IS NULL OR s.id = :statusId) " +
+			"AND (f.id = (SELECT u.facultyId FROM UserModel u WHERE u.id = :userId) OR f.id IS NULL) " +
+			"AND (:title IS NULL OR e.title LIKE %:title%) " +
+			"AND (CASE " +
+			"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
+			"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
+			"       ELSE true " +
+			"   END) " +
+			"AND s.id != 4 " +
+			"AND (:tagNames IS NULL OR t.name IN :tagNames)")
+	Page<IEventListDto> searchEventsByUserFaculty(
+			@Param("userId") String userId,
+			@Param("title") String title,
+			@Param("statusId") Integer statusId,
+			@Param("tagNames") List<String> tagNames,
+			@Param("startDate") Date startDate,
+			@Param("mode") Integer mode,
+			Pageable pageable);
+
+	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " +
+			"FROM EventModel e " +
 			"LEFT JOIN ParticipantEventModel p " +
 			"ON p.id.eventId = e.id AND p.id.userId = :userId AND p.isDelete = false " +
 			"WHERE e.id = :id")

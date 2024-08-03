@@ -65,6 +65,7 @@ import hcmus.alumni.event.exception.AppException;
 import jakarta.persistence.EntityManager;
 
 import hcmus.alumni.event.common.CommentEventPermissions;
+import hcmus.alumni.event.common.FetchEventMode;
 import hcmus.alumni.event.common.NotificationType;
 import hcmus.alumni.event.model.notification.EntityTypeModel;
 import hcmus.alumni.event.model.notification.NotificationChangeModel;
@@ -107,10 +108,12 @@ public class EventServiceController {
 	private FirebaseService firebaseService;
 	@Autowired
 	private NotificationService notificationService;
-	
+
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
-	
+	private final static int ADMIN_ROLE_ID = 1;
+	private final static int FACULTY_MANAGER_ROLE_ID = 2;
+
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getEvents(
 			@RequestHeader(value = "userId", defaultValue = "") String userId,
@@ -122,92 +125,109 @@ public class EventServiceController {
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
 			@RequestParam(value = "statusId", required = false) Integer statusId,
-			@RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
-	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
-	    	pageSize = MAXIMUM_PAGES;
-	    }
+			@RequestParam(value = "mode", required = false, defaultValue = "1") int mode,
+			@RequestParam(value = "fetchMode", required = false, defaultValue = "NORMAL") FetchEventMode fetchMode) {
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
 		if (title.isBlank()) {
 			title = null;
 		}
-	    HashMap<String, Object> result = new HashMap<>();
-	    if (tagNames != null) {
+		HashMap<String, Object> result = new HashMap<>();
+		if (tagNames != null) {
 			for (int i = 0; i < tagNames.size(); i++) {
 				tagNames.set(i, TagModel.sanitizeTagName(tagNames.get(i)));
 			}
 		}
 
-	    try {
-	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-	        Page<IEventListDto> events = null;
-	        
-	        Calendar cal = Calendar.getInstance();
-	        Date startDate = cal.getTime();
-	        events = eventRepository.searchEvents(userId, title, statusId, facultyId, tagNames, startDate, mode, pageable);
+		try {
+			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
+			Page<IEventListDto> events = null;
 
-	        result.put("totalPages", events.getTotalPages());
-	        result.put("events", events.getContent());
-	    } catch (IllegalArgumentException e) {
-	    	throw new AppException(50100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
+			Calendar cal = Calendar.getInstance();
+			Date startDate = cal.getTime();
+
+			if (fetchMode.equals(FetchEventMode.MANAGEMENT)) {
+				// Check if is Admin or FacultyManager
+				Set<Integer> roleIds = userRepository.getRoleIds(userId);
+				if (roleIds.contains(ADMIN_ROLE_ID)) {
+					events = eventRepository.searchEvents(userId, title, statusId, null, tagNames, startDate, mode,
+							pageable);
+				} else if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+					events = eventRepository.searchEventsByUserFaculty(userId, title, statusId, tagNames,
+							startDate, mode, pageable);
+				}
+			}
+
+			if (events == null) {
+				events = eventRepository.searchEvents(userId, title, statusId, facultyId, tagNames, startDate, mode,
+						pageable);
+			}
+
+			result.put("totalPages", events.getTotalPages());
+			result.put("events", events.getContent());
+		} catch (IllegalArgumentException e) {
+			throw new AppException(50100, "Tham số order phải là 'asc' hoặc 'desc'", HttpStatus.BAD_REQUEST);
 		} catch (InvalidDataAccessApiUsageException e) {
 			throw new AppException(50101, "Tham số orderBy không hợp lệ", HttpStatus.BAD_REQUEST);
 		}
 
-	    return ResponseEntity.status(HttpStatus.OK).body(result);
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<IEventDto> getEventById(
 			@PathVariable String id,
 			@RequestHeader(value = "userId", defaultValue = "") String userId) {
-		
-	    Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId);
-	    if (optionalEvent.isEmpty()) {
-	    	throw new AppException(50200, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
-	    }
-	    eventRepository.incrementEventViews(id);
-	    return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
+
+		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId);
+		if (optionalEvent.isEmpty()) {
+			throw new AppException(50200, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
+		}
+		eventRepository.incrementEventViews(id);
+		return ResponseEntity.status(HttpStatus.OK).body(optionalEvent.get());
 	}
-    
+
 	@PreAuthorize("hasAnyAuthority('Event.Create')")
 	@PostMapping("")
 	public ResponseEntity<String> createEvent(
 			@RequestHeader("userId") String creatorId,
-	        @RequestParam(value = "title") String title, 
-	        @RequestParam(value = "thumbnail") MultipartFile thumbnail,
-	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
-	        @RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
-	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
-	        @RequestParam(value = "tagNames", required = false) List<String> tagNames,
-	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
-	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
-	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
-	        @RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
+			@RequestParam(value = "title") String title,
+			@RequestParam(value = "thumbnail") MultipartFile thumbnail,
+			@RequestParam(value = "content", required = false, defaultValue = "") String content,
+			@RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
+			@RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
+			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+			@RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
+			@RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
+			@RequestParam(value = "statusId", required = false, defaultValue = "2") Integer statusId) {
 		if (title.equals("")) {
 			throw new AppException(50300, "Title không được để trống", HttpStatus.BAD_REQUEST);
-        }
+		}
 		if (thumbnail.isEmpty()) {
 			throw new AppException(50301, "thumbnail không được để trống", HttpStatus.BAD_REQUEST);
-        }
+		}
 		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(50303, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
-		
-	    String id = UUID.randomUUID().toString();
 
-	    try {
-	        // Save thumbnail image
-	        String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail);
-	        // Save event to database
-	        EventModel event = new EventModel();
-	        event.setId(id);
-	        event.setCreator(new UserModel(creatorId));
-	        event.setTitle(title);
-	        event.setThumbnail(thumbnailUrl);
-	        event.setContent(content);
-	        event.setOrganizationLocation(organizationLocation);
-	        event.setOrganizationTime(organizationTime);
-	        event.setPublishedAt(new Date());
-	        if (tagNames != null && !tagNames.isEmpty()) {
+		String id = UUID.randomUUID().toString();
+
+		try {
+			// Save thumbnail image
+			String thumbnailUrl = imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail);
+			// Save event to database
+			EventModel event = new EventModel();
+			event.setId(id);
+			event.setCreator(new UserModel(creatorId));
+			event.setTitle(title);
+			event.setThumbnail(thumbnailUrl);
+			event.setContent(content);
+			event.setOrganizationLocation(organizationLocation);
+			event.setOrganizationTime(organizationTime);
+			event.setPublishedAt(new Date());
+			if (tagNames != null && !tagNames.isEmpty()) {
 				Set<TagModel> tags = new HashSet<TagModel>();
 				for (String tagName : tagNames) {
 					var sanitizedTagName = TagModel.sanitizeTagName(tagName);
@@ -222,18 +242,18 @@ public class EventServiceController {
 				}
 				event.setTags(tags);
 			}
-	        if (!facultyId.equals(0)) {
-	            event.setFaculty(new FacultyModel(facultyId));
-	        }
-	        event.setMinimumParticipants(minimumParticipants);
-	        event.setMaximumParticipants(maximumParticipants);
-	        event.setStatus(new StatusPostModel(statusId));
-	        eventRepository.save(event);
-	    } catch (IOException e) {
-	    	e.printStackTrace();
+			if (!facultyId.equals(0)) {
+				event.setFaculty(new FacultyModel(facultyId));
+			}
+			event.setMinimumParticipants(minimumParticipants);
+			event.setMaximumParticipants(maximumParticipants);
+			event.setStatus(new StatusPostModel(statusId));
+			eventRepository.save(event);
+		} catch (IOException e) {
+			e.printStackTrace();
 			throw new AppException(50302, "Lỗi lưu ảnh", HttpStatus.INTERNAL_SERVER_ERROR);
-	    }
-	    return ResponseEntity.status(HttpStatus.CREATED).body(id);
+		}
+		return ResponseEntity.status(HttpStatus.CREATED).body(id);
 	}
 
 	@PreAuthorize("hasAnyAuthority('Event.Edit')")
@@ -241,48 +261,48 @@ public class EventServiceController {
 	public ResponseEntity<String> updateEvent(
 			@PathVariable String id,
 			@RequestHeader("userId") String userId,
-	        @RequestParam(value = "title", defaultValue = "") String title,
-	        @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
-	        @RequestParam(value = "content", required = false, defaultValue = "") String content,
-	        @RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
-	        @RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
-	        @RequestParam(value = "tagNames", required = false) List<String> tagNames,
-	        @RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
-	        @RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
-	        @RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
-	        @RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
-	    boolean isPut = false;
-	    if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
+			@RequestParam(value = "title", defaultValue = "") String title,
+			@RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+			@RequestParam(value = "content", required = false, defaultValue = "") String content,
+			@RequestParam(value = "organizationLocation", required = false, defaultValue = "") String organizationLocation,
+			@RequestParam(value = "organizationTime", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date organizationTime,
+			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
+			@RequestParam(value = "facultyId", required = false, defaultValue = "0") Integer facultyId,
+			@RequestParam(value = "minimumParticipants", required = false, defaultValue = "0") Integer minimumParticipants,
+			@RequestParam(value = "maximumParticipants", required = false, defaultValue = "0") Integer maximumParticipants,
+			@RequestParam(value = "statusId", required = false, defaultValue = "0") Integer statusId) {
+		boolean isPut = false;
+		if (tagNames != null && tagNames.size() > MAXIMUM_TAGS) {
 			throw new AppException(50401, "Số lượng thẻ không được vượt quá " + MAXIMUM_TAGS, HttpStatus.BAD_REQUEST);
 		}
-	    
-	    try {
-	        // Find event
-	        Optional<EventModel> optionalEvent = eventRepository.findById(id);
-	        if (optionalEvent.isEmpty()) {
-	        	throw new AppException(50400, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
-	        }
-	        EventModel event = optionalEvent.get();
-	        if (thumbnail != null && !thumbnail.isEmpty()) {
-	            imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail);
-	        }
-	        if (!title.equals("")) {
-	            event.setTitle(title);
-	            isPut = true;
-	        }
-	        if (!content.equals("")) {
-	            event.setContent(content);
-	            isPut = true;
-	        }
-	        if (!organizationLocation.equals("")) {
-	            event.setOrganizationLocation(organizationLocation);
-	            isPut = true;
-	        }
-	        if (organizationTime != null) {
-	            event.setOrganizationTime(organizationTime);
-	            isPut = true;
-	        }
-	        if (tagNames != null) {
+
+		try {
+			// Find event
+			Optional<EventModel> optionalEvent = eventRepository.findById(id);
+			if (optionalEvent.isEmpty()) {
+				throw new AppException(50400, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
+			}
+			EventModel event = optionalEvent.get();
+			if (thumbnail != null && !thumbnail.isEmpty()) {
+				imageUtils.saveImageToStorage(imageUtils.getEventPath(id), thumbnail);
+			}
+			if (!title.equals("")) {
+				event.setTitle(title);
+				isPut = true;
+			}
+			if (!content.equals("")) {
+				event.setContent(content);
+				isPut = true;
+			}
+			if (!organizationLocation.equals("")) {
+				event.setOrganizationLocation(organizationLocation);
+				isPut = true;
+			}
+			if (organizationTime != null) {
+				event.setOrganizationTime(organizationTime);
+				isPut = true;
+			}
+			if (tagNames != null) {
 				Set<TagModel> currentTags = event.getTags();
 				Set<TagModel> updatedTags = new HashSet<TagModel>();
 
@@ -313,30 +333,30 @@ public class EventServiceController {
 				event.setTags(currentTags);
 				isPut = true;
 			}
-	        if (!facultyId.equals(0)) {
-	            event.setFaculty(new FacultyModel(facultyId));
-	            isPut = true;
-	        }
-	        if (minimumParticipants != null) {
-	        	event.setMinimumParticipants(minimumParticipants);
-	            isPut = true;
-	        }
-	        if (maximumParticipants != null) {
-	        	event.setMaximumParticipants(maximumParticipants);
-	            isPut = true;
-	        }
-	        if (!statusId.equals(0)) {
-	            event.setStatus(new StatusPostModel(statusId));
-	            isPut = true;
-	        }
-	        if (isPut) {
-	            eventRepository.save(event);
-	        }
-	    } catch (IOException e) {
-	        // TODO Auto-generated catch block
-	        System.err.println(e);
-	    }
-	    return ResponseEntity.status(HttpStatus.OK).body("");
+			if (!facultyId.equals(0)) {
+				event.setFaculty(new FacultyModel(facultyId));
+				isPut = true;
+			}
+			if (minimumParticipants != null) {
+				event.setMinimumParticipants(minimumParticipants);
+				isPut = true;
+			}
+			if (maximumParticipants != null) {
+				event.setMaximumParticipants(maximumParticipants);
+				isPut = true;
+			}
+			if (!statusId.equals(0)) {
+				event.setStatus(new StatusPostModel(statusId));
+				isPut = true;
+			}
+			if (isPut) {
+				eventRepository.save(event);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println(e);
+		}
+		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
 	@PreAuthorize("hasAnyAuthority('Event.Delete')")
@@ -344,40 +364,40 @@ public class EventServiceController {
 	public ResponseEntity<String> deleteEvent(
 			@PathVariable String id,
 			@RequestHeader("userId") String userId) {
-	    // Find event
-	    Optional<EventModel> optionalEvent = eventRepository.findById(id);
-	    if (optionalEvent.isEmpty()) {
-	    	throw new AppException(50500, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
-	    }
-	    EventModel event = optionalEvent.get();
-	    event.setStatus(new StatusPostModel(4));
-	    eventRepository.save(event);
+		// Find event
+		Optional<EventModel> optionalEvent = eventRepository.findById(id);
+		if (optionalEvent.isEmpty()) {
+			throw new AppException(50500, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
+		}
+		EventModel event = optionalEvent.get();
+		event.setStatus(new StatusPostModel(4));
+		eventRepository.save(event);
 
 		List<String> commentIds = commentEventRepository.findByEventId(id);
 		notificationService.deleteNotificationsByEntityIds(commentIds);
 
-	    return ResponseEntity.status(HttpStatus.OK).body("");
+		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
 
 	@GetMapping("/hot")
 	public ResponseEntity<HashMap<String, Object>> getHotEvents(
 			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
-	    if (limit <= 0 || limit > 5) {
-	        limit = 5;
-	    }
-	    Calendar cal = Calendar.getInstance();
-	    Date startDate = cal.getTime();
+		if (limit <= 0 || limit > 5) {
+			limit = 5;
+		}
+		Calendar cal = Calendar.getInstance();
+		Date startDate = cal.getTime();
 
-	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
-	    Page<IEventListDto> events = eventRepository.getHotEvents(userId, startDate, pageable);
+		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
+		Page<IEventListDto> events = eventRepository.getHotEvents(userId, startDate, pageable);
 
-	    HashMap<String, Object> result = new HashMap<>();
-	    result.put("events", events.getContent());
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("events", events.getContent());
 
-	    return ResponseEntity.status(HttpStatus.OK).body(result);
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
-	
+
 	@GetMapping("/participated")
 	public ResponseEntity<HashMap<String, Object>> getUserParticipatedEvents(
 			@RequestHeader(value = "userId", defaultValue = "") String requestingUserId,
@@ -385,86 +405,87 @@ public class EventServiceController {
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "mode", required = false, defaultValue = "1") int mode) {
-	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
-	    	pageSize = MAXIMUM_PAGES;
-	    }
-	    HashMap<String, Object> result = new HashMap<>();
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
+		HashMap<String, Object> result = new HashMap<>();
 
-	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
-	    Calendar cal = Calendar.getInstance();
-        Date startDate = cal.getTime();
-        Page<IEventListDto> events = eventRepository.getUserParticipatedEvents(requestingUserId, requestedUserId, startDate, mode, pageable);
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
+		Calendar cal = Calendar.getInstance();
+		Date startDate = cal.getTime();
+		Page<IEventListDto> events = eventRepository.getUserParticipatedEvents(requestingUserId, requestedUserId,
+				startDate, mode, pageable);
 
-        result.put("totalPages", events.getTotalPages());
-        result.put("events", events.getContent());
+		result.put("totalPages", events.getTotalPages());
+		result.put("events", events.getContent());
 
-	    return ResponseEntity.status(HttpStatus.OK).body(result);
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
-	
+
 	@GetMapping("/{id}/participants")
 	public ResponseEntity<Map<String, Object>> getParticipantsListById(
 			@PathVariable String id,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize) {
-	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
-	    	pageSize = MAXIMUM_PAGES;
-	    }
-	    
-	    Optional<EventModel> optionalEvent = eventRepository.findById(id);
-	    if (optionalEvent.isEmpty()) {
-	    	throw new AppException(50900, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
-	    }
-	    
-	    Map<String, Object> result = new HashMap<>();
-	    
-	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-	    Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, pageable);
+		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
+			pageSize = MAXIMUM_PAGES;
+		}
 
-	    result.put("participants", participantsPage.getContent());
+		Optional<EventModel> optionalEvent = eventRepository.findById(id);
+		if (optionalEvent.isEmpty()) {
+			throw new AppException(50900, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
+		}
 
-	    return ResponseEntity.status(HttpStatus.OK).body(result);
+		Map<String, Object> result = new HashMap<>();
+
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+		Page<IParticipantEventDto> participantsPage = participantEventRepository.getParticipantsByEventId(id, pageable);
+
+		result.put("participants", participantsPage.getContent());
+
+		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('Event.Participant.Create')")
 	@PostMapping("/{id}/participants")
 	public ResponseEntity<String> addParticipant(
-	        @PathVariable String id,
-	        @RequestHeader("userId") String userId,
-	        @RequestBody ParticipantEventModel participantEvent) {
+			@PathVariable String id,
+			@RequestHeader("userId") String userId,
+			@RequestBody ParticipantEventModel participantEvent) {
 		Optional<IEventDto> optionalEvent = eventRepository.findEventById(id, userId);
-		if (optionalEvent.isEmpty()) 
+		if (optionalEvent.isEmpty())
 			throw new AppException(51000, "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND);
 		if (optionalEvent.get().getIsParticipated())
 			throw new AppException(51001, "Đã tham gia sự kiện", HttpStatus.BAD_REQUEST);
-		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants()) 
+		if (optionalEvent.get().getParticipants() >= optionalEvent.get().getMaximumParticipants())
 			throw new AppException(51002, "Số lượng người tham gia sự kiện đã đạt mức tối đa", HttpStatus.BAD_REQUEST);
-		
-	    ParticipantEventModel participant = participantEvent;
-	    participant.setId(new ParticipantEventId(id, userId));
-	    participant.setCreatedAt(new Date());
-	    participantEventRepository.save(participant);
-	    
-	    eventRepository.participantCountIncrement(id, 1);
 
-	    return ResponseEntity.status(HttpStatus.CREATED).body(null);
+		ParticipantEventModel participant = participantEvent;
+		participant.setId(new ParticipantEventId(id, userId));
+		participant.setCreatedAt(new Date());
+		participantEventRepository.save(participant);
+
+		eventRepository.participantCountIncrement(id, 1);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 
 	@PreAuthorize("hasAnyAuthority('Event.Participant.Delete')")
 	@DeleteMapping("/{id}/participants")
 	public ResponseEntity<String> deleteParticipant(
-	        @PathVariable String id,
-	        @RequestHeader("userId") String userId) {
-	    // Delete the participant
-	    int updatedRow = participantEventRepository.deleteByEventIdAndUserId(id, userId);
+			@PathVariable String id,
+			@RequestHeader("userId") String userId) {
+		// Delete the participant
+		int updatedRow = participantEventRepository.deleteByEventIdAndUserId(id, userId);
 
-	    if (updatedRow == 1)
-	    	eventRepository.participantCountIncrement(id, -1);
-	    else
-	    	throw new AppException(51100, "Không tìm thấy thành viên", HttpStatus.NOT_FOUND);
+		if (updatedRow == 1)
+			eventRepository.participantCountIncrement(id, -1);
+		else
+			throw new AppException(51100, "Không tìm thấy thành viên", HttpStatus.NOT_FOUND);
 
-	    return ResponseEntity.status(HttpStatus.OK).body(null);
+		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
-	
+
 	@GetMapping("/{id}/comments")
 	public ResponseEntity<HashMap<String, Object>> getEventComments(
 			Authentication authentication,
@@ -476,7 +497,7 @@ public class EventServiceController {
 			pageSize = MAXIMUM_PAGES;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
-		
+
 		boolean canDelete = false;
 		if (authentication != null && authentication.getAuthorities().stream()
 				.anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
@@ -508,7 +529,7 @@ public class EventServiceController {
 		if (parentComment.isEmpty() || parentComment.get().getIsDelete()) {
 			throw new AppException(51300, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
-		
+
 		boolean canDelete = false;
 		if (authentication != null && authentication.getAuthorities().stream()
 				.anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
@@ -516,7 +537,8 @@ public class EventServiceController {
 		}
 
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createAt"));
-		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, userId, canDelete, pageable);
+		Page<ICommentEventDto> comments = commentEventRepository.getChildrenComment(commentId, userId, canDelete,
+				pageable);
 
 		result.put("comments", comments.getContent());
 
@@ -534,11 +556,11 @@ public class EventServiceController {
 		}
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
-		
+
 		comment.setId(UUID.randomUUID().toString());
 		comment.setEvent(new EventModel(id));
 		comment.setCreator(new UserModel(creator));
-		
+
 		try {
 			CommentEventModel savedCmt = commentEventRepository.saveAndFlush(comment);
 			entityManager.refresh(savedCmt);
@@ -549,7 +571,7 @@ public class EventServiceController {
 		} catch (DataIntegrityViolationException e) {
 			throw new AppException(51402, "Không tìm thấy bình luận cha", HttpStatus.NOT_FOUND);
 		}
-		
+
 		if (comment.getParentId() != null) {
 			commentEventRepository.commentCountIncrement(comment.getParentId(), 1);
 			// Fetch the parent comment
@@ -559,22 +581,22 @@ public class EventServiceController {
 				// Create NotificationObject
 				EntityTypeModel entityType = entityTypeRepository
 						.findByEntityTableAndNotificationType("comment_event", NotificationType.CREATE)
-				        .orElseGet(() -> entityTypeRepository
-							.save(new EntityTypeModel(null, "comment_event", NotificationType.CREATE, null)));
-				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType, 
+						.orElseGet(() -> entityTypeRepository
+								.save(new EntityTypeModel(null, "comment_event", NotificationType.CREATE, null)));
+				NotificationObjectModel notificationObject = new NotificationObjectModel(null, entityType,
 						comment.getId(), new Date(), false);
 				notificationObject = notificationObjectRepository.save(notificationObject);
-				
+
 				// Create NotificationChange
-				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject, 
+				NotificationChangeModel notificationChange = new NotificationChangeModel(null, notificationObject,
 						new UserModel(creator), false);
 				notificationChangeRepository.save(notificationChange);
-				
+
 				// Create Notification
-				NotificationModel notification = new NotificationModel(null, notificationObject, 
+				NotificationModel notification = new NotificationModel(null, notificationObject,
 						parentComment.getCreator(), new StatusNotificationModel(1));
 				notificationRepository.save(notification);
-				
+
 				Optional<UserModel> optionalUser = userRepository.findById(creator);
 				firebaseService.sendNotification(
 						notification, notificationChange, notificationObject,
@@ -582,10 +604,10 @@ public class EventServiceController {
 						optionalUser.get().getFullName() + " đã bình luận về bình luận của bạn",
 						comment.getEvent().getId());
 			}
-	    } else {
-	    	eventRepository.commentCountIncrement(id, 1);
-	    }
-		
+		} else {
+			eventRepository.commentCountIncrement(id, 1);
+		}
+
 		return ResponseEntity.status(HttpStatus.CREATED).body(result);
 	}
 
@@ -647,7 +669,7 @@ public class EventServiceController {
 				eventRepository.commentCountIncrement(originalComment.getEvent().getId(), -1);
 			}
 		}
-		
+
 		// Delete notifications for the comment and its children
 		List<String> allCommentIds = commentEventRepository.findByParentIds(allParentId);
 		allCommentIds.add(commentId);
@@ -655,7 +677,7 @@ public class EventServiceController {
 
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 	}
-	
+
 	// Get a specific comment of a post
 	@GetMapping("/{eventId}/comments/{commentId}")
 	public ResponseEntity<Map<String, Object>> getSingleCommentOfAPost(
@@ -664,22 +686,22 @@ public class EventServiceController {
 			@PathVariable String eventId,
 			@PathVariable String commentId) {
 		HashMap<String, Object> result = new HashMap<String, Object>();
-	
+
 		// Delete all post permissions regardless of being creator or not
 		boolean canDelete = false;
 		if (authentication != null && authentication.getAuthorities().stream()
 				.anyMatch(a -> a.getAuthority().equals("Event.Comment.Delete"))) {
 			canDelete = true;
 		}
-	
+
 		ICommentEventDto comment = commentEventRepository.getComment(eventId, commentId, userId, canDelete)
 				.orElse(null);
 		if (comment == null) {
 			throw new AppException(51700, "Không tìm thấy bình luận", HttpStatus.NOT_FOUND);
 		}
-	
+
 		result.put("comment", comment);
-	
+
 		return ResponseEntity.status(HttpStatus.OK).body(result);
 	}
 }
