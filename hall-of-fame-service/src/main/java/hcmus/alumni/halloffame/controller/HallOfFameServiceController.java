@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import hcmus.alumni.halloffame.dto.IHallOfFameDto;
+import hcmus.alumni.halloffame.dto.IHallOfFameListDto;
 import hcmus.alumni.halloffame.exception.AppException;
 import hcmus.alumni.halloffame.model.FacultyModel;
 import hcmus.alumni.halloffame.model.HallOfFameModel;
@@ -74,11 +75,14 @@ public class HallOfFameServiceController {
 		if (pageSize <= 0 || pageSize > 50) {
 			pageSize = 50;
 		}
+		if (title.isBlank()) {
+			title = null;
+		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IHallOfFameDto> hof = null;
+			Page<IHallOfFameListDto> hof = null;
 
 			hof = halloffameRepository.searchHof(title, statusId, facultyId, beginningYear, pageable);
 
@@ -258,7 +262,7 @@ public class HallOfFameServiceController {
 	@GetMapping("/rand")
 	public ResponseEntity<HashMap<String, Object>> getRandomHof(
 			@RequestParam(value = "number", defaultValue = "8") Integer number) {
-		List<IHallOfFameDto> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
+		List<IHallOfFameListDto> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("hof", optionalHallOfFame);
