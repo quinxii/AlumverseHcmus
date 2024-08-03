@@ -23,39 +23,6 @@ public interface EventRepository extends JpaRepository<EventModel, String> {
 			"where r.id in (select role_id from user_role where user_id = :userId) and p.name like :domain% and rp.is_delete = false;", nativeQuery = true)
 	List<String> getPermissions(String userId, String domain);
 
-	// @Query(value = "SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " +
-	// 		"FROM EventModel e " +
-	// 		"LEFT JOIN e.status s " +
-	// 		"LEFT JOIN e.faculty f " +
-	// 		"LEFT JOIN e.tags t " +
-	// 		"LEFT JOIN ParticipantEventModel p " +
-	// 		"ON p.id.eventId = e.id AND p.id.userId = :userId AND p.isDelete = false " +
-	// 		"WHERE (:statusId IS NULL OR s.id = :statusId) " +
-	// 		"AND (:facultyId IS NULL OR f.id = :facultyId) " +
-	// 		"AND (:title IS NULL OR e.title LIKE %:title%) " +
-	// 		"AND (CASE " +
-	// 		"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
-	// 		"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
-	// 		"       ELSE true " +
-	// 		"   END) " +
-	// 		"AND s.id != 4 " +
-	// 		"AND (:tagNames IS NULL OR t.name IN :tagNames)", countQuery = "SELECT COUNT(DISTINCT e) " +
-	// 				"FROM EventModel e " +
-	// 				"LEFT JOIN e.status s " +
-	// 				"LEFT JOIN e.faculty f " +
-	// 				"LEFT JOIN e.tags t " +
-	// 				"LEFT JOIN ParticipantEventModel p " +
-	// 				"ON p.id.eventId = e.id AND p.id.userId = :userId AND p.isDelete = false " +
-	// 				"WHERE (:statusId IS NULL OR s.id = :statusId) " +
-	// 				"AND (:facultyId IS NULL OR f.id = :facultyId) " +
-	// 				"AND (:title IS NULL OR e.title LIKE %:title%) " +
-	// 				"AND (CASE " +
-	// 				"       WHEN :mode = 1 THEN e.organizationTime >= :startDate " +
-	// 				"       WHEN :mode = 2 THEN e.organizationTime < :startDate " +
-	// 				"       ELSE true " +
-	// 				"   END) " +
-	// 				"AND s.id != 4 " +
-	// 				"AND (:tagNames IS NULL OR t.name IN :tagNames)")
 	@Query("SELECT DISTINCT new EventModel(e, CASE WHEN p IS NOT NULL THEN true ELSE false END) " +
 			"FROM EventModel e " +
 			"LEFT JOIN e.status s " +

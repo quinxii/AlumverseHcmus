@@ -47,6 +47,7 @@ import hcmus.alumni.news.repository.notification.NotificationObjectRepository;
 import hcmus.alumni.news.repository.notification.NotificationRepository;
 import hcmus.alumni.news.repository.UserRepository;
 import hcmus.alumni.news.common.CommentNewsPermissions;
+import hcmus.alumni.news.common.FetchNewsMode;
 import hcmus.alumni.news.common.NotificationType;
 import hcmus.alumni.news.model.notification.EntityTypeModel;
 import hcmus.alumni.news.model.notification.NotificationChangeModel;
@@ -103,6 +104,8 @@ public class NewsServiceController {
 
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
+	private final static int ADMIN_ROLE_ID = 1;
+	private final static int FACULTY_MANAGER_ROLE_ID = 2;
 
 	@GetMapping("/count")
 	public ResponseEntity<Long> getNewsCount(
@@ -115,6 +118,7 @@ public class NewsServiceController {
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getNews(
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -122,7 +126,8 @@ public class NewsServiceController {
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
-			@RequestParam(value = "statusId", required = false) Integer statusId) {
+			@RequestParam(value = "statusId", required = false) Integer statusId,
+			@RequestParam(value = "fetchMode", required = false, defaultValue = "NORMAL") FetchNewsMode fetchMode) {
 		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
 		}
@@ -140,7 +145,19 @@ public class NewsServiceController {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
 			Page<INewsListDto> news = null;
 
-			news = newsRepository.searchNews(title, facultyId, tagNames, statusId, pageable);
+			if (fetchMode.equals(FetchNewsMode.MANAGEMENT)) {
+				// Check if is Admin or FacultyManager
+				Set<Integer> roleIds = userRepository.getRoleIds(userId);
+				if (roleIds.contains(ADMIN_ROLE_ID)) {
+					news = newsRepository.searchNews(title, null, tagNames, statusId, pageable);
+				} else if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+					news = newsRepository.searchNewsByUserFaculty(userId, title, tagNames, statusId, pageable);
+				}
+			}
+
+			if (news == null) {
+				news = newsRepository.searchNews(title, facultyId, tagNames, statusId, pageable);
+			}
 
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());

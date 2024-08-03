@@ -43,6 +43,28 @@ public interface NewsRepository extends JpaRepository<NewsModel, String> {
 	Page<INewsListDto> searchNews(String title, Integer facultyId, List<String> tagNames, Integer statusId,
 			Pageable pageable);
 
+	@Query(value = "SELECT n " +
+			"FROM NewsModel n " +
+			"LEFT JOIN n.status s " +
+			"LEFT JOIN n.faculty f " +
+			"LEFT JOIN FETCH n.tags t " +
+			"WHERE (:statusId IS NULL OR s.id = :statusId) " +
+			"AND (f.id = (SELECT u.facultyId FROM UserModel u WHERE u.id = :userId) OR f.id IS NULL) " +
+			"AND (:tagNames IS NULL OR t.name IN :tagNames) " +
+			"AND s.id != 4 " +
+			"AND (:title IS NULL OR n.title LIKE %:title%)", countQuery = "SELECT COUNT(DISTINCT n) " +
+					"FROM NewsModel n " +
+					"LEFT JOIN n.status s " +
+					"LEFT JOIN n.faculty f " +
+					"LEFT JOIN n.tags t " +
+					"WHERE (:statusId IS NULL OR s.id = :statusId) " +
+					"AND (f.id = (SELECT u.facultyId FROM UserModel u WHERE u.id = :userId) OR f.id IS NULL) " +
+					"AND (:tagNames IS NULL OR t.name IN :tagNames) " +
+					"AND s.id != 4 " +
+					"AND (:title IS NULL OR n.title LIKE %:title%)")
+	Page<INewsListDto> searchNewsByUserFaculty(String userId, String title, List<String> tagNames, Integer statusId,
+			Pageable pageable);
+
 	@Query("SELECT DISTINCT n " +
 			"FROM NewsModel n " +
 			"LEFT JOIN n.faculty f " +
