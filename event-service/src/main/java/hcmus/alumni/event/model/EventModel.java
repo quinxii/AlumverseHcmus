@@ -22,6 +22,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -29,11 +30,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class EventModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	@Id
 	@Column(name = "id", length = 36, nullable = false)
+	@EqualsAndHashCode.Include
 	private String id;
 	
 	@ManyToOne

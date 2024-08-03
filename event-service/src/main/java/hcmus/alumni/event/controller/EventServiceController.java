@@ -43,6 +43,7 @@ import org.springframework.web.multipart.MultipartFile;
 import hcmus.alumni.event.dto.CommentEventDto;
 import hcmus.alumni.event.dto.ICommentEventDto;
 import hcmus.alumni.event.dto.IEventDto;
+import hcmus.alumni.event.dto.IEventListDto;
 import hcmus.alumni.event.dto.IParticipantEventDto;
 import hcmus.alumni.event.model.EventModel;
 import hcmus.alumni.event.model.StatusPostModel;
@@ -125,6 +126,9 @@ public class EventServiceController {
 	    if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 	    	pageSize = MAXIMUM_PAGES;
 	    }
+		if (title.isBlank()) {
+			title = null;
+		}
 	    HashMap<String, Object> result = new HashMap<>();
 	    if (tagNames != null) {
 			for (int i = 0; i < tagNames.size(); i++) {
@@ -134,7 +138,7 @@ public class EventServiceController {
 
 	    try {
 	        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-	        Page<IEventDto> events = null;
+	        Page<IEventListDto> events = null;
 	        
 	        Calendar cal = Calendar.getInstance();
 	        Date startDate = cal.getTime();
@@ -366,7 +370,7 @@ public class EventServiceController {
 	    Date startDate = cal.getTime();
 
 	    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "participants"));
-	    Page<IEventDto> events = eventRepository.getHotEvents(userId, startDate, pageable);
+	    Page<IEventListDto> events = eventRepository.getHotEvents(userId, startDate, pageable);
 
 	    HashMap<String, Object> result = new HashMap<>();
 	    result.put("events", events.getContent());
@@ -389,7 +393,7 @@ public class EventServiceController {
 	    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "organizationTime"));
 	    Calendar cal = Calendar.getInstance();
         Date startDate = cal.getTime();
-        Page<IEventDto> events = eventRepository.getUserParticipatedEvents(requestingUserId, requestedUserId, startDate, mode, pageable);
+        Page<IEventListDto> events = eventRepository.getUserParticipatedEvents(requestingUserId, requestedUserId, startDate, mode, pageable);
 
         result.put("totalPages", events.getTotalPages());
         result.put("events", events.getContent());

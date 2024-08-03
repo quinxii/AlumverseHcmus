@@ -53,9 +53,6 @@ public interface NewsRepository extends JpaRepository<NewsModel, String> {
 			"AND n.id != :originalNewsId")
 	Page<INewsListDto> getRelatedNews(String originalNewsId, Integer facultyId, List<Long> tagsId, Pageable pageable);
 
-	@Query("SELECT n FROM NewsModel n JOIN n.status s WHERE s.id = 2")
-	Page<INewsListDto> getMostViewdNews(Pageable pageable);
-
 	@Query("SELECT n FROM NewsModel n JOIN n.status s WHERE s.id = 2 AND n.publishedAt >= :startDate AND n.publishedAt <= :endDate")
 	Page<INewsListDto> getHotNews(Date startDate, Date endDate, Pageable pageable);
 
