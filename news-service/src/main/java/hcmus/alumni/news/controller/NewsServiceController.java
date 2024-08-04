@@ -148,9 +148,7 @@ public class NewsServiceController {
 			if (fetchMode.equals(FetchNewsMode.MANAGEMENT)) {
 				// Check if is Admin or FacultyManager
 				Set<Integer> roleIds = userRepository.getRoleIds(userId);
-				if (roleIds.contains(ADMIN_ROLE_ID)) {
-					news = newsRepository.searchNews(title, null, tagNames, statusId, pageable);
-				} else if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+				if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
 					news = newsRepository.searchNewsByUserFaculty(userId, title, tagNames, statusId, pageable);
 				}
 			}

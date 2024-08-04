@@ -150,10 +150,7 @@ public class EventServiceController {
 			if (fetchMode.equals(FetchEventMode.MANAGEMENT)) {
 				// Check if is Admin or FacultyManager
 				Set<Integer> roleIds = userRepository.getRoleIds(userId);
-				if (roleIds.contains(ADMIN_ROLE_ID)) {
-					events = eventRepository.searchEvents(userId, title, statusId, null, tagNames, startDate, mode,
-							pageable);
-				} else if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+				if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
 					events = eventRepository.searchEventsByUserFaculty(userId, title, statusId, tagNames,
 							startDate, mode, pageable);
 				}

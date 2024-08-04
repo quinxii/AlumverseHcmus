@@ -94,9 +94,7 @@ public class HallOfFameServiceController {
 			if (fetchMode.equals(FetchHofMode.MANAGEMENT)) {
 				// Check if is Admin or FacultyManager
 				Set<Integer> roleIds = userRepository.getRoleIds(userId);
-				if (roleIds.contains(ADMIN_ROLE_ID)) {
-					hof = halloffameRepository.searchHof(title, statusId, null, beginningYear, pageable);
-				} else if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+				if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
 					hof = halloffameRepository.searchHofByUserFaculty(userId, title, statusId, beginningYear, pageable);
 				}
 			}
