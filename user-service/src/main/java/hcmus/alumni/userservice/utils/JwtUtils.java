@@ -2,6 +2,8 @@ package hcmus.alumni.userservice.utils;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,7 +26,6 @@ public class JwtUtils {
 	private long expirationTime; // 3 days
 
 	public boolean validateToken(final String token) {
-		Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token);
 		try {
 			Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token);
 			return true;
@@ -41,7 +42,11 @@ public class JwtUtils {
 	}
 
 	public String generateToken(UserModel user) {
-		return Jwts.builder().setSubject(user.getId())
+		Map<String, Object> claims = new HashMap<>();
+		claims.put("fullName", user.getFullName());
+		claims.put("roles", user.getRolesName());
+
+		return Jwts.builder().setClaims(claims).setSubject(user.getId())
 				.setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + expirationTime))
 				.signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
