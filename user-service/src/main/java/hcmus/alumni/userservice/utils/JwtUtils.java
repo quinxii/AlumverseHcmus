@@ -2,9 +2,8 @@ package hcmus.alumni.userservice.utils;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import hcmus.alumni.userservice.model.UserModel;
@@ -19,8 +18,10 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtils {
-	public static final String SECRET = "givepraiseforhehasnoequalworshiphimagodhasbeenbornuntotheworldcowerinfearhewillnotforgiveanyvicedevoteyourselfyourfateisoverwritten";
-	private final long expirationTime = 259200000L; // 3 days
+	@Value("${jwt.secret}")
+	private String SECRET;
+	@Value("${jwt.expiration}")
+	private long expirationTime; // 3 days
 
 	public boolean validateToken(final String token) {
 		Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token);
@@ -40,11 +41,7 @@ public class JwtUtils {
 	}
 
 	public String generateToken(UserModel user) {
-		Map<String, Object> claims = new HashMap<>();
-		claims.put("fullName", user.getFullName());
-		claims.put("roles", user.getRolesName());
-
-		return Jwts.builder().setClaims(claims).setSubject(user.getId())
+		return Jwts.builder().setSubject(user.getId())
 				.setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + expirationTime))
 				.signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
