@@ -3,6 +3,7 @@ package hcmus.alumni.userservice.repository;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -117,4 +118,12 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
 	@Modifying
 	@Query("UPDATE UserModel u SET u.lastLogin = :lastLogin WHERE u.email = :email")
 	int setLastLogin(@Param("email") String email, @Param("lastLogin") Date lastLogin);
+
+	@Query(value = "SELECT ur.role_id FROM user_role ur " +
+			"WHERE ur.user_id = :userId", nativeQuery = true)
+	Set<Integer> getRoleIds(String userId);
+
+	@Query(value = "SELECT u.faculty_id FROM user u " +
+			"WHERE u.id = :userId", nativeQuery = true)
+	Integer getFacultyId(String userId);
 }

@@ -1,0 +1,41 @@
+package hcmus.alumni.event.dto;
+
+import java.util.Date;
+import java.util.Set;
+
+public interface IEventListDto {
+	interface User{
+		String getId();
+		String getFullName();
+		String getAvatarUrl();
+	}
+	interface StatusPost{
+		String getName();
+	}
+	interface Tag{
+		Integer getId();
+		String getName();
+	}
+	interface Faculty{
+		Integer getId();
+		String getName();
+	}
+
+	String getId();
+	String getTitle();
+	String getThumbnail();
+	String getOrganizationLocation();
+	Date getOrganizationTime();
+	Integer getViews();
+	Date getUpdateAt();
+	Date getPublishedAt();
+	User getCreator();
+	Set<Tag> getTags();
+	Faculty getFaculty();
+	StatusPost getStatus();
+	Integer getParticipants();
+	Integer getMinimumParticipants();
+	Integer getMaximumParticipants();
+	Integer getChildrenCommentNumber();
+	boolean getIsParticipated();
+}

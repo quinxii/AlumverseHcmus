@@ -390,7 +390,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `role` WRITE;
 /*!40000 ALTER TABLE `role` DISABLE KEYS */;
-INSERT INTO `role` VALUES (1,'Admin',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(2,'FacultyManager',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(3,'Lecturer',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(4,'Alumni',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0),(5,'Guest',NULL,'2024-07-09 22:31:08','2024-07-09 22:31:08',0);
+INSERT INTO `role` VALUES (1,'Admin','Quản trị viên hệ thống','2024-07-09 22:31:08','2024-07-09 22:31:08',0),(2,'FacultyManager','Quản trị viên cấp khoa','2024-07-09 22:31:08','2024-07-09 22:31:08',0),(3,'Lecturer','Giảng viên','2024-07-09 22:31:08','2024-07-09 22:31:08',0),(4,'VerifiedAlumni','Cựu sinh viên đã xác thực','2024-07-09 22:31:08','2024-07-09 22:31:08',0),(5,'UnverifiedAlumni','Cựu sinh viên chưa xác thực','2024-07-09 22:31:08','2024-07-09 22:31:08',0);
 /*!40000 ALTER TABLE `role` ENABLE KEYS */;
 UNLOCK TABLES;
 

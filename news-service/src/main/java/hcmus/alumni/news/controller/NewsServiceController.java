@@ -47,6 +47,7 @@ import hcmus.alumni.news.repository.notification.NotificationObjectRepository;
 import hcmus.alumni.news.repository.notification.NotificationRepository;
 import hcmus.alumni.news.repository.UserRepository;
 import hcmus.alumni.news.common.CommentNewsPermissions;
+import hcmus.alumni.news.common.FetchNewsMode;
 import hcmus.alumni.news.common.NotificationType;
 import hcmus.alumni.news.model.notification.EntityTypeModel;
 import hcmus.alumni.news.model.notification.NotificationChangeModel;
@@ -56,6 +57,7 @@ import hcmus.alumni.news.model.notification.StatusNotificationModel;
 import hcmus.alumni.news.dto.CommentNewsDto;
 import hcmus.alumni.news.dto.ICommentNewsDto;
 import hcmus.alumni.news.dto.INewsDto;
+import hcmus.alumni.news.dto.INewsListDto;
 import hcmus.alumni.news.exception.AppException;
 import hcmus.alumni.news.model.CommentNewsModel;
 import hcmus.alumni.news.model.FacultyModel;
@@ -102,6 +104,8 @@ public class NewsServiceController {
 
 	private final static int MAXIMUM_PAGES = 50;
 	private final static int MAXIMUM_TAGS = 5;
+	private final static int ADMIN_ROLE_ID = 1;
+	private final static int FACULTY_MANAGER_ROLE_ID = 2;
 
 	@GetMapping("/count")
 	public ResponseEntity<Long> getNewsCount(
@@ -114,6 +118,7 @@ public class NewsServiceController {
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getNews(
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -121,9 +126,13 @@ public class NewsServiceController {
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
 			@RequestParam(value = "tagNames", required = false) List<String> tagNames,
-			@RequestParam(value = "statusId", required = false) Integer statusId) {
+			@RequestParam(value = "statusId", required = false) Integer statusId,
+			@RequestParam(value = "fetchMode", required = false, defaultValue = "NORMAL") FetchNewsMode fetchMode) {
 		if (pageSize <= 0 || pageSize > MAXIMUM_PAGES) {
 			pageSize = MAXIMUM_PAGES;
+		}
+		if (title.isBlank()) {
+			title = null;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		if (tagNames != null) {
@@ -134,9 +143,19 @@ public class NewsServiceController {
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<INewsDto> news = null;
+			Page<INewsListDto> news = null;
 
-			news = newsRepository.searchNews(title, facultyId, tagNames, statusId, pageable);
+			if (fetchMode.equals(FetchNewsMode.MANAGEMENT)) {
+				// Check if is Admin or FacultyManager
+				Set<Integer> roleIds = userRepository.getRoleIds(userId);
+				if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+					news = newsRepository.searchNewsByUserFaculty(userId, title, tagNames, statusId, pageable);
+				}
+			}
+
+			if (news == null) {
+				news = newsRepository.searchNews(title, facultyId, tagNames, statusId, pageable);
+			}
 
 			result.put("totalPages", news.getTotalPages());
 			result.put("news", news.getContent());
@@ -360,7 +379,7 @@ public class NewsServiceController {
 		List<Long> tagIds = optionalNews.get().getTags().stream().map(TagModel::getId).collect(Collectors.toList());
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
-		Page<INewsDto> news = newsRepository.getRelatedNews(id, facultyId, tagIds, pageable);
+		Page<INewsListDto> news = newsRepository.getRelatedNews(id, facultyId, tagIds, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());
@@ -387,7 +406,7 @@ public class NewsServiceController {
 		Date startDate = cal.getTime();
 
 		Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "views"));
-		Page<INewsDto> news = newsRepository.getHotNews(startDate, endDate, pageable);
+		Page<INewsListDto> news = newsRepository.getHotNews(startDate, endDate, pageable);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("news", news.getContent());

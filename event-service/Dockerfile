@@ -24,4 +24,4 @@ ENV FCM_SERVICE_ACCOUNT_KEY_PATH=/app/fcm-key.json
 COPY --from=builder app/target/event-service.jar /app/
 # Command to run the Java application
 # Set JVM memory limits based on Heroku's plan
-CMD ["java", "-Xmx200M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/event-service.jar"]
+CMD ["java", "-Xmx150M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/event-service.jar"]

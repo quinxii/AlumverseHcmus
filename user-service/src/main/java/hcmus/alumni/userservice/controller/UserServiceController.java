@@ -147,6 +147,8 @@ public class UserServiceController {
 	private NotificationService notificationService;
 
 	private final static int MAXIMUM_PAGES = 50;
+	private final static int ADMIN_ROLE_ID = 1;
+	private final static int FACULTY_MANAGER_ROLE_ID = 2;
 
 	@PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
 	@GetMapping("/alumni-verification/count")
@@ -172,7 +174,9 @@ public class UserServiceController {
 
 	@PreAuthorize("hasAnyAuthority('AlumniVerify.Read')")
 	@GetMapping("/alumni-verification")
-	public ResponseEntity<HashMap<String, Object>> searchAlumniVerification(@RequestParam String status,
+	public ResponseEntity<HashMap<String, Object>> searchAlumniVerification(
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
+			@RequestParam String status,
 			@RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
 			@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
 			@RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
@@ -239,11 +243,21 @@ public class UserServiceController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 		Predicate facultyIdPredicate = null;
-		if (!facultyId.equals("0")) {
-			facultyIdPredicate = cb.equal(facultyJoin.get("id"), facultyId);
-			cq.where(statusPredication, criteriaPredicate, isDeletePredicate, facultyIdPredicate);
-		} else {
-			cq.where(statusPredication, criteriaPredicate, isDeletePredicate);
+		Set<Integer> roleIds = userRepository.getRoleIds(userId);
+		if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+			Integer userFacultyId = userRepository.getFacultyId(userId);
+			facultyIdPredicate = cb.equal(facultyJoin.get("id"), userFacultyId);
+			Predicate facultyIdNullPredicate = cb.isNull(facultyJoin.get("id"));
+			Predicate facultyIdOrFacultyIdNullPredicate = cb.or(facultyIdPredicate, facultyIdNullPredicate);
+			cq.where(statusPredication, criteriaPredicate, isDeletePredicate, facultyIdOrFacultyIdNullPredicate);
+		}
+		if (facultyIdPredicate == null) {
+			if (!facultyId.equals("0")) {
+				facultyIdPredicate = cb.equal(facultyJoin.get("id"), facultyId);
+				cq.where(statusPredication, criteriaPredicate, isDeletePredicate, facultyIdPredicate);
+			} else {
+				cq.where(statusPredication, criteriaPredicate, isDeletePredicate);
+			}
 		}
 
 		List<Order> orderList = new ArrayList<Order>();

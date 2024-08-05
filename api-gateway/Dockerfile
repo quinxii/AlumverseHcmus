@@ -18,4 +18,4 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=builder app/target/api-gateway.jar /app/
 # Command to run the Java application
-CMD ["java", "-Xmx200M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/api-gateway.jar"]
+CMD ["java", "-Xmx150M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/api-gateway.jar"]

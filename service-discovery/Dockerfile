@@ -19,4 +19,4 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=builder app/target/service-discovery.jar /app/
 # Command to run the Java application
-CMD ["java", "-Xmx200M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "/app/service-discovery.jar"]
+CMD ["java", "-Xmx150M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "/app/service-discovery.jar"]

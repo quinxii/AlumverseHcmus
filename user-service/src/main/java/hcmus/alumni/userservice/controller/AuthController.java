@@ -74,11 +74,11 @@ public class AuthController {
 
 			Set<RoleModel> roles = user.getRoles();
 			List<Integer> roleIds = roles.stream().map(RoleModel::getId).collect(Collectors.toList());
-
 			List<String> permissionNames = permissionRepository.getPermissionNamesByRoleIds(roleIds);
 
 			Map<String, Object> response = new HashMap<>();
 			response.put("jwt", jwtUtils.generateToken(user));
+			response.put("roleIds", roleIds);
 			response.put("permissions", permissionNames);
 
 			return ResponseEntity.status(HttpStatus.OK).body(response);

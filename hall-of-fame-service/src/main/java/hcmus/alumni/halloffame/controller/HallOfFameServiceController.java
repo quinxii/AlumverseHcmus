@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
@@ -28,7 +29,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import hcmus.alumni.halloffame.common.FetchHofMode;
 import hcmus.alumni.halloffame.dto.IHallOfFameDto;
+import hcmus.alumni.halloffame.dto.IHallOfFameListDto;
 import hcmus.alumni.halloffame.exception.AppException;
 import hcmus.alumni.halloffame.model.FacultyModel;
 import hcmus.alumni.halloffame.model.HallOfFameModel;
@@ -53,6 +56,9 @@ public class HallOfFameServiceController {
 	@Autowired
 	private ImageUtils imageUtils;
 
+	private final static int ADMIN_ROLE_ID = 1;
+	private final static int FACULTY_MANAGER_ROLE_ID = 2;
+
 	@GetMapping("/count")
 	public ResponseEntity<Long> getHofCount(@RequestParam(value = "status") String status) {
 		if (status.equals(StringUtils.EMPTY)) {
@@ -63,6 +69,7 @@ public class HallOfFameServiceController {
 
 	@GetMapping("")
 	public ResponseEntity<HashMap<String, Object>> getHof(
+			@RequestHeader(value = "userId", defaultValue = "") String userId,
 			@RequestParam(value = "page", required = false, defaultValue = "0") int page,
 			@RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
 			@RequestParam(value = "title", required = false, defaultValue = "") String title,
@@ -70,17 +77,31 @@ public class HallOfFameServiceController {
 			@RequestParam(value = "order", required = false, defaultValue = "desc") String order,
 			@RequestParam(value = "statusId", required = false) Integer statusId,
 			@RequestParam(value = "facultyId", required = false) Integer facultyId,
-			@RequestParam(value = "beginningYear", required = false) Integer beginningYear) {
+			@RequestParam(value = "beginningYear", required = false) Integer beginningYear,
+			@RequestParam(value = "fetchMode", required = false, defaultValue = "NORMAL") FetchHofMode fetchMode) {
 		if (pageSize <= 0 || pageSize > 50) {
 			pageSize = 50;
+		}
+		if (title.isBlank()) {
+			title = null;
 		}
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
 		try {
 			Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(order), orderBy));
-			Page<IHallOfFameDto> hof = null;
+			Page<IHallOfFameListDto> hof = null;
 
-			hof = halloffameRepository.searchHof(title, statusId, facultyId, beginningYear, pageable);
+			if (fetchMode.equals(FetchHofMode.MANAGEMENT)) {
+				// Check if is Admin or FacultyManager
+				Set<Integer> roleIds = userRepository.getRoleIds(userId);
+				if (roleIds.contains(FACULTY_MANAGER_ROLE_ID)) {
+					hof = halloffameRepository.searchHofByUserFaculty(userId, title, statusId, beginningYear, pageable);
+				}
+			}
+
+			if (hof == null) {
+				hof = halloffameRepository.searchHof(title, statusId, facultyId, beginningYear, pageable);
+			}
 
 			result.put("totalPages", hof.getTotalPages());
 			result.put("hof", hof.getContent());
@@ -258,7 +279,7 @@ public class HallOfFameServiceController {
 	@GetMapping("/rand")
 	public ResponseEntity<HashMap<String, Object>> getRandomHof(
 			@RequestParam(value = "number", defaultValue = "8") Integer number) {
-		List<IHallOfFameDto> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
+		List<IHallOfFameListDto> optionalHallOfFame = halloffameRepository.findRandomHofEntries(number);
 
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		result.put("hof", optionalHallOfFame);

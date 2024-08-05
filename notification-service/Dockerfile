@@ -20,4 +20,4 @@ WORKDIR /app
 COPY --from=builder app/target/notification-service.jar /app/
 # Command to run the Java application
 # Set JVM memory limits based on Heroku's plan
-CMD ["java", "-Xmx200M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/notification-service.jar"]
+CMD ["java", "-Xmx150M", "-Xms100M", "-XX:+UseContainerSupport", "-jar", "-Dspring.profiles.active=heroku", "/app/notification-service.jar"]
