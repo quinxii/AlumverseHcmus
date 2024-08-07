@@ -23,14 +23,17 @@ public class JwtUtils {
 			return true;
 		} catch (MalformedJwtException ex) {
 			System.err.println("Invalid JWT token");
+			throw ex;
 		} catch (ExpiredJwtException ex) {
 			System.err.println("Expired JWT token");
+			throw ex;
 		} catch (UnsupportedJwtException ex) {
 			System.err.println("Unsupported JWT token");
+			throw ex;
 		} catch (IllegalArgumentException ex) {
 			System.err.println("JWT claims string is empty.");
+			throw ex;
 		}
-		return false;
 	}
 
 	private Key getSignKey() {

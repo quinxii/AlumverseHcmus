@@ -74,7 +74,7 @@ public class UserModel implements Serializable {
     private String aboutMe;
 
     @Column(name = "avatar_url", columnDefinition = "TINYTEXT")
-    private String avatarUrl = "https://storage.googleapis.com/hcmus-alumverse/images/users/avatar/none";
+    private String avatarUrl;
 
     @Column(name = "cover_url", columnDefinition = "TINYTEXT")
     private String coverUrl;

@@ -46,7 +46,6 @@ import hcmus.alumni.notification.exception.AppException;
 import hcmus.alumni.notification.common.NotificationType;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/notification")
 public class NotificationServiceController {
 	@Autowired

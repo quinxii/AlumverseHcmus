@@ -31,6 +31,7 @@ import hcmus.alumni.userservice.repository.PasswordHistoryRepository;
 import hcmus.alumni.userservice.repository.PermissionRepository;
 import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
+import hcmus.alumni.userservice.utils.ImageUtils;
 import hcmus.alumni.userservice.utils.JwtUtils;
 import hcmus.alumni.userservice.utils.PasswordUtils;
 import hcmus.alumni.userservice.utils.UserUtils;
@@ -54,6 +55,8 @@ public class AuthController {
 	@Autowired
 	private PermissionRepository permissionRepository;
 
+	@Autowired
+	private ImageUtils imageUtils;
 	private UserUtils userUtils = UserUtils.getInstance();
 	private EmailSenderUtils emailSenderUtils = EmailSenderUtils.getInstance();
 
@@ -94,6 +97,7 @@ public class AuthController {
 		}
 		UserModel newUser = new UserModel(email, passwordEncoder.encode(pass));
 		newUser.setStatusId(2);
+		newUser.setAvatarUrl(imageUtils.getNoneAvatarFullUrl());
 
 		try {
 			userRepository.save(newUser);

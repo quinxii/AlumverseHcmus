@@ -353,7 +353,6 @@ public class UserServiceController {
 		try {
 			if (avatar != null) {
 				String avatarUrl = imageUtils.saveImageToStorage(imageUtils.getAvatarPath(), avatar, userId);
-				System.out.println(avatarUrl);
 				user.setAvatarUrl(avatarUrl);
 			}
 

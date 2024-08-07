@@ -137,17 +137,20 @@ public class ImageUtils {
 	public String getAvatarPath() {
 		return this.avatarPath;
 	}
-	
+
 	public String getCoverPath() {
 		return this.coverPath;
 	}
-	
+
 	public String getAvatarPath(String id) {
 		return this.avatarPath + id + "/";
 	}
-	
+
 	public String getCoverPath(String id) {
 		return this.coverPath + id + "/";
 	}
 
+	public String getNoneAvatarFullUrl() {
+		return gcp.getDomainName() + gcp.getBucketName() + "/" + avatarPath + noneAvatar;
+	}
 }
