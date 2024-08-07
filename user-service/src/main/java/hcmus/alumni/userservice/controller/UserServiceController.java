@@ -650,6 +650,7 @@ public class UserServiceController {
 		}
 
 		if (isUpdated) {
+			alumniVerification.setCreateAt(new Date());
 			verifyAlumniRepository.save(alumniVerification);
 		}
 
