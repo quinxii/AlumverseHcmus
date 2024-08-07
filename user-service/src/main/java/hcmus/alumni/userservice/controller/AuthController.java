@@ -33,6 +33,7 @@ import hcmus.alumni.userservice.repository.UserRepository;
 import hcmus.alumni.userservice.utils.EmailSenderUtils;
 import hcmus.alumni.userservice.utils.ImageUtils;
 import hcmus.alumni.userservice.utils.JwtUtils;
+import hcmus.alumni.userservice.utils.PasswordUtils;
 import hcmus.alumni.userservice.utils.UserUtils;
 
 @RestController
@@ -91,6 +92,9 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	public ResponseEntity<String> signup(@RequestParam String email, @RequestParam String pass) {
+		if (!PasswordUtils.isPasswordStrong(pass)) {
+			throw new AppException(10200, "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ cái viết thường, viết hoa, số và ký tự đặc biệt.", HttpStatus.BAD_REQUEST);
+		}
 		UserModel newUser = new UserModel(email, passwordEncoder.encode(pass));
 		newUser.setStatusId(2);
 		newUser.setAvatarUrl(imageUtils.getNoneAvatarFullUrl());
@@ -98,10 +102,10 @@ public class AuthController {
 		try {
 			userRepository.save(newUser);
 		} catch (IllegalArgumentException e) {
-			throw new AppException(10200, "Email hoặc mật khẩu không hợp lệ", HttpStatus.BAD_REQUEST);
+			throw new AppException(10201, "Email hoặc mật khẩu không hợp lệ", HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new AppException(10201, "Email đã tồn tại", HttpStatus.CONFLICT);
+			throw new AppException(10202, "Email đã tồn tại", HttpStatus.CONFLICT);
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("");
 	}
@@ -147,7 +151,6 @@ public class AuthController {
 	public ResponseEntity<String> resetPassword(
 			@RequestHeader String userId,
 			@RequestBody ResetPasswordRequestDto req) {
-		System.out.println(userId);
 		UserModel user = userRepository.findById(userId).orElse(null);
 		if (req.getNewPassword() == null || req.getNewPassword().isBlank()) {
 			throw new AppException(10502, "Mật khẩu mới không được để trống", HttpStatus.BAD_REQUEST);
@@ -159,6 +162,10 @@ public class AuthController {
 
 		if (!passwordEncoder.matches(req.getOldPassword(), user.getPass())) {
 			throw new AppException(10501, "Mật khẩu cũ không chính xác", HttpStatus.BAD_REQUEST);
+		}
+
+		if (!PasswordUtils.isPasswordStrong(user.getPass())) {
+			throw new AppException(10503, "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ cái viết thường, viết hoa, số và ký tự đặc biệt.", HttpStatus.BAD_REQUEST);
 		}
 
 		user.setPass(passwordEncoder.encode(req.getNewPassword()));

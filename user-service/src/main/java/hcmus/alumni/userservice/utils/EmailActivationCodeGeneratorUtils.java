@@ -4,8 +4,8 @@ import java.security.SecureRandom;
 
 public class EmailActivationCodeGeneratorUtils {
 	
-	private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final int CODE_LENGTH = 8; 
+	private static final String CHARACTERS = "0123456789";
+    private static final int CODE_LENGTH = 4; 
 
     private static volatile EmailActivationCodeGeneratorUtils instance  = null;
     
