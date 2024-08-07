@@ -63,7 +63,7 @@ public class VerifyAlumniModel implements Serializable {
 	private Status status;
 
 	@CreationTimestamp
-	@Column(name = "create_at", updatable = false)
+	@Column(name = "create_at")
 	private Date createAt;
 
 	@Column(name = "is_delete", columnDefinition = "TINYINT(1) DEFAULT(0)")
