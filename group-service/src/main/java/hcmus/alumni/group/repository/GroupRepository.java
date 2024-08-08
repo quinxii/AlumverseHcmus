@@ -51,7 +51,7 @@ public interface GroupRepository extends JpaRepository<GroupModel, String> {
 	    @Param("privacy") Privacy privacy,
 	    @Param("isJoined") Boolean isJoined,
 	    @Param("requestingUserId") String requestingUserId,
-	    boolean canDelete,
+	    @Param("canDelete") boolean canDelete,
 	    Pageable pageable);
 
 	@Query("SELECT DISTINCT new GroupModel(g, " +
@@ -62,7 +62,7 @@ public interface GroupRepository extends JpaRepository<GroupModel, String> {
         "LEFT JOIN GroupMemberModel gm ON gm.id.group.id = g.id AND gm.id.user.id = :requestingUserId AND gm.isDelete = false " +
         "LEFT JOIN RequestJoinGroupModel rjg ON rjg.id.group.id = g.id AND rjg.id.user.id = :requestingUserId AND rjg.isDelete = false " +
         "WHERE g.id = :id")
-	Optional<IGroupDto> findGroupById(@Param("id") String id, @Param("requestingUserId") String requestingUserId, boolean canDelete);
+	Optional<IGroupDto> findGroupById(@Param("id") String id, @Param("requestingUserId") String requestingUserId, @Param("canDelete") boolean canDelete);
 	
 	@Query("SELECT gm.id.group FROM GroupMemberModel gm WHERE gm.id.user.id = :userId AND gm.isDelete = false")
     Page<IGroupDto> findGroupsByUserId(
